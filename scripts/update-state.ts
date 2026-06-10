@@ -166,6 +166,29 @@ switch (cmd) {
         console.warn('[update-state] WARN: model-policy.json unreadable — run /research.');
       }
     }
+    // Session metrics integrity (F-0010): roadmap/metrics.jsonl is consumed by
+    // /kaizen and /status — a malformed record fails validation.
+    const metricsFile = process.env.METRICS_FILE
+      ? path.resolve(process.env.METRICS_FILE)
+      : path.join(process.cwd(), 'roadmap', 'metrics.jsonl');
+    if (fs.existsSync(metricsFile)) {
+      const recordLines = fs.readFileSync(metricsFile, 'utf8').split(/\r?\n/).filter((l) => l.trim());
+      recordLines.forEach((l, idx) => {
+        // Bounded-injection rule (plan §9): metrics feed /kaizen and /status
+        // context, so an oversized record is a prompt-injection channel.
+        if (l.length > 500) {
+          errors.push(`metrics.jsonl line ${idx + 1}: record exceeds 500 chars (bounded-injection rule)`);
+          return;
+        }
+        try {
+          const rec = JSON.parse(l);
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(rec.date ?? '')) errors.push(`metrics.jsonl line ${idx + 1}: missing/invalid "date" (YYYY-MM-DD)`);
+          if (typeof rec.feature !== 'string' || !rec.feature) errors.push(`metrics.jsonl line ${idx + 1}: missing "feature"`);
+        } catch {
+          errors.push(`metrics.jsonl line ${idx + 1}: not valid JSON`);
+        }
+      });
+    }
     if (errors.length) fail(`invalid backlog:\n  - ${errors.join('\n  - ')}`);
     console.log(`[update-state] valid: ${data.features.length} features, ` +
       `${data.features.filter((f) => f.passes).length} passing (evidence re-verified).`);

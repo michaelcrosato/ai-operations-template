@@ -1,0 +1,9 @@
+{"date":"2026-06-09","feature":"F-0001","attempts":0,"evaluator":"NEEDS_WORK->PASS","security":"APPROVE","findings_fixed":8,"pr":1,"notes":"factory bootstrap; CRLF + evidence-gitignore caught in review"}
+{"date":"2026-06-09","feature":"F-0003","attempts":0,"evaluator":"PASS","security":"APPROVE","findings_fixed":0,"pr":1,"notes":"hook contract tests shipped with F-0001"}
+{"date":"2026-06-09","feature":"F-0005","attempts":0,"evaluator":"PASS","security":"skipped-per-sensitivity-rule","findings_fixed":0,"pr":2,"notes":"philosophy + downtime protocol; docs only"}
+{"date":"2026-06-10","feature":"F-0006","attempts":1,"evaluator":"PASS","security":"BLOCK->APPROVE","findings_fixed":4,"pr":3,"notes":"+refspec push bypass caught by security re-review"}
+{"date":"2026-06-10","feature":"F-0002","attempts":1,"evaluator":"PASS","security":"skipped-per-sensitivity-rule","findings_fixed":2,"pr":14,"notes":"loop proof; Node 20/24 --test divergence caught by CI; audit marker collision found post-merge (fixed PR 15)"}
+{"date":"2026-06-10","feature":"F-0008","attempts":1,"evaluator":"NEEDS_WORK->PASS","security":"APPROVE","findings_fixed":3,"pr":18,"notes":"tripwire self-trip caught by evaluator"}
+{"date":"2026-06-10","feature":"F-0009","attempts":1,"evaluator":"NEEDS_WORK->PASS","security":"APPROVE","findings_fixed":2,"pr":18,"notes":"wget --post-data gap caught by security review"}
+{"date":"2026-06-10","feature":"F-0010","attempts":1,"evaluator":"NEEDS_WORK->PASS","security":"APPROVE","findings_fixed":3,"pr":19,"notes":"evidence-before-judging + metrics over-claim caught by evaluator"}
+{"date":"2026-06-10","feature":"F-0011","attempts":1,"evaluator":"NEEDS_WORK->PASS","security":"APPROVE","findings_fixed":2,"pr":19,"notes":"README scope ride documented; rescope-cannot-grant held"}

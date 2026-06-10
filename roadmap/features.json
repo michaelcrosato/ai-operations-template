@@ -290,10 +290,12 @@
       "dependencies": [
         "F-0001"
       ],
-      "status": "pending",
-      "passes": false,
-      "evidence": [],
-      "attempts": 0,
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0010/verify.log"
+      ],
+      "attempts": 1,
       "blocked_reason": null,
       "forbidden_paths": [
         ".github/workflows/**",
@@ -320,10 +322,12 @@
       "dependencies": [
         "F-0001"
       ],
-      "status": "pending",
-      "passes": false,
-      "evidence": [],
-      "attempts": 0,
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0011/verify.log"
+      ],
+      "attempts": 1,
       "blocked_reason": null,
       "forbidden_paths": [
         ".claude/hooks/**"

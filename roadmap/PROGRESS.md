@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-06-10 — F-0008…F-0011 + subscription-first — adoption-readiness wave
+
+**Done:** ① Subscription-first auth verified against official docs and shipped (PR #17): every lane runs on the Claude Max plan — cloud/Routines = login, @claude lane = CLAUDE_CODE_OAUTH_TOKEN from `claude setup-token` billing the included agent credit pool; no API key required anywhere, from any provider. ② F-0008+F-0009 (PR #18): biome/shellcheck/actionlint as engine meta-gates (all findings fixed), exfil-upload guard, trust-widening + MCP CI tripwires, shield .skip/.only detection, model-policy staleness warning. ③ F-0010+F-0011 (PR #19): metrics.jsonl (seeded, validated, 500-char cap) wired into /work//kaizen//status; operator PR template; AGENTS.md stub; briefs/TEMPLATE.md; dangerous-naming + constitution-edit checklist; adoption-gated placeholder check.
+
+**Verified:** 89 contract tests green; every PR through evaluator + security review (cycles honestly logged: tripwire self-trip, wget gap, evidence-before-judging — each caught by a different layer and fixed with tests).
+
+**Surprises:** the --paths scope-hardening from the morning correctly refused to rescope a factory feature in the afternoon — rescope-cannot-grant-guard-surfaces held against its own author.
+
+**Next step:** operator's 3 clicks (Q-0001: App install, CLAUDE_CODE_OAUTH_TOKEN secret, cloud env), then first-repo live trial. F-0007 (path-guard) remains the only deferred design.
+
+---
+
 ## 2026-06-10 — F-0002 — THE LOOP IS PROVEN END-TO-END
 
 **Done:** Branch protection enabled via API first (develop: PR+verify; main: +1 approval; enforce_admins — it blocked a red merge within the hour, working as designed). Then F-0002 ran the complete loop: SELECT (`--status in_progress`) → groom correction via new `--paths` verb (shipped PR #13 when grooming proved too narrow — caught honestly, fixed through its own gated PR) → BRIEF (roadmap/briefs/F-0002.md, immutable) → BUILD (builder sub-agent created src/health.js + src/health.test.js exactly to brief, hit a real Windows/Node-24 defect in MY prep, refused to exceed scope, escalated with a verified fix — the conditions-problem protocol worked) → VERIFY (first PRODUCT_MODE green: unit tests + lint now hard gates; evidence ×3) → JUDGE (fresh evaluator PASS, independently re-ran everything) → SHIP (PR #14, operator template) → RECORD (this entry).
