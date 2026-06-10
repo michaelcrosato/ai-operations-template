@@ -174,6 +174,12 @@ switch (cmd) {
     if (fs.existsSync(metricsFile)) {
       const recordLines = fs.readFileSync(metricsFile, 'utf8').split(/\r?\n/).filter((l) => l.trim());
       recordLines.forEach((l, idx) => {
+        // Bounded-injection rule (plan §9): metrics feed /kaizen and /status
+        // context, so an oversized record is a prompt-injection channel.
+        if (l.length > 500) {
+          errors.push(`metrics.jsonl line ${idx + 1}: record exceeds 500 chars (bounded-injection rule)`);
+          return;
+        }
         try {
           const rec = JSON.parse(l);
           if (!/^\d{4}-\d{2}-\d{2}$/.test(rec.date ?? '')) errors.push(`metrics.jsonl line ${idx + 1}: missing/invalid "date" (YYYY-MM-DD)`);

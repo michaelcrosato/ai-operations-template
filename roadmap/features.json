@@ -293,7 +293,7 @@
       "status": "in_progress",
       "passes": false,
       "evidence": [],
-      "attempts": 0,
+      "attempts": 1,
       "blocked_reason": null,
       "forbidden_paths": [
         ".github/workflows/**",
@@ -323,7 +323,7 @@
       "status": "in_progress",
       "passes": false,
       "evidence": [],
-      "attempts": 0,
+      "attempts": 1,
       "blocked_reason": null,
       "forbidden_paths": [
         ".claude/hooks/**"
