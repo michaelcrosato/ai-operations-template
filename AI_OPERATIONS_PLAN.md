@@ -28,6 +28,7 @@ These five rules are binding on every agent session and every file added to this
 | P3 | **The operator is a business client.** Every operator-facing artifact (status, PR descriptions, QA scripts, questions) is written in plain English with zero jargon, with click-by-click instructions where action is needed. | PR/status templates (§8), evaluator checks |
 | P4 | **One orchestrator, disposable specialists, file-based state.** Coordination is centralized; context windows are short-lived; truth lives in `roadmap/` files + git history. Token-heavy parallelism (agent teams) is opt-in, not default. | Loop design (§5), token rules (§9) |
 | P5 | **Trust nothing without evidence.** A feature is "done" only when machine verification has run and an independent fresh-context evaluator has seen proof (test output, screenshots). Self-grading is banned. | Default-FAIL `features.json`, evidence-gate hook, evaluator agent (§6, §7) |
+| P6 | **Servant leadership; downtime sharpens the axe.** The orchestrator takes care of those in its charge: trust but monitor, help when an agent struggles, and treat repeated failure as a conditions problem the manager owns. Idle periods are spent proactively — sentinel monitoring, research, pre-briefing, daily 1% improvement — never burned on make-work or wasted waiting. | Downtime protocol (§5.5), `/kaizen` + `/downtime` skills, /work manager mindset |
 
 ---
 
@@ -259,7 +260,24 @@ Long single sessions are *allowed* (cloud sessions persist after the browser clo
 
 ### 5.4 Skills (`.claude/skills/`)
 
-`/work` (the loop above), `/groom` (decompose ROADMAP/README specs into `features.json` entries with acceptance criteria; fold in QUESTIONS answers), `/status` (regenerate STATUS.md), `/qa-pack` (produce the human QA script for everything newly `done` since last promotion), `/research` (P1 enforcement: web-search any AI/framework claim; anything sourced >3 months old must be re-verified against current docs — this mirrors the project's own research rule; also maintains `.claude/model-policy.json` `last_verified` stamps and evaluates official MCP servers as cleaner tool integrations in later phases).
+`/work` (the loop above), `/groom` (decompose ROADMAP/README specs into `features.json` entries with acceptance criteria; fold in QUESTIONS answers), `/status` (regenerate STATUS.md), `/qa-pack` (produce the human QA script for everything newly `done` since last promotion), `/research` (P1 enforcement: web-search any AI/framework claim; anything sourced >3 months old must be re-verified against current docs — this mirrors the project's own research rule; also maintains `.claude/model-policy.json` `last_verified` stamps and evaluates official MCP servers as cleaner tool integrations in later phases), `/kaizen` (daily ≥1% system improvement, §5.5), `/downtime` (the idle protocol, §5.5).
+
+### 5.5 Downtime & idle protocol (the self-sharpening axe)
+
+**Triggers:** no eligible pending feature; all remaining work blocked on operator answers; waiting on long CI/E2E runs; a scheduled session finds the backlog empty.
+
+**Doctrine (P6).** *"Give me six hours to chop down a tree, and I will spend the first four sharpening the axe."* Idle time is when the orchestrator earns its title: it improves the conditions under which future work happens. And because *leadership is taking care of those in your charge*, downtime review focuses on what made agents struggle — a builder that failed twice didn't fail; its brief, tools, or rules failed it.
+
+**Priority-ordered downtime work** (run top-down; stop when the session's downtime budget is spent):
+
+1. **Sentinel scan (catch problems before they happen):** CI run history for new flakiness or slowdowns; staging health; dependency/security alerts (`gh api` Dependabot endpoints); stale branches and unmerged green PRs; evidence/state drift (`update-state.ts --validate`); model-policy `last_verified` staleness. Anything found becomes a `fix/...` branch now (if small) or a backlog feature (if not).
+2. **Risk research for upcoming moves:** for the next 2–3 roadmap items, run `/research` on their riskiest assumption (an API's current shape, a framework's current major, a pricing change). Findings go into the feature's description/acceptance so the eventual builder starts with verified facts, not stale memory. This maximizes the success probability of future moves before a single token is spent building them.
+3. **Pre-brief the next features (sharpen the axe):** write the immutable builder briefs for the top 2–3 pending features — explorer fan-out, spec excerpts, file maps — and save to `roadmap/briefs/F-XXXX.md`. When work resumes (or parallel lanes open), builders launch instantly with zero discovery cost.
+4. **`/kaizen`** if not yet done this calendar day (one shipped ≥1% improvement).
+5. **Trust-but-monitor spot check:** re-open one recently merged feature; re-run its evidence; confirm staging still honors it. Regressions become fixes immediately.
+6. **Hygiene:** PROGRESS archival past ~500 lines, `/status` refresh, QUESTIONS tidy-up.
+
+**Bounds (this protocol obeys §9, it doesn't fight it):** downtime work is capped at roughly **30% of a session's context budget**; "keeping the team busy" means keeping the *system ready* — pre-briefed features, verified assumptions, healthy pipelines — not spinning up sub-agents to look busy. When the list is exhausted or the budget is hit, the session exits cleanly. An empty backlog with a sharpened axe is a success state, not a failure to find work.
 
 ---
 
