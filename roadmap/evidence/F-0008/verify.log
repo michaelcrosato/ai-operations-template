@@ -7,10 +7,10 @@ Checked 6 files in 6ms. No fixes applied.
 ──── lint: OK
 
 ──── verify: unit tests ────
-✔ getHealth() reports status ok and the correct service name (0.8338ms)
-✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.1188ms)
-✔ getHealth() uptime_s is a non-negative number (0.0647ms)
-✔ CLI: node src/health.js exits 0 and prints JSON with status ok (32.9412ms)
+✔ getHealth() reports status ok and the correct service name (0.8689ms)
+✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.1247ms)
+✔ getHealth() uptime_s is a non-negative number (0.0657ms)
+✔ CLI: node src/health.js exits 0 and prints JSON with status ok (31.1658ms)
 ℹ tests 4
 ℹ suites 0
 ℹ pass 4
@@ -18,7 +18,7 @@ Checked 6 files in 6ms. No fixes applied.
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 78.5665
+ℹ duration_ms 79.3315
 ──── unit tests: OK
 (no build script — skipping)
 ──── test coverage guard: OK (every src test file is wired into npm test)
@@ -65,6 +65,8 @@ Checked 4 files in 6ms. No fixes applied.
   [PASS] blocks exfil POST (key-shaped data)
   [PASS] blocks exfil upload (env secret ref)
   [PASS] blocks exfil form (github token)
+  [PASS] blocks wget --post-data exfil
+  [PASS] blocks curl -T secret upload
   [PASS] allows gh api read
   [PASS] allows harmless POST
   [PASS] allows gh api POST of plain refs
@@ -133,8 +135,8 @@ Checked 4 files in 6ms. No fixes applied.
   [PASS] dependency cycle is rejected
   [PASS] validate audits evidence of passing features (missing file rejected)
 
-hook contract tests: 83 passed, 0 failed
+hook contract tests: 85 passed, 0 failed
 ──── hook contract tests: OK
 
-VERIFY-COMMIT: 5141991e603c72a8f497332dd5577e570f4b70ee @ 2026-06-10T14:30:06Z
+VERIFY-COMMIT: 70701d14f9794ece7875319a801260c532c0d270 @ 2026-06-10T14:44:10Z
 VERIFY: PASS (exit 0)
