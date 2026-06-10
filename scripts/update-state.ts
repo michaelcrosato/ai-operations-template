@@ -72,6 +72,7 @@ function validate(features: Feature[]): string[] {
     if (f.attempts < 0) errors.push(`${f.id}: attempts < 0`);
     if (f.status === 'blocked' && !f.blocked_reason) errors.push(`${f.id}: blocked without blocked_reason`);
     if (f.passes && f.evidence.length === 0) errors.push(`${f.id}: passes:true with no evidence (default-FAIL contract)`);
+    if (f.status === 'done' && !f.passes) errors.push(`${f.id}: status:done requires passes:true (evidence-gated flow)`);
   }
   for (const f of features) {
     for (const dep of f.dependencies ?? []) {
@@ -79,6 +80,20 @@ function validate(features: Feature[]): string[] {
       if (dep === f.id) errors.push(`${f.id}: depends on itself`);
     }
   }
+  // Dependency cycle detection (DFS with three colors)
+  const deps = new Map(features.map((f) => [f.id, f.dependencies ?? []]));
+  const state = new Map<string, 'visiting' | 'done'>();
+  const walk = (id: string, trail: string[]): void => {
+    if (state.get(id) === 'done') return;
+    if (state.get(id) === 'visiting') {
+      errors.push(`dependency cycle: ${[...trail, id].join(' -> ')}`);
+      return;
+    }
+    state.set(id, 'visiting');
+    for (const d of deps.get(id) ?? []) if (deps.has(d)) walk(d, [...trail, id]);
+    state.set(id, 'done');
+  };
+  for (const f of features) walk(f.id, []);
   return errors;
 }
 
@@ -88,24 +103,31 @@ function find(data: { features: Feature[] }, id: string): Feature {
   return f;
 }
 
-/** Evidence contract for --passes true: every evidence file exists, is non-empty,
- *  and at least one is a verify log proving a green gate run (plan §4.2, §6.3). */
-function checkEvidence(f: Feature): void {
-  if (f.evidence.length === 0) fail(`${f.id}: no evidence recorded; run --evidence first`);
+/** Evidence contract: every evidence file exists, is non-empty, and at least
+ *  one is a verify log proving a green gate run (plan §4.2, §6.3). Used by
+ *  --passes at flip time AND by --validate for every passing feature, so a
+ *  hand-edited or bash-redirected passes:true cannot survive CI. */
+function collectEvidenceErrors(f: Feature): string[] {
+  const errors: string[] = [];
+  if (f.evidence.length === 0) return [`${f.id}: no evidence recorded; run --evidence first`];
   let hasGreenVerifyLog = false;
   for (const rel of f.evidence) {
     const p = path.join(process.cwd(), rel);
-    if (!fs.existsSync(p)) fail(`${f.id}: evidence file missing on disk: ${rel}`);
+    if (!fs.existsSync(p)) {
+      errors.push(`${f.id}: evidence file missing on disk: ${rel}`);
+      continue;
+    }
     const stat = fs.statSync(p);
-    if (stat.isFile() && stat.size === 0) fail(`${f.id}: evidence file is empty: ${rel}`);
+    if (stat.isFile() && stat.size === 0) errors.push(`${f.id}: evidence file is empty: ${rel}`);
     if (/verify.*\.log$/i.test(rel)) {
       const content = fs.readFileSync(p, 'utf8');
       if (/VERIFY: PASS \(exit 0\)/.test(content)) hasGreenVerifyLog = true;
     }
   }
   if (!hasGreenVerifyLog) {
-    fail(`${f.id}: no green verify log among evidence (need a *verify*.log containing "VERIFY: PASS (exit 0)" from scripts/verify.sh)`);
+    errors.push(`${f.id}: no green verify log among evidence (need a *verify*.log containing "VERIFY: PASS (exit 0)" from scripts/verify.sh)`);
   }
+  return errors;
 }
 
 const [, , cmd, ...args] = process.argv;
@@ -114,9 +136,14 @@ const data = load();
 switch (cmd) {
   case '--validate': {
     const errors = validate(data.features);
+    // Deep evidence audit: re-verify the physical evidence contract for every
+    // feature claiming passes:true, not just at flip time.
+    for (const f of data.features.filter((x) => x.passes)) {
+      errors.push(...collectEvidenceErrors(f));
+    }
     if (errors.length) fail(`invalid backlog:\n  - ${errors.join('\n  - ')}`);
     console.log(`[update-state] valid: ${data.features.length} features, ` +
-      `${data.features.filter((f) => f.passes).length} passing.`);
+      `${data.features.filter((f) => f.passes).length} passing (evidence re-verified).`);
     break;
   }
   case '--add': {
@@ -164,7 +191,8 @@ switch (cmd) {
     const [id, value] = args;
     if (value !== 'true') fail('--passes only accepts "true" (features are born failing; to un-pass, fix the feature)');
     const f = find(data, id);
-    checkEvidence(f);
+    const evidenceErrors = collectEvidenceErrors(f);
+    if (evidenceErrors.length) fail(evidenceErrors.join('\n  - '));
     f.passes = true;
     save(data);
     break;

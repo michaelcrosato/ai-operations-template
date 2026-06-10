@@ -25,16 +25,24 @@ has_pkg_script() {
   [ -f package.json ] && node -e "process.exit(require('./package.json').scripts?.['$1'] ? 0 : 1)" 2>/dev/null
 }
 
+# Template mode (no product code yet) tolerates missing stack scripts.
+# Product mode (src/ exists) treats a missing test or lint script as a FAILURE:
+# an autonomous factory must not be able to "pass" by never defining its gates.
+PRODUCT_MODE=false
+[ -d src ] && PRODUCT_MODE=true
+
 # ---- product/stack gates (auto-detected) ----
 if [ -f package.json ]; then
   if has_pkg_script typecheck; then step "typecheck" npm run --silent typecheck
   elif [ -f tsconfig.json ]; then step "typecheck" npx tsc --noEmit; fi
 
   if has_pkg_script lint; then step "lint" npm run --silent lint
-  else echo "(no lint script — skipping; add one when the product stack lands)"; fi
+  elif $PRODUCT_MODE; then echo "──── lint: FAILED (product code exists but no lint script is defined)"; FAILED=1
+  else echo "(no lint script — template mode skip; becomes a hard gate once src/ exists)"; fi
 
   if has_pkg_script test; then step "unit tests" npm run --silent test
-  else echo "(no test script — skipping; product features REQUIRE tests, see CLAUDE.md)"; fi
+  elif $PRODUCT_MODE; then echo "──── unit tests: FAILED (product code exists but no test script is defined)"; FAILED=1
+  else echo "(no test script — template mode skip; becomes a hard gate once src/ exists)"; fi
 
   if has_pkg_script build; then step "build" npm run --silent build
   else echo "(no build script — skipping)"; fi

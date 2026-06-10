@@ -24,11 +24,16 @@ fi
 
 block() { echo "BLOCKED by guard-bash.sh: $1" >&2; exit 2; }
 
-# Push to stable branches / force push
-echo "$CMD" | grep -qE 'git push[^|;&]*( |:)(main|master)([^a-zA-Z0-9_-]|$)' \
+# Push to stable branches / force push.
+# GITPUSH tolerates flags between git and push (git -C . push, git -c k=v push)
+# and the target patterns cover refspec forms (HEAD:main, x:refs/heads/main).
+GITPUSH='git[[:space:]]+((-C[[:space:]]+[^[:space:]]+|-c[[:space:]]+[^[:space:]]+|--(git-dir|work-tree|namespace|exec-path)(=[^[:space:]]+|[[:space:]]+[^[:space:]]+)|--?[A-Za-z][^[:space:]]*)[[:space:]]+)*push'
+# Stable-branch targets: " main", ":main", "+main" (force-refspec), refs/heads/ forms
+echo "$CMD" | grep -qE "${GITPUSH}[^|;&]*[ :+](refs/heads/)?(main|master)([^a-zA-Z0-9_-]|\$)" \
   && block "pushing to a stable branch (main/master) is prohibited; PRs target develop (CLAUDE.md §5)."
-echo "$CMD" | grep -qE 'git push[^|;&]*(--force|--force-with-lease|[[:space:]]-f([[:space:]]|$))' \
-  && block "force-pushing is prohibited; rebase locally or merge cleanly (CLAUDE.md §6)."
+# Force pushes: --force/--force-with-lease/-f flags AND the +<refspec> syntax
+echo "$CMD" | grep -qE "${GITPUSH}[^|;&]*(--force(-with-lease)?|[[:space:]]-f([[:space:]]|\$)|[[:space:]]\+[^[:space:]])" \
+  && block "force-pushing is prohibited (including +refspec syntax); rebase locally or merge cleanly (CLAUDE.md §6)."
 
 # Destructive filesystem operations outside temp
 echo "$CMD" | grep -qE 'rm[[:space:]]+-[a-zA-Z]*[rR][a-zA-Z]*[fF]?[a-zA-Z]*[[:space:]]+("?/([a-zA-Z]|$)|~|\$HOME)' \

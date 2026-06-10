@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 
 /**
  * Assertion Shield:
@@ -9,18 +9,28 @@ import { execSync } from 'child_process';
 const BASE_BRANCH = process.env.BASE_BRANCH || 'origin/develop';
 
 function getGitDiff(): string {
+  // execFileSync with arg arrays: BASE_BRANCH is env-supplied, so it must
+  // never pass through a shell (security-guidance plugin finding).
+  const diffs: string[] = [];
   try {
-    // Attempt diff against base branch first
-    return execSync(`git diff ${BASE_BRANCH}...HEAD`, { encoding: 'utf8' });
+    // Committed work on this branch vs base
+    diffs.push(execFileSync('git', ['diff', `${BASE_BRANCH}...HEAD`], { encoding: 'utf8' }));
   } catch {
     try {
-      // Fallback: Diff last commit if base branch is not fetched or available
-      return execSync('git diff HEAD~1', { encoding: 'utf8' });
+      // Fallback: diff last commit if base branch is not fetched or available
+      diffs.push(execFileSync('git', ['diff', 'HEAD~1'], { encoding: 'utf8' }));
     } catch {
-      console.log('No git history found or not in git repository. Skipping assertion check.');
-      return '';
+      // no usable history — staged check below may still apply
     }
   }
+  try {
+    // Staged-but-uncommitted changes — what a pre-commit hook is actually
+    // gating. Without --cached the hook only ever saw prior commits.
+    diffs.push(execFileSync('git', ['diff', '--cached'], { encoding: 'utf8' }));
+  } catch {
+    console.log('Not in a git repository. Skipping assertion check.');
+  }
+  return diffs.join('\n');
 }
 
 interface Violation {
@@ -49,8 +59,18 @@ function scanDiffForWeakening(diffText: string): Violation[] {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    if (line.startsWith('+++ b/')) {
+    // Deleted lines belong to the OLD side of the diff. Keying on "+++ b/"
+    // alone made wholesale test-file deletions invisible: a deleted file's
+    // new side is "+++ /dev/null", so the old path was never tracked.
+    if (line.startsWith('--- a/')) {
       currentFile = line.substring(6);
+      continue;
+    }
+    if (line.startsWith('--- ')) {
+      currentFile = ''; // "--- /dev/null" → newly added file, nothing deletable
+      continue;
+    }
+    if (line.startsWith('+++ ')) {
       continue;
     }
 

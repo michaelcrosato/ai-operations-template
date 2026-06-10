@@ -150,6 +150,72 @@
         "roadmap/**"
       ],
       "priority": 1
+    },
+    {
+      "dependencies": [
+        "F-0001"
+      ],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0006/verify.log"
+      ],
+      "attempts": 1,
+      "blocked_reason": null,
+      "forbidden_paths": [],
+      "id": "F-0006",
+      "epic": "factory",
+      "title": "Review remediation: harden gates, fix inert security patterns, correct platform docs",
+      "spec_ref": "roadmap/DECISIONS.md",
+      "description": "Fix the nine verified defects from the external review: assertion-shield staged/deleted-file blind spots, CI evidence audit in --validate, done-implies-passes + cycle invariants, security-patterns plugin schema, guard-bash refspec/flag bypasses, promotion-PR identity docs, dependabot.yml + formal deferrals, verify.sh product-mode gates, zero-CLI operator recovery.",
+      "acceptance": [
+        "assertion-shield catches staged assertion deletions and wholesale test-file deletions (contract-tested)",
+        "update-state --validate runs checkEvidence on every passes:true feature and rejects done-without-passes and dependency cycles (contract-tested)",
+        "security-patterns.json matches the documented plugin schema (rule_name/reminder/regex|substrings)",
+        "guard-bash blocks refspec pushes to stable branches and flag-separated git push variants (contract-tested)",
+        "dependabot.yml ships; format hook and path-guard formally deferred in plan 6.3; plan security citations corrected (GHSA-8q5r-mmjf-575q, Claude Code 2.1.128, StopFailure, YAML/JSON wording)",
+        "verify.sh hard-fails missing test script in product mode; verify-rules.ts no longer emits false-positive warnings",
+        "OPERATOR_GUIDE recovery is zero-CLI",
+        "bash scripts/verify.sh exits 0"
+      ],
+      "authorized_paths": [
+        "scripts/**",
+        ".claude/**",
+        ".github/**",
+        "roadmap/**",
+        "AI_OPERATIONS_PLAN.md",
+        "OPERATOR_GUIDE.md",
+        "CLAUDE.md"
+      ],
+      "priority": 1
+    },
+    {
+      "dependencies": [
+        "F-0001"
+      ],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".github/workflows/**"
+      ],
+      "id": "F-0007",
+      "epic": "factory",
+      "title": "Per-feature authorized_paths edit guard (PreToolUse)",
+      "spec_ref": "AI_OPERATIONS_PLAN.md#63-hooks-mechanical-enforcement-not-vibes",
+      "description": "Mechanically enforce the active feature's authorized_paths/forbidden_paths on Edit/Write via a PreToolUse hook. Design must resolve: which feature is active when several are in_progress (likely a CLAUDE_ACTIVE_FEATURE env contract set in builder briefs), glob matching engine, and fail-open vs fail-closed when no feature is active.",
+      "acceptance": [
+        "Hook blocks edits outside the active feature's authorized_paths and inside forbidden_paths",
+        "Orchestrator/maintenance sessions without an active feature are not broken",
+        "Contract tests cover block, allow, and no-active-feature cases"
+      ],
+      "authorized_paths": [
+        ".claude/hooks/**",
+        "scripts/**"
+      ],
+      "priority": 3
     }
   ]
 }
