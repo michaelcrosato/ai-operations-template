@@ -5,6 +5,8 @@
   "license": "MIT",
   "description": "Drop-in AI operations engine: orchestrator-managed, evidence-gated autonomous coding factory",
   "scripts": {
+    "test": "node --test src/",
+    "lint": "node --check src/health.js && node --check src/health.test.js",
     "verify": "bash scripts/verify.sh",
     "shield": "ts-node scripts/assertion-shield.ts",
     "state": "ts-node scripts/update-state.ts",

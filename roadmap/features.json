@@ -42,7 +42,8 @@
       ],
       "authorized_paths": [
         "src/**",
-        "roadmap/evidence/F-0002/**"
+        "roadmap/**",
+        "package.json"
       ],
       "forbidden_paths": [
         ".claude/**",
