@@ -36,6 +36,7 @@ echo "$CMD" | grep -qE "${GITPUSH}[^|;&]*(--force(-with-lease)?|[[:space:]]-f([[
   && block "force-pushing is prohibited (including +refspec syntax); rebase locally or merge cleanly (CLAUDE.md §6)."
 
 # Destructive filesystem operations outside temp
+# shellcheck disable=SC2016  # pattern matches a literal dollar (HOME) — no expansion intended
 echo "$CMD" | grep -qE 'rm[[:space:]]+-[a-zA-Z]*[rR][a-zA-Z]*[fF]?[a-zA-Z]*[[:space:]]+("?/([a-zA-Z]|$)|~|\$HOME)' \
   && block "recursive deletion of home/root paths is prohibited."
 
@@ -54,5 +55,14 @@ echo "$CMD" | grep -qE '(npm|pnpm|yarn)[[:space:]]+publish' \
 # Self-bypass of the assertion shield
 echo "$CMD" | grep -q 'ASSERTION_SHIELD_BYPASS' \
   && block "setting ASSERTION_SHIELD_BYPASS is prohibited for agents; restore the assertions instead."
+
+# Exfil-shaped uploads (F-0009, mirrors Anthropic's post-incident gh-wrapper fix):
+# block ONLY when an upload-capable invocation carries secret-shaped content or
+# a secret env var — plain gh api reads/writes of normal data stay allowed.
+if echo "$CMD" | grep -qE '(curl|wget|gh[[:space:]]+api)[^|;&]*([[:space:]]-(d|F|T)[[:space:]]|--data|--form|--upload-file|--post-data|--post-file|--body-data|--body-file|-X[[:space:]]*(POST|PUT)|--method[[:space:]]*(POST|PUT)|-f[[:space:]]+[A-Za-z_]+=)'; then
+  # shellcheck disable=SC2016  # patterns match literal $VAR references; no expansion intended
+  echo "$CMD" | grep -qE '(sk-ant-[A-Za-z0-9_-]{8,}|AKIA[0-9A-Z]{8,}|\b(ghp|gho|ghu|ghs|github_pat)_[A-Za-z0-9_]{8,}|BEGIN[[:space:]]+(RSA|EC|OPENSSH)?[[:space:]]*PRIVATE[[:space:]]+KEY|\$\{?(ANTHROPIC_API_KEY|CLAUDE_CODE_OAUTH_TOKEN|GITHUB_TOKEN|GH_TOKEN)\}?)' \
+    && block "exfil-shaped upload: secret-shaped content in a POST/upload command is prohibited (plan §7.2)."
+fi
 
 exit 0

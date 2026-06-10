@@ -3,7 +3,7 @@
 # Exit code is the only truth. Usage: bash scripts/verify.sh [--e2e]
 # Stack-aware: runs whatever gates the repo defines; engine meta-gates always run.
 set -u
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 
 E2E=false
 [ "${1:-}" = "--e2e" ] && E2E=true
@@ -84,6 +84,20 @@ fi
 # ---- engine meta-gates (always) ----
 step "features.json schema + invariants" npx ts-node scripts/update-state.ts --validate
 step "assertion shield" npx ts-node scripts/assertion-shield.ts
+
+# Static analysis on the guardrail layer itself (F-0008): the hooks and gate
+# scripts ARE this engine's product surface. biome + shellcheck ship as npm
+# devDependencies (hard everywhere); actionlint is CI-hard, local-soft.
+step "engine lint (biome)" npx --no-install biome lint scripts
+step "shellcheck (hooks + gate scripts)" npx --no-install shellcheck .claude/hooks/*.sh scripts/*.sh
+if command -v actionlint >/dev/null 2>&1; then
+  step "actionlint (workflows)" actionlint
+elif [ "${CI:-}" = "true" ]; then
+  echo "──── actionlint: FAILED (required in CI but not installed)"
+  FAILED=1
+else
+  echo "(actionlint not installed locally — enforced in CI)"
+fi
 step "hook contract tests" bash scripts/test-hooks.sh
 
 # ---- E2E (opt-in) ----

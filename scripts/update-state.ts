@@ -1,5 +1,5 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 /**
  * update-state.ts — the ONLY writer for roadmap/features.json (plan §4.2).
@@ -51,8 +51,8 @@ function load(): { $schema?: string; features: Feature[] } {
 function save(data: { features: Feature[] }): void {
   const errors = validate(data.features);
   if (errors.length) fail(`refusing to save invalid state:\n  - ${errors.join('\n  - ')}`);
-  const tmp = FILE + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2) + '\n', 'utf8');
+  const tmp = `${FILE}.tmp`;
+  fs.writeFileSync(tmp, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
   fs.renameSync(tmp, FILE);
   console.log('[update-state] saved.');
 }
@@ -144,6 +144,27 @@ switch (cmd) {
     // feature claiming passes:true, not just at flip time.
     for (const f of data.features.filter((x) => x.passes)) {
       errors.push(...collectEvidenceErrors(f));
+    }
+    // Model-policy freshness (F-0009): warn — never fail — when a tier's
+    // last_verified exceeds 30 days, so the next session's /research runs.
+    // A scheduled auto-PR cron was deliberately rejected (DECISIONS 2026-06-10).
+    const policyFile = process.env.MODEL_POLICY_FILE
+      ? path.resolve(process.env.MODEL_POLICY_FILE)
+      : path.join(process.cwd(), '.claude', 'model-policy.json');
+    if (fs.existsSync(policyFile)) {
+      try {
+        const policy = JSON.parse(fs.readFileSync(policyFile, 'utf8'));
+        const now = Date.now();
+        for (const [tier, cfg] of Object.entries(policy.tiers ?? {})) {
+          const stamp = (cfg as { last_verified?: string }).last_verified;
+          const parsed = stamp ? Date.parse(stamp) : Number.NaN;
+          if (Number.isNaN(parsed) || now - parsed > 30 * 24 * 3600 * 1000) {
+            console.warn(`[update-state] WARN: model-policy tier "${tier}" last_verified is stale (>30d or missing) — run /research to re-verify the mapping.`);
+          }
+        }
+      } catch {
+        console.warn('[update-state] WARN: model-policy.json unreadable — run /research.');
+      }
     }
     if (errors.length) fail(`invalid backlog:\n  - ${errors.join('\n  - ')}`);
     console.log(`[update-state] valid: ${data.features.length} features, ` +
