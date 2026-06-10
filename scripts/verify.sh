@@ -65,6 +65,9 @@ fi
 
 echo ""
 if [ "$FAILED" -eq 0 ]; then
+  # Run signature for audit (ties an evidence log to a commit; CI re-running the
+  # real gate on every PR is the hard backstop against forged logs)
+  echo "VERIFY-COMMIT: $(git rev-parse HEAD 2>/dev/null || echo no-git) @ $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
   echo "VERIFY: PASS (exit 0)"   # update-state.ts --passes parses this exact line
   exit 0
 else

@@ -73,6 +73,18 @@
           }
         ]
       }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/commit-on-stop.sh\"",
+            "shell": "bash",
+            "timeout": 15
+          }
+        ]
+      }
     ]
   },
   "environment": {

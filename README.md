@@ -42,5 +42,5 @@ Nothing flips to `passes: true` without physical evidence on disk; nothing reach
 ## Requirements
 
 - Node.js ≥ 20 (engine meta-tooling; the product stack is whatever you choose)
-- Git + bash (hooks are bash scripts; on Windows use Git Bash)
+- Git + bash (hooks are bash scripts; on Windows use **Git Bash** — note that inside PowerShell, `bash` may resolve to WSL's bash, which has a different PATH and gives misleading results when testing hooks by hand)
 - GitHub repo with the Claude GitHub App installed (cloud sessions / `@claude` PR fixes)

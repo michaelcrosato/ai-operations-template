@@ -32,7 +32,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: anthropics/claude-code-action@v1
+      # SHA-pinned (= tag v1 on 2026-06-09): highest-privilege workflow, so an
+      # upstream tag-move must not change what runs here. Hygiene routine rolls this.
+      - uses: anthropics/claude-code-action@11ba60486e4aec9ddfeafcf4bb3f00b028ac2c16
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: "--max-turns 30"

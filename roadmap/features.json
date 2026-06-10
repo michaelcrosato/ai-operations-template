@@ -14,13 +14,17 @@
         "Hooks are wired in .claude/settings.json and scripts exist and are executable",
         "CI workflow runs verify.sh + assertion-shield + state validation on every PR"
       ],
-      "authorized_paths": ["**"],
+      "authorized_paths": [
+        "**"
+      ],
       "forbidden_paths": [],
       "dependencies": [],
       "priority": 1,
-      "status": "in_progress",
-      "passes": false,
-      "evidence": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0001/verify.log"
+      ],
       "attempts": 0,
       "blocked_reason": null
     },
@@ -36,9 +40,18 @@
         "Evaluator sub-agent issued PASS from a fresh context",
         "PR merged to develop with green CI and the operator PR template"
       ],
-      "authorized_paths": ["src/**", "roadmap/evidence/F-0002/**"],
-      "forbidden_paths": [".claude/**", ".github/**", "scripts/**"],
-      "dependencies": ["F-0001"],
+      "authorized_paths": [
+        "src/**",
+        "roadmap/evidence/F-0002/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/**",
+        "scripts/**"
+      ],
+      "dependencies": [
+        "F-0001"
+      ],
       "priority": 1,
       "status": "pending",
       "passes": false,
@@ -57,13 +70,23 @@
         "update-state.ts tests cover: schema rejection, evidence-file requirement, dependency validation",
         "Tests run inside scripts/verify.sh and in CI"
       ],
-      "authorized_paths": ["scripts/**", "tests/**"],
-      "forbidden_paths": [".github/workflows/claude.yml"],
-      "dependencies": ["F-0001"],
+      "authorized_paths": [
+        "scripts/**",
+        "tests/**"
+      ],
+      "forbidden_paths": [
+        ".github/workflows/claude.yml"
+      ],
+      "dependencies": [
+        "F-0001"
+      ],
       "priority": 2,
-      "status": "pending",
-      "passes": false,
-      "evidence": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0003/contract-tests.log",
+        "roadmap/evidence/F-0003/verify.log"
+      ],
       "attempts": 0,
       "blocked_reason": null
     },
@@ -79,8 +102,12 @@
         "Cloud environment created with init.sh as setup script"
       ],
       "authorized_paths": [],
-      "forbidden_paths": ["**"],
-      "dependencies": ["F-0001"],
+      "forbidden_paths": [
+        "**"
+      ],
+      "dependencies": [
+        "F-0001"
+      ],
       "priority": 2,
       "status": "blocked",
       "passes": false,
