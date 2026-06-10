@@ -54,9 +54,12 @@ if [ -f package.json ]; then
     TEST_SCRIPT="$(node -e "console.log(require('./package.json').scripts.test || '')")"
     UNWIRED=""
     while IFS= read -r tf; do
+      # Every test file must appear by basename — no glob shortcut: a script
+      # merely CONTAINING "*.test." would have skipped this guard entirely
+      # (security review, PR #16). When a real glob-based runner lands
+      # (Phase 1), it replaces this guard rather than weakening it.
       case "$TEST_SCRIPT" in
-        *"$(basename "$tf")"*) : ;;  # file explicitly wired in
-        *'*.test.'*|*'*.spec.'*) : ;;  # glob discovery in use — covers it
+        *"$(basename "$tf")"*) : ;;
         *) UNWIRED="$UNWIRED $tf" ;;
       esac
     done <<EOF
