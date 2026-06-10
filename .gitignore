@@ -31,3 +31,6 @@ Thumbs.db
 # Playwright / E2E artifacts (evidence is curated into roadmap/evidence/ instead)
 test-results/
 playwright-report/
+
+# Staged review inputs (session-local)
+/tmp-feedback-2.md
