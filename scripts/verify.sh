@@ -81,6 +81,23 @@ if [ -f pyproject.toml ] && command -v pytest >/dev/null 2>&1; then
   step "pytest" pytest -q
 fi
 
+# Placeholder check (F-0011): in an ADOPTED repo (package renamed from the
+# template) with product code, leftover <PLACEHOLDER> tokens in operator-facing
+# docs are adoption bugs. The template repo itself self-skips by name.
+if $PRODUCT_MODE && [ -f package.json ]; then
+  PKG_NAME="$(node -e "console.log(require('./package.json').name || '')")"
+  if [ "$PKG_NAME" != "ai-operations-template" ]; then
+    if grep -nE '<[A-Z_]{3,}>' CLAUDE.md AI_OPERATIONS_PLAN.md OPERATOR_GUIDE.md README.md 2>/dev/null; then
+      echo "──── placeholder check: FAILED (replace the <PLACEHOLDER> tokens above — see README drop-in step 2)"
+      FAILED=1
+    else
+      echo "──── placeholder check: OK"
+    fi
+  else
+    echo "(placeholder check: template repo — self-skipped; activates after adoption rename)"
+  fi
+fi
+
 # ---- engine meta-gates (always) ----
 step "features.json schema + invariants" npx ts-node scripts/update-state.ts --validate
 step "assertion shield" npx ts-node scripts/assertion-shield.ts

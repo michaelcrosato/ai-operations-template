@@ -79,6 +79,7 @@ Phase 0 (§10) builds exactly this tree. One-line purpose per entry; detailed sp
 ├── AI_OPERATIONS_PLAN.md         # This file (the "how")
 ├── CLAUDE.md                     # Agent constitution, ≤150 lines (§4.1)
 ├── OPERATOR_GUIDE.md             # One-page plain-English manual for the human (§8.5)
+├── AGENTS.md                     # Pointer stub for non-Claude agents → CLAUDE.md
 │
 ├── roadmap/                      # ALL durable state shared between human and agents
 │   ├── ROADMAP.md                # Human-owned priorities, plain English bullets
@@ -89,7 +90,8 @@ Phase 0 (§10) builds exactly this tree. One-line purpose per entry; detailed sp
 │   ├── DECISIONS.md              # Append-only log of decisions agents made autonomously
 │   ├── STATUS.md                 # Auto-generated plain-English status report (§8.2)
 │   ├── evidence/F-XXXX/          # Physical proof per feature: verify logs, screenshots (§4.2, §7.3)
-│   └── briefs/F-XXXX.md          # Pre-written builder briefs from /downtime passes (§5.5)
+│   ├── briefs/F-XXXX.md          # Builder briefs (TEMPLATE.md is the canonical shape) (§5.5)
+│   └── metrics.jsonl             # One record per session: attempts, verdicts, findings (§5.1 RECORD)
 │
 ├── .claude/
 │   ├── settings.json             # Permissions, hooks, env, enabledPlugins (§6.2, §7.2)
@@ -130,6 +132,7 @@ Phase 0 (§10) builds exactly this tree. One-line purpose per entry; detailed sp
 │   └── seed.ts                   # Seed data generator for isolated manual & automated tests
 │
 ├── .github/
+│   ├── pull_request_template.md  # The operator PR template (§8.3), evaluator-checked
 │   ├── dependabot.yml            # Weekly dependency/action update PRs (§7.2)
 │   └── workflows/
 │       ├── ci.yml                # verify.sh + security jobs on every PR (§7.2)
@@ -400,7 +403,8 @@ One page, 8th-grade reading level, written in Phase 0: the three surfaces, the d
 6. **Teams off by default** (§2.1); enable per-epic only when work items are provably independent.
 7. **Model tiering per §2.2;** effort tuned per role.
 8. **No narration:** builders work silently between tool calls; reporting happens once, in PROGRESS + PR.
-9. **Caching-aware context ordering:** stable always-loaded content (CLAUDE.md, rules) forms the cached prompt prefix — edit it sparingly and batch changes, since any byte change invalidates the cache for everything after it. Volatile state (PROGRESS.md, features.json, tool output) enters mid-conversation as tool results, never the prefix. With prompt caching, *re-reading* a large stable doc on demand is cheap — explorers exist to keep **conclusions** small in the orchestrator's context, not because reading files is expensive.
+9. **Bounded injections:** any new hook or skill that injects model-visible content must declare a hard size bound and redaction behavior at introduction (the session brief's `head -50` / `-10` caps are the pattern); unbounded injections are rejected in review.
+10. **Caching-aware context ordering:** stable always-loaded content (CLAUDE.md, rules) forms the cached prompt prefix — edit it sparingly and batch changes, since any byte change invalidates the cache for everything after it. Volatile state (PROGRESS.md, features.json, tool output) enters mid-conversation as tool results, never the prefix. With prompt caching, *re-reading* a large stable doc on demand is cheap — explorers exist to keep **conclusions** small in the orchestrator's context, not because reading files is expensive.
 
 ---
 

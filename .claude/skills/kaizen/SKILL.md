@@ -9,6 +9,7 @@ You are the manager walking the factory floor. Product features are NOT in scope
 
 ## Procedure
 1. **Gather signals** (15 min of reading, fan out explorers if useful):
+   - `roadmap/metrics.jsonl` — the measurable feed: first-attempt pass rate (attempts==0 vs total), recurring NEEDS_WORK/BLOCK verdicts, findings_fixed trend. This is where "check that metric next kaizen" (step 4) reads from.
    - PROGRESS.md since the last kaizen entry: where did sessions lose time? What surprised agents?
    - Evaluator/security findings: any *category* that recurred?
    - CI history (`gh run list`): flaky steps, slow steps?

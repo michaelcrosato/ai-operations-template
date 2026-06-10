@@ -34,7 +34,8 @@ Anything about AI models, tooling, pricing, or framework majors that comes from 
 - No production database/config access. No reading `.env*` or secret stores. No live customer data — synthetic seeds only.
 - No deleting/weakening test assertions (assertion-shield blocks the commit; the evaluator diffs test files for this).
 - No hand-editing `roadmap/features.json` (verify-gate hook) — `passes:true` exists only via evidence on disk.
-- No `curl|sh`, no package publishing, no `rm -rf` of root/home, no setting `ASSERTION_SHIELD_BYPASS`.
+- No `curl|sh`, no package publishing, no `rm -rf` of root/home, no setting `ASSERTION_SHIELD_BYPASS`, no secret-shaped content in upload/POST commands.
+- Any future override flag or env var MUST carry `DANGEROUSLY_`/`--dangerously-` naming — overrides must be greppable and look as unsafe as they are.
 - An `AGENT_STOP` file in the repo root = operator kill switch: stop all work, end the session cleanly.
 
 ## 8. Operator communication
@@ -43,3 +44,4 @@ The operator speaks in plain-English **intent**, not specifications: translate r
 
 ## 9. Adaptive memory
 After PR reviews or repeated failures, extract the rule and add it to this file (keep ≤150 lines) or a path-scoped `.claude/rules/*.md` so it never recurs. Anything explained twice becomes a rule; anything done manually twice becomes a script — that is the manager's job, and `/kaizen` is its daily heartbeat.
+Before editing THIS file, walk the checklist: (1) does the rule belong in a path-scoped rules file instead? (2) does it duplicate or contradict an existing line? (3) still ≤150 lines after the edit? (4) is the wording an enforceable instruction, not advice? (5) log the change in DECISIONS.md.

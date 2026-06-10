@@ -14,4 +14,4 @@ Sections, in order:
 4. **Blocked / needs you** — open QUESTIONS.md items, one line + pointer.
 5. **Health** — ✅/⚠️ staging working?, "all automated checks passing" or what's red (in plain terms), test count trend, and one cost line (session spend trend; flag any dated pricing transitions).
 
-Data sources: `features.json` (truth for status), `git log origin/develop` since last report, open PRs (`gh pr list`), CI runs (`gh run list`), QUESTIONS.md. Facts only — if staging is broken, say so plainly; never soften health to look good.
+Data sources: `features.json` (truth for status), `roadmap/metrics.jsonl` (pass rates, review outcomes, cost notes — feed the Health line from data, not prose), `git log origin/develop` since last report, open PRs (`gh pr list`), CI runs (`gh run list`), QUESTIONS.md. Facts only — if staging is broken, say so plainly; never soften health to look good.
