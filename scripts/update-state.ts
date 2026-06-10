@@ -194,14 +194,30 @@ switch (cmd) {
   case '--paths': {
     const [id, json] = args;
     if (!id || !json) fail('--paths requires <id> <json-string-array>');
-    let paths: unknown;
-    try { paths = JSON.parse(json); } catch (e) { fail(`--paths argument is not valid JSON: ${e}`); }
-    if (!Array.isArray(paths) || paths.length === 0 || !paths.every((p) => typeof p === 'string' && p.length > 0)) {
+    let parsed: unknown;
+    try { parsed = JSON.parse(json); } catch (e) { fail(`--paths argument is not valid JSON: ${e}`); }
+    if (!Array.isArray(parsed) || parsed.length === 0 || !parsed.every((p) => typeof p === 'string' && p.length > 0)) {
       fail('--paths requires a non-empty JSON array of glob strings');
     }
+    const paths = parsed as string[];
+    // Scope-rewrite hardening (security review, PR #16): rescoping must never
+    // be able to grant a feature the guardrail surfaces, no matter what the
+    // current scope says. Guardrail edits are factory work with their own PRs.
+    const GUARD_SURFACES = /^(\.claude|\.github|scripts)(\/|$)/;
+    const BROAD = new Set(['*', '**', '**/*', '**/**', './**', '/**']);
+    for (const p of paths) {
+      if (p.includes('..')) fail(`--paths rejects parent-traversal glob: "${p}"`);
+      if (BROAD.has(p.trim())) fail(`--paths rejects catch-all glob "${p}" — scope must be explicit`);
+      if (GUARD_SURFACES.test(p.trim())) fail(`--paths rejects guardrail surface "${p}" (.claude/, .github/, scripts/ are never feature scope)`);
+    }
     const f = find(data, id);
-    if (f.status === 'done') fail(`${f.id}: cannot rescope a done feature`);
-    f.authorized_paths = paths as string[];
+    if (f.status !== 'pending' && f.status !== 'in_progress') fail(`${f.id}: can only rescope pending/in_progress features (status: ${f.status})`);
+    for (const p of paths) {
+      if ((f.forbidden_paths ?? []).some((fp) => fp === p || (fp.endsWith('/**') && p.startsWith(fp.slice(0, -2))))) {
+        fail(`${f.id}: "${p}" collides with the feature's own forbidden_paths`);
+      }
+    }
+    f.authorized_paths = paths;
     save(data);
     break;
   }
