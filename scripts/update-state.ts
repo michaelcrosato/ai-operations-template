@@ -12,6 +12,7 @@ import * as path from 'path';
  *   ts-node scripts/update-state.ts --attempt F-0001
  *   ts-node scripts/update-state.ts --evidence F-0001 <path> [<path>...]
  *   ts-node scripts/update-state.ts --passes F-0001 true
+ *   ts-node scripts/update-state.ts --paths F-0001 '<json-string-array>'   (replace authorized_paths — groom corrections)
  */
 
 // STATE_FILE override exists for contract tests (scripts/test-hooks.sh) so they
@@ -184,6 +185,20 @@ switch (cmd) {
       if (!fs.existsSync(path.join(process.cwd(), p))) fail(`evidence file does not exist: ${p}`);
       if (!f.evidence.includes(p)) f.evidence.push(p);
     }
+    save(data);
+    break;
+  }
+  case '--paths': {
+    const [id, json] = args;
+    if (!id || !json) fail('--paths requires <id> <json-string-array>');
+    let paths: unknown;
+    try { paths = JSON.parse(json); } catch (e) { fail(`--paths argument is not valid JSON: ${e}`); }
+    if (!Array.isArray(paths) || paths.length === 0 || !paths.every((p) => typeof p === 'string' && p.length > 0)) {
+      fail('--paths requires a non-empty JSON array of glob strings');
+    }
+    const f = find(data, id);
+    if (f.status === 'done') fail(`${f.id}: cannot rescope a done feature`);
+    f.authorized_paths = paths as string[];
     save(data);
     break;
   }
