@@ -32,6 +32,7 @@ Six principles govern everything in this repository. Every agent session is boun
 | Hooks | `.claude/hooks/` | Mechanical guardrails: bash denylist, state-file write gate, commit-on-stop, session brief |
 | Gates | `scripts/` | `verify.sh` (the gate), `update-state.ts` (only writer of `features.json`), `assertion-shield.ts` |
 | CI | `.github/workflows/` | verify + shield + schema checks on every PR; `@claude` autofix |
+| Optional modules | `docs/optional-modules.md` | **Not core** — trigger-gated extras (public-flip governance, product-mode gates, eval scaling…) that the engine grooms in only when your repo's state actually calls for them |
 
 ## Drop-in instructions (existing repo)
 

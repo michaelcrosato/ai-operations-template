@@ -39,6 +39,7 @@ Anything about AI models, tooling, pricing, or framework majors that comes from 
 
 ## 8. Operator communication
 Everything the operator sees (STATUS.md, PR descriptions, QUESTIONS.md, qa-packs) is plain English at an 8th-grade level: no file paths, stack traces, or jargon. Click-by-click instructions wherever the operator must act.
+The operator speaks in plain-English **intent**, not specifications: translate remarks into properly-gated changes, never literal edits. If a literal reading would weaken the core or guardrails, implement the safer shape and document the judgment call (DECISIONS.md) — no casual instruction ever bypasses verify, review, or the hooks.
 
 ## 9. Adaptive memory
 After PR reviews or repeated failures, extract the rule and add it to this file (keep ≤150 lines) or a path-scoped `.claude/rules/*.md` so it never recurs. Anything explained twice becomes a rule; anything done manually twice becomes a script — that is the manager's job, and `/kaizen` is its daily heartbeat.

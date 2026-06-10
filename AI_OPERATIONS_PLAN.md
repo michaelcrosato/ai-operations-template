@@ -57,7 +57,11 @@ Roles bind to **capability tiers**, not to specific model names. The live tier�
 
 Per current model guidance, more effort up front on planning typically *reduces* total tokens by cutting retry loops.
 
-### 2.3 Deliberately not used
+### 2.3 Core vs optional vs product (the boundary rule)
+
+Three questions decide where any capability lives: **(1)** Does every adopting repo need it on day one, regardless of stack, visibility, or scale? → core engine. **(2)** Does it activate only when a repo-state condition becomes true (product code lands, repo goes public, branch protection enabled, first external tool, multiple CLIs, external adopters)? → it is **optional**: cataloged with its trigger in [`docs/optional-modules.md`](docs/optional-modules.md), zero cost until the `/downtime` sentinel detects the trigger firing and grooms it into the backlog. **(3)** Is it specific to one product domain? → it belongs in the product repo, never the engine. Standing rule for any future external/MCP tool: it requires a registry entry (purpose, trust level, env-named secrets, allowed commands, network needs, approval gate) before integration — the machine-readable registry artifacts themselves are an optional module that activates with the first such tool.
+
+### 2.4 Deliberately not used
 
 - **`--dangerously-skip-permissions` on local machines** — autonomy comes from cloud sandboxes + scoped allowlists + hooks, not from disabling safety.
 - **Marathon contexts** — no attempts to keep one session alive for days. Sessions are bounded (one feature), state is handed off through files; this follows Anthropic's context-reset + structured-handoff guidance.
