@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-06-10 — housekeeping — self-audit after F-0006
+
+**Done:** Trust-but-monitor pass over the session's own output. Found and fixed: plan §3 layout tree missing six shipped artifacts (kaizen/downtime skills, test-hooks.sh, evidence/, briefs/, dependabot.yml); plan §4.2 overpromising ("validates against features.schema.json", "test-runner JSON report") vs what is actually implemented (in-code invariants; VERIFY-marker log + CI re-run backstop) — wording now matches code; dead line in test-hooks.sh; STATUS.md regenerated (was a day stale); ROADMAP bullets annotated ✅ shipped.
+
+**Verified:** full gate re-run green on develop HEAD before and after edits (63/63).
+
+**Next step:** unchanged — F-0002 demo loop, F-0004 operator setup (Q-0001).
+
+---
+
 ## 2026-06-10 — F-0006 — External-review remediation (nine verified defects)
 
 **Done:** Fixed all nine defects from the verified external review: assertion-shield now scans staged changes (`--cached`) and catches wholesale test-file deletions (`--- a/` parsing), and uses execFileSync (security-guidance plugin finding); `update-state.ts --validate` deep-audits evidence of every passing feature and rejects done-without-passes and dependency cycles; `security-patterns.json` rewritten to the real plugin schema (was silently inert); guard-bash blocks refspec (`HEAD:refs/heads/main`) and flag-separated (`git -C . push`) variants; promotion-PR identity documented (App/bot authors it — operator can't approve own PRs); dependabot.yml shipped; format hook + path guard formally deferred (F-0007); verify.sh hard-fails missing test/lint once `src/` exists; verify-rules.ts no longer emits false-positive warnings; OPERATOR_GUIDE recovery is now zero-CLI (@claude comment or GitHub Revert button). Plan security citations corrected to GHSA-8q5r-mmjf-575q + Claude Code 2.1.128, verified 2026-06-10 against the GitHub advisory API and vendor docs.

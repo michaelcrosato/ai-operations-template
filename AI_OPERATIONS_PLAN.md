@@ -83,7 +83,9 @@ Phase 0 (§10) builds exactly this tree. One-line purpose per entry; detailed sp
 │   ├── PROGRESS.md               # Agent-maintained session log / handoff notes (§4.3)
 │   ├── QUESTIONS.md              # Non-blocking escalations for the human (§6.1)
 │   ├── DECISIONS.md              # Append-only log of decisions agents made autonomously
-│   └── STATUS.md                 # Auto-generated plain-English status report (§8.2)
+│   ├── STATUS.md                 # Auto-generated plain-English status report (§8.2)
+│   ├── evidence/F-XXXX/          # Physical proof per feature: verify logs, screenshots (§4.2, §7.3)
+│   └── briefs/F-XXXX.md          # Pre-written builder briefs from /downtime passes (§5.5)
 │
 ├── .claude/
 │   ├── settings.json             # Permissions, hooks, env, enabledPlugins (§6.2, §7.2)
@@ -101,7 +103,9 @@ Phase 0 (§10) builds exactly this tree. One-line purpose per entry; detailed sp
 │   │   ├── groom/SKILL.md        #   /groom — ROADMAP.md → features.json entries
 │   │   ├── status/SKILL.md       #   /status — regenerate roadmap/STATUS.md
 │   │   ├── qa-pack/SKILL.md      #   /qa-pack — click-by-click QA script for the human
-│   │   └── research/SKILL.md     #   /research — web-verify any AI/stack claim (P1)
+│   │   ├── research/SKILL.md     #   /research — web-verify any AI/stack claim (P1)
+│   │   ├── kaizen/SKILL.md       #   /kaizen — daily ≥1% system improvement (§5.5)
+│   │   └── downtime/SKILL.md     #   /downtime — idle protocol: sentinel scan, pre-briefs (§5.5)
 │   ├── rules/                    # Path-scoped rules, loaded only when touching matches
 │   │   ├── database.md           #   paths: schema/**, migrations/**
 │   │   ├── security.md           #   paths: src/api/**, src/auth/**
@@ -115,15 +119,18 @@ Phase 0 (§10) builds exactly this tree. One-line purpose per entry; detailed sp
 ├── scripts/
 │   ├── init.sh                   # Bootstrap dev env (dependencies, toolchain setups)
 │   ├── verify.sh                 # THE gate: typecheck+lint+unit+build (+e2e flag) (§7.1)
+│   ├── test-hooks.sh             # Contract tests for every hook + the state writer (§6.3)
 │   ├── verify-rules.ts           # Scanning utility to detect framework configuration & sync rules
 │   ├── assertion-shield.ts       # Guardrail checking to block test assertion deletion
 │   ├── update-state.ts           # The ONLY writer for features.json — schema-safe mutations (§4.2)
 │   └── seed.ts                   # Seed data generator for isolated manual & automated tests
 │
-├── .github/workflows/
-│   ├── ci.yml                    # verify.sh + security jobs on every PR (§7.2)
-│   ├── e2e.yml                   # E2E test runs against preview deployments
-│   └── claude.yml                # claude-code-action: @claude mentions + CI-failure autofix
+├── .github/
+│   ├── dependabot.yml            # Weekly dependency/action update PRs (§7.2)
+│   └── workflows/
+│       ├── ci.yml                # verify.sh + security jobs on every PR (§7.2)
+│       ├── e2e.yml               # E2E test runs against preview deployments
+│       └── claude.yml            # claude-code-action: @claude mentions + CI-failure autofix
 │
 └── src/ ...                      # Product source code (organized by components)
 ```
@@ -179,7 +186,7 @@ Default-FAIL contract: every feature is born failing and only flips on evidence.
 }
 ```
 
-Rules: agents never hand-edit this file. All mutations go through `scripts/update-state.ts` (`--add`, `--status`, `--evidence`, `--passes`), which validates against `features.schema.json` (unique ids, status enums, priority ranges, dependency references, evidence paths) and refuses `--passes true` unless (a) every listed evidence file physically exists on disk and (b) the test-runner JSON report it parses shows total tests > 0 with zero failures. JSON hand-edits are additionally a known corruption vector over long runs. CI re-validates schema + invariants on every PR, so a corrupted backlog can't merge. The file is the single source of "what is left"; Phase 0 seeds it by decomposing the system specification into ~30–100 features with acceptance criteria.
+Rules: agents never hand-edit this file (a PreToolUse hook blocks it). All mutations go through `scripts/update-state.ts` (`--add`, `--status`, `--attempt`, `--evidence`, `--passes`, `--validate`), which enforces the schema's invariants in code (unique ids, status enums, priority ranges, dependency references incl. cycle detection, done⇒passes) — `features.schema.json` documents the same contract for humans and external tooling. `--passes true` is refused unless (a) every listed evidence file physically exists on disk and is non-empty, and (b) the evidence includes a verify log ending in the gate's literal `VERIFY: PASS (exit 0)` marker with a `VERIFY-COMMIT` signature; the *hard* backstop against a forged log is CI re-running the real gate on every PR. JSON hand-edits are additionally a known corruption vector over long runs. CI re-validates schema invariants **and the physical evidence of every passing feature** on every PR, so a corrupted or forged backlog can't merge. The file is the single source of "what is left"; Phase 0 seeds it by decomposing the system specification into ~30–100 features with acceptance criteria.
 
 ### 4.3 `roadmap/PROGRESS.md` — the handoff log
 
