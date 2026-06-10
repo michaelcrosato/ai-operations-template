@@ -20,7 +20,9 @@ permissions:
 jobs:
   claude:
     # Hard gate (plan §7.2): only @claude mentions from HUMAN actors with write access.
-    # Bot actors are never trusted (claude-code-action >= v1.0.94 also enforces this).
+    # Bot actors are never trusted. Related advisory: GHSA-8q5r-mmjf-575q (action
+    # <1.0.74, malicious .mcp.json in PRs -> RCE/secret exfil); our SHA pin is far
+    # beyond that floor, and this actor gate is defense-in-depth on top.
     if: >
       contains(github.event.comment.body, '@claude') &&
       !endsWith(github.actor, '[bot]') &&

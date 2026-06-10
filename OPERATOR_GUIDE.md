@@ -47,8 +47,11 @@ If you see an agent doing something unexpected, or if you want to stop work imme
 
 ## 4. Disaster Recovery (The Reset Button)
 
-If staging or integration gets into a messy state and you want to restore it to the last known working version:
-1. Go to the GitHub repository.
-2. Find the last successful release commit on the stable branch (`master`/`main`).
-3. Revert the `develop` branch to match that stable commit, or push a revert commit.
-4. The agents will automatically detect the reset and adapt their work backlog status accordingly.
+If staging gets into a messy state and you want to restore the last known working version, you have two clicks-only options — you never need to run commands:
+
+1. **Ask the agents (easiest):** comment on any open pull request, or open a new GitHub issue, with:
+   `@claude restore the last working version and explain in plain English what went wrong.`
+   The agents will revert the bad change, get staging green again, and reply with a plain-English summary.
+2. **One-click revert (do it yourself):** open the pull request that introduced the problem (the newest one on the "Pull requests → Closed" list), and click GitHub's **Revert** button at the bottom. That opens a ready-made undo PR — merge it and staging rolls back.
+
+Either way, the agents detect the rollback automatically and put the reverted work back into the backlog as "needs another attempt."

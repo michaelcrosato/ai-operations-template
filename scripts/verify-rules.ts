@@ -8,7 +8,7 @@ import * as path from 'path';
 
 const CLAUDE_PATH = path.join(process.cwd(), 'CLAUDE.md');
 
-function detectStack(): { buildCmd: string; testCmd: string } {
+function detectStack(): { buildCmd: string; testCmd: string; hasBuild: boolean; hasTest: boolean } {
   const packageJsonPath = path.join(process.cwd(), 'package.json');
   const cargoTomlPath = path.join(process.cwd(), 'Cargo.toml');
   const pyprojectPath = path.join(process.cwd(), 'pyproject.toml');
@@ -19,20 +19,23 @@ function detectStack(): { buildCmd: string; testCmd: string } {
     const isYarn = fs.existsSync(path.join(process.cwd(), 'yarn.lock'));
     const runner = isPnpm ? 'pnpm' : isYarn ? 'yarn' : 'npm';
 
-    const buildCmd = pkg.scripts?.build ? `${runner} run build` : `${runner} build`;
-    const testCmd = pkg.scripts?.test ? `${runner} test` : `${runner} run test`;
-    return { buildCmd, testCmd };
+    return {
+      buildCmd: `${runner} run build`,
+      testCmd: `${runner} test`,
+      hasBuild: Boolean(pkg.scripts?.build),
+      hasTest: Boolean(pkg.scripts?.test)
+    };
   }
 
   if (fs.existsSync(cargoTomlPath)) {
-    return { buildCmd: 'cargo build', testCmd: 'cargo test' };
+    return { buildCmd: 'cargo build', testCmd: 'cargo test', hasBuild: true, hasTest: true };
   }
 
   if (fs.existsSync(pyprojectPath)) {
-    return { buildCmd: 'pip install .', testCmd: 'pytest' };
+    return { buildCmd: 'pip install .', testCmd: 'pytest', hasBuild: true, hasTest: true };
   }
 
-  return { buildCmd: 'make build', testCmd: 'make test' };
+  return { buildCmd: 'make build', testCmd: 'make test', hasBuild: false, hasTest: false };
 }
 
 function verifyClaudeMd() {
@@ -57,10 +60,13 @@ function verifyClaudeMd() {
   const content = fs.readFileSync(CLAUDE_PATH, 'utf8');
   const stack = detectStack();
 
-  if (!content.includes(stack.buildCmd)) {
+  // Only warn about commands that actually exist in this repo. Warning about
+  // guessed defaults ("npm build" with no build script) injected false-positive
+  // noise into every session brief.
+  if (stack.hasBuild && !content.includes(stack.buildCmd)) {
     console.warn(`[Warning] CLAUDE.md might be missing the current build command: "${stack.buildCmd}"`);
   }
-  if (!content.includes(stack.testCmd)) {
+  if (stack.hasTest && !content.includes(stack.testCmd)) {
     console.warn(`[Warning] CLAUDE.md might be missing the current test command: "${stack.testCmd}"`);
   }
 }
