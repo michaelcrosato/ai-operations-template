@@ -107,9 +107,11 @@ check "paths rejects empty array"               1 "$(US --paths F-0001 '[]')"
 check "paths replaces authorized_paths"         0 "$(US --paths F-0001 '["src/**","docs/**"]')"
 check "passes refuses without evidence"         1 "$(US --passes F-0001 true)"
 check "evidence refuses missing file"           1 "$(US --evidence F-0001 $FIX/nope.log)"
-echo "some output... VERIFY: PASS (exit 0)" > "$FIX/verify.log"
+echo 'audit said: need a verify.log containing "VERIFY: PASS (exit 0)" ... VERIFY: FAIL' > "$FIX/verify.log"
 check "evidence accepts existing file"          0 "$(US --evidence F-0001 $FIX/verify.log)"
-check "passes accepts with green verify log"    0 "$(US --passes F-0001 true)"
+check "passes rejects QUOTED marker in failed log" 1 "$(US --passes F-0001 true)"
+printf 'gate output...\nVERIFY: PASS (exit 0)\n' > "$FIX/verify.log"
+check "passes accepts green verify log (exact line)" 0 "$(US --passes F-0001 true)"
 cat > "$STATE_FILE.corrupt" <<'EOF'
 { "features": [ { "id": "BAD", "status": "nope" } ] }
 EOF

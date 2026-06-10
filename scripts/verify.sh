@@ -46,6 +46,29 @@ if [ -f package.json ]; then
 
   if has_pkg_script build; then step "build" npm run --silent build
   else echo "(no build script — skipping)"; fi
+
+  # Test-coverage guard (security-review finding, PR #15): the test script pins
+  # explicit files (Node 20/24 disagree on --test dir/glob handling), so a new
+  # test file that nobody wires in must be a hard failure, never a silent skip.
+  if $PRODUCT_MODE && has_pkg_script test; then
+    TEST_SCRIPT="$(node -e "console.log(require('./package.json').scripts.test || '')")"
+    UNWIRED=""
+    while IFS= read -r tf; do
+      case "$TEST_SCRIPT" in
+        *"$(basename "$tf")"*) : ;;  # file explicitly wired in
+        *'*.test.'*|*'*.spec.'*) : ;;  # glob discovery in use — covers it
+        *) UNWIRED="$UNWIRED $tf" ;;
+      esac
+    done <<EOF
+$(find src -type f \( -name '*.test.js' -o -name '*.spec.js' -o -name '*.test.ts' \) 2>/dev/null)
+EOF
+    if [ -n "$UNWIRED" ]; then
+      echo "──── test coverage guard: FAILED (test files not wired into the npm test script:$UNWIRED)"
+      FAILED=1
+    else
+      echo "──── test coverage guard: OK (every src test file is wired into npm test)"
+    fi
+  fi
 fi
 if [ -f Cargo.toml ]; then
   step "cargo check" cargo check --quiet

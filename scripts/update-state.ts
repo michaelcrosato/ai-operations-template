@@ -122,7 +122,10 @@ function collectEvidenceErrors(f: Feature): string[] {
     if (stat.isFile() && stat.size === 0) errors.push(`${f.id}: evidence file is empty: ${rel}`);
     if (/verify.*\.log$/i.test(rel)) {
       const content = fs.readFileSync(p, 'utf8');
-      if (/VERIFY: PASS \(exit 0\)/.test(content)) hasGreenVerifyLog = true;
+      // Exact-line match, not substring: a failed run's log QUOTES the marker
+      // inside this very audit's error message, which once self-satisfied the
+      // check (found via PR #14). A quoted occurrence is never a whole line.
+      if (content.split(/\r?\n/).some((l) => l.trim() === 'VERIFY: PASS (exit 0)')) hasGreenVerifyLog = true;
     }
   }
   if (!hasGreenVerifyLog) {
