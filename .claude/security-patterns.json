@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "patterns": [
+    {
+      "id": "private-key-block",
+      "description": "Private key material",
+      "regex": "-----BEGIN (RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----",
+      "severity": "critical"
+    },
+    {
+      "id": "anthropic-api-key",
+      "description": "Anthropic API key",
+      "regex": "sk-ant-[A-Za-z0-9_-]{20,}",
+      "severity": "critical"
+    },
+    {
+      "id": "github-token",
+      "description": "GitHub token (PAT/OAuth/App)",
+      "regex": "\\b(ghp|gho|ghu|ghs|github_pat)_[A-Za-z0-9_]{20,}\\b",
+      "severity": "critical"
+    },
+    {
+      "id": "aws-access-key",
+      "description": "AWS access key ID",
+      "regex": "\\bAKIA[0-9A-Z]{16}\\b",
+      "severity": "critical"
+    },
+    {
+      "id": "generic-secret-assignment",
+      "description": "Hardcoded secret-shaped assignment",
+      "regex": "(?i)\\b(api[_-]?key|secret|password|passwd|token)\\b\\s*[:=]\\s*['\"][^'\"\\s]{12,}['\"]",
+      "severity": "high"
+    },
+    {
+      "id": "connection-string-with-password",
+      "description": "Database URL with embedded credentials",
+      "regex": "(?i)\\b(postgres|postgresql|mysql|mongodb(\\+srv)?|redis)://[^/\\s:]+:[^@\\s]+@",
+      "severity": "high"
+    },
+    {
+      "id": "pipe-to-shell",
+      "description": "curl/wget piped to a shell",
+      "regex": "(curl|wget)[^|\\n]*\\|\\s*(sudo\\s+)?(ba)?sh\\b",
+      "severity": "high"
+    },
+    {
+      "id": "dotenv-read",
+      "description": "Reading .env files (prohibited for agents)",
+      "regex": "(cat|less|more|head|tail|type|Get-Content)\\s+[^\\n]*\\.env\\b",
+      "severity": "high"
+    },
+    {
+      "id": "assertion-shield-bypass",
+      "description": "Attempt to set the assertion-shield bypass variable",
+      "regex": "ASSERTION_SHIELD_BYPASS\\s*=",
+      "severity": "high"
+    }
+  ]
+}

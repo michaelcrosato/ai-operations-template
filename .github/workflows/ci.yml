@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # assertion-shield diffs against origin/develop
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Verify (typecheck + lint + tests + state validation + assertion shield)
+        run: bash scripts/verify.sh
+
+      - name: Secret-shaped string scan
+        run: |
+          # Deterministic leak check (plan §7.2): fail if tracked files contain key-shaped strings.
+          ! git grep -nE "(sk-ant-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----|\b(ghp|gho|ghu|ghs|github_pat)_[A-Za-z0-9_]{20,}\b)" -- ':!.claude/security-patterns.json' ':!.github/workflows/ci.yml' \
+            || { echo "::error::Secret-shaped string found in tracked files"; exit 1; }

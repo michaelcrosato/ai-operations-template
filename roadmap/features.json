@@ -1,0 +1,119 @@
+{
+  "$schema": "./features.schema.json",
+  "features": [
+    {
+      "id": "F-0001",
+      "epic": "factory",
+      "title": "Phase 0: build the factory",
+      "spec_ref": "AI_OPERATIONS_PLAN.md#10-build-phases--milestones",
+      "description": "Implement the full control plane from the blueprint: state files, sub-agents, skills, rules, hooks, gate scripts, update-state writer, CI workflows.",
+      "acceptance": [
+        "Every file in the AI_OPERATIONS_PLAN.md section 3 layout exists with working content",
+        "bash scripts/verify.sh exits 0 (typecheck + state validation + shield)",
+        "update-state.ts is the only writer of features.json and refuses passes:true without evidence files on disk",
+        "Hooks are wired in .claude/settings.json and scripts exist and are executable",
+        "CI workflow runs verify.sh + assertion-shield + state validation on every PR"
+      ],
+      "authorized_paths": [
+        "**"
+      ],
+      "forbidden_paths": [],
+      "dependencies": [],
+      "priority": 1,
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0001/verify.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null
+    },
+    {
+      "id": "F-0002",
+      "epic": "factory",
+      "title": "Demo feature through the full loop",
+      "spec_ref": "AI_OPERATIONS_PLAN.md#10-build-phases--milestones",
+      "description": "Run one deliberately trivial feature (e.g. a health-check page or CLI ping) through brief, build, verify, evaluate, PR, CI, and merge to prove the loop works end to end.",
+      "acceptance": [
+        "Feature implemented by the builder sub-agent from a written brief",
+        "Evidence saved under roadmap/evidence/F-0002/ including a green verify log",
+        "Evaluator sub-agent issued PASS from a fresh context",
+        "PR merged to develop with green CI and the operator PR template"
+      ],
+      "authorized_paths": [
+        "src/**",
+        "roadmap/evidence/F-0002/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/**",
+        "scripts/**"
+      ],
+      "dependencies": [
+        "F-0001"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null
+    },
+    {
+      "id": "F-0003",
+      "epic": "factory",
+      "title": "Contract tests for hooks and gate scripts",
+      "spec_ref": "AI_OPERATIONS_PLAN.md#63-hooks-mechanical-enforcement-not-vibes",
+      "description": "Fixture-based tests for guard-bash.sh, verify-gate.sh, commit-on-stop.sh, session-brief.sh, update-state.ts and assertion-shield.ts so the safety net is tested code.",
+      "acceptance": [
+        "Each hook has at least one test proving it blocks what it must block and allows what it must allow",
+        "update-state.ts tests cover: schema rejection, evidence-file requirement, dependency validation",
+        "Tests run inside scripts/verify.sh and in CI"
+      ],
+      "authorized_paths": [
+        "scripts/**",
+        "tests/**"
+      ],
+      "forbidden_paths": [
+        ".github/workflows/claude.yml"
+      ],
+      "dependencies": [
+        "F-0001"
+      ],
+      "priority": 2,
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0003/contract-tests.log",
+        "roadmap/evidence/F-0003/verify.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null
+    },
+    {
+      "id": "F-0004",
+      "epic": "factory",
+      "title": "Operator one-time setup completed",
+      "spec_ref": "AI_OPERATIONS_PLAN.md#11-one-time-human-setup-checklist-30-minutes-click-through-only",
+      "description": "Human-only checklist: GitHub App install, branch protection, ANTHROPIC_API_KEY secret, cloud environment, Routines. Agents cannot do these; tracked here so status reports surface it.",
+      "acceptance": [
+        "Branch protection active on develop (PR + green CI) and stable branch (PR + human approval)",
+        "claude-code-action secret configured and @claude responds on a test PR",
+        "Cloud environment created with init.sh as setup script"
+      ],
+      "authorized_paths": [],
+      "forbidden_paths": [
+        "**"
+      ],
+      "dependencies": [
+        "F-0001"
+      ],
+      "priority": 2,
+      "status": "blocked",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": "Requires human operator actions (GitHub settings, secrets, claude.ai configuration) — see QUESTIONS.md"
+    }
+  ]
+}

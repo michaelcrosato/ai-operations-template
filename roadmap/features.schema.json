@@ -59,6 +59,13 @@
               "type": "string"
             }
           },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^F-\\d{4}$"
+            }
+          },
           "priority": {
             "type": "integer",
             "minimum": 1,

@@ -17,6 +17,10 @@ build/
 tmp/
 .cache/
 
+# …but evidence is the product of the verification contract — it MUST ship
+# (evaluators open it; features.json records its paths; fresh clones resume from it)
+!roadmap/evidence/**
+
 # OS / editor junk
 .DS_Store
 Thumbs.db

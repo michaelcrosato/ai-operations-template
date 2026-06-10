@@ -1,0 +1,174 @@
+import * as fs from 'fs';
+import * as path from 'path';
+
+/**
+ * update-state.ts — the ONLY writer for roadmap/features.json (plan §4.2).
+ * A PreToolUse hook blocks direct edits; CI re-validates on every PR.
+ *
+ * Usage:
+ *   ts-node scripts/update-state.ts --validate
+ *   ts-node scripts/update-state.ts --add '<feature-json>'
+ *   ts-node scripts/update-state.ts --status F-0001 in_progress|pending|blocked|done [reason]
+ *   ts-node scripts/update-state.ts --attempt F-0001
+ *   ts-node scripts/update-state.ts --evidence F-0001 <path> [<path>...]
+ *   ts-node scripts/update-state.ts --passes F-0001 true
+ */
+
+// STATE_FILE override exists for contract tests (scripts/test-hooks.sh) so they
+// can exercise mutations against a fixture without touching the real backlog.
+const FILE = process.env.STATE_FILE
+  ? path.resolve(process.env.STATE_FILE)
+  : path.join(process.cwd(), 'roadmap', 'features.json');
+const STATUSES = ['pending', 'in_progress', 'blocked', 'done'];
+const REQUIRED = [
+  'id', 'epic', 'title', 'spec_ref', 'description', 'acceptance',
+  'authorized_paths', 'forbidden_paths', 'priority', 'status', 'passes',
+  'evidence', 'attempts', 'blocked_reason'
+];
+
+interface Feature {
+  id: string; epic: string; title: string; spec_ref: string; description: string;
+  acceptance: string[]; authorized_paths: string[]; forbidden_paths: string[];
+  dependencies?: string[]; priority: number; status: string; passes: boolean;
+  evidence: string[]; attempts: number; blocked_reason: string | null;
+}
+
+function fail(msg: string): never {
+  console.error(`[update-state] ERROR: ${msg}`);
+  process.exit(1);
+}
+
+function load(): { $schema?: string; features: Feature[] } {
+  if (!fs.existsSync(FILE)) fail(`${FILE} not found`);
+  try {
+    return JSON.parse(fs.readFileSync(FILE, 'utf8'));
+  } catch (e) {
+    fail(`features file is not valid JSON: ${e}`);
+  }
+}
+
+function save(data: { features: Feature[] }): void {
+  const errors = validate(data.features);
+  if (errors.length) fail(`refusing to save invalid state:\n  - ${errors.join('\n  - ')}`);
+  const tmp = FILE + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2) + '\n', 'utf8');
+  fs.renameSync(tmp, FILE);
+  console.log('[update-state] saved.');
+}
+
+function validate(features: Feature[]): string[] {
+  const errors: string[] = [];
+  const ids = new Set<string>();
+  for (const f of features) {
+    for (const key of REQUIRED) {
+      if (!(key in (f as unknown as Record<string, unknown>))) errors.push(`${f.id ?? '?'}: missing field "${key}"`);
+    }
+    if (!/^F-\d{4}$/.test(f.id)) errors.push(`invalid id "${f.id}" (want F-XXXX)`);
+    if (ids.has(f.id)) errors.push(`duplicate id ${f.id}`);
+    ids.add(f.id);
+    if (!STATUSES.includes(f.status)) errors.push(`${f.id}: invalid status "${f.status}"`);
+    if (!Number.isInteger(f.priority) || f.priority < 1 || f.priority > 3) errors.push(`${f.id}: priority must be 1..3`);
+    if (!Array.isArray(f.acceptance) || f.acceptance.length === 0) errors.push(`${f.id}: needs at least one acceptance criterion`);
+    if (f.attempts < 0) errors.push(`${f.id}: attempts < 0`);
+    if (f.status === 'blocked' && !f.blocked_reason) errors.push(`${f.id}: blocked without blocked_reason`);
+    if (f.passes && f.evidence.length === 0) errors.push(`${f.id}: passes:true with no evidence (default-FAIL contract)`);
+  }
+  for (const f of features) {
+    for (const dep of f.dependencies ?? []) {
+      if (!ids.has(dep)) errors.push(`${f.id}: dependency ${dep} does not exist`);
+      if (dep === f.id) errors.push(`${f.id}: depends on itself`);
+    }
+  }
+  return errors;
+}
+
+function find(data: { features: Feature[] }, id: string): Feature {
+  const f = data.features.find((x) => x.id === id);
+  if (!f) fail(`feature ${id} not found`);
+  return f;
+}
+
+/** Evidence contract for --passes true: every evidence file exists, is non-empty,
+ *  and at least one is a verify log proving a green gate run (plan §4.2, §6.3). */
+function checkEvidence(f: Feature): void {
+  if (f.evidence.length === 0) fail(`${f.id}: no evidence recorded; run --evidence first`);
+  let hasGreenVerifyLog = false;
+  for (const rel of f.evidence) {
+    const p = path.join(process.cwd(), rel);
+    if (!fs.existsSync(p)) fail(`${f.id}: evidence file missing on disk: ${rel}`);
+    const stat = fs.statSync(p);
+    if (stat.isFile() && stat.size === 0) fail(`${f.id}: evidence file is empty: ${rel}`);
+    if (/verify.*\.log$/i.test(rel)) {
+      const content = fs.readFileSync(p, 'utf8');
+      if (/VERIFY: PASS \(exit 0\)/.test(content)) hasGreenVerifyLog = true;
+    }
+  }
+  if (!hasGreenVerifyLog) {
+    fail(`${f.id}: no green verify log among evidence (need a *verify*.log containing "VERIFY: PASS (exit 0)" from scripts/verify.sh)`);
+  }
+}
+
+const [, , cmd, ...args] = process.argv;
+const data = load();
+
+switch (cmd) {
+  case '--validate': {
+    const errors = validate(data.features);
+    if (errors.length) fail(`invalid backlog:\n  - ${errors.join('\n  - ')}`);
+    console.log(`[update-state] valid: ${data.features.length} features, ` +
+      `${data.features.filter((f) => f.passes).length} passing.`);
+    break;
+  }
+  case '--add': {
+    if (!args[0]) fail('--add requires a JSON argument');
+    let incoming: Partial<Feature>;
+    try { incoming = JSON.parse(args[0]); } catch (e) { fail(`--add argument is not valid JSON: ${e}`); }
+    const feature: Feature = {
+      dependencies: [], status: 'pending', passes: false, evidence: [],
+      attempts: 0, blocked_reason: null, forbidden_paths: ['.claude/**', '.github/workflows/**'],
+      ...incoming
+    } as Feature;
+    if (feature.passes) fail('new features are born failing (default-FAIL contract); cannot --add with passes:true');
+    data.features.push(feature);
+    save(data);
+    break;
+  }
+  case '--status': {
+    const [id, status, ...reason] = args;
+    if (!id || !status) fail('--status requires <id> <status>');
+    const f = find(data, id);
+    f.status = status;
+    f.blocked_reason = status === 'blocked' ? (reason.join(' ') || 'unspecified') : null;
+    save(data);
+    break;
+  }
+  case '--attempt': {
+    const f = find(data, args[0]);
+    f.attempts += 1;
+    console.log(`[update-state] ${f.id} attempts = ${f.attempts}${f.attempts >= 2 ? ' (two-strike limit reached — block and move on)' : ''}`);
+    save(data);
+    break;
+  }
+  case '--evidence': {
+    const [id, ...paths] = args;
+    if (!id || paths.length === 0) fail('--evidence requires <id> <path> [...]');
+    const f = find(data, id);
+    for (const p of paths) {
+      if (!fs.existsSync(path.join(process.cwd(), p))) fail(`evidence file does not exist: ${p}`);
+      if (!f.evidence.includes(p)) f.evidence.push(p);
+    }
+    save(data);
+    break;
+  }
+  case '--passes': {
+    const [id, value] = args;
+    if (value !== 'true') fail('--passes only accepts "true" (features are born failing; to un-pass, fix the feature)');
+    const f = find(data, id);
+    checkEvidence(f);
+    f.passes = true;
+    save(data);
+    break;
+  }
+  default:
+    fail(`unknown command "${cmd ?? ''}". See header comment for usage.`);
+}

@@ -1,0 +1,36 @@
+name: E2E
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ["src/**", "e2e/**", "playwright.config.*", "cypress.config.*"]
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: E2E suite (skips with notice until the product defines an e2e script)
+        run: |
+          if node -e "process.exit(require('./package.json').scripts?.e2e ? 0 : 1)"; then
+            bash scripts/verify.sh --e2e
+          else
+            echo "No e2e script defined yet (pre-Phase-3). Skipping."
+          fi

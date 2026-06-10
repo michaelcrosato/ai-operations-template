@@ -57,9 +57,6 @@ function verifyClaudeMd() {
   const content = fs.readFileSync(CLAUDE_PATH, 'utf8');
   const stack = detectStack();
 
-  let updatedContent = content;
-  let changed = false;
-
   if (!content.includes(stack.buildCmd)) {
     console.warn(`[Warning] CLAUDE.md might be missing the current build command: "${stack.buildCmd}"`);
   }
