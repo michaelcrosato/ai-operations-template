@@ -290,9 +290,11 @@
       "dependencies": [
         "F-0001"
       ],
-      "status": "in_progress",
-      "passes": false,
-      "evidence": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0010/verify.log"
+      ],
       "attempts": 1,
       "blocked_reason": null,
       "forbidden_paths": [
@@ -320,9 +322,11 @@
       "dependencies": [
         "F-0001"
       ],
-      "status": "in_progress",
-      "passes": false,
-      "evidence": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0011/verify.log"
+      ],
       "attempts": 1,
       "blocked_reason": null,
       "forbidden_paths": [
