@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-06-10 — F-0002 — THE LOOP IS PROVEN END-TO-END
+
+**Done:** Branch protection enabled via API first (develop: PR+verify; main: +1 approval; enforce_admins — it blocked a red merge within the hour, working as designed). Then F-0002 ran the complete loop: SELECT (`--status in_progress`) → groom correction via new `--paths` verb (shipped PR #13 when grooming proved too narrow — caught honestly, fixed through its own gated PR) → BRIEF (roadmap/briefs/F-0002.md, immutable) → BUILD (builder sub-agent created src/health.js + src/health.test.js exactly to brief, hit a real Windows/Node-24 defect in MY prep, refused to exceed scope, escalated with a verified fix — the conditions-problem protocol worked) → VERIFY (first PRODUCT_MODE green: unit tests + lint now hard gates; evidence ×3) → JUDGE (fresh evaluator PASS, independently re-ran everything) → SHIP (PR #14, operator template) → RECORD (this entry).
+
+**Verified:** VERIFY: PASS with VERIFY-COMMIT signature; 4/4 unit tests, 66/66 contract tests; evaluator reproduced independently.
+
+**Surprises:** `node --test <dir>` silently broken on Windows Node 24 (glob form works everywhere); custom agent roster doesn't hot-load mid-session locally (mandates inlined — cloud unaffected).
+
+**Next step:** wave-1 hardening F-0008–F-0011. Operator owes the rest of Q-0001 (App install, ANTHROPIC_API_KEY, cloud env).
+
+---
+
 ## 2026-06-10 — optional-modules catalog + operator-intent rule
 
 **Done:** Operator asked that repo-state-dependent ideas live outside the core. Shipped docs/optional-modules.md — every adopt-later/conditional module from the verified review, keyed by its activation trigger (product code lands / public flip / protection on / first external tool / other CLIs / adopters exist), explicitly marked NOT core. Wired: /downtime sentinel now checks the triggers and grooms modules when one fires; plan §2.3 adds the three-question core-vs-optional-vs-product rule; README points at the catalog. Also codified the operator's standing instruction in CLAUDE.md §8: remarks are intent, never literal edits — nothing bypasses the gates. MIT license landed earlier today (PR #11).

@@ -1,0 +1,16 @@
+$ node --test src/health.test.js   (node v24.16.0, win32)
+# NOTE: package.json runs "node --test src/" — broken on local Node v24.16.0/Windows
+# (directory arg treated as module entry point; see verify.log). Suite itself is green:
+✔ getHealth() reports status ok and the correct service name (0.9374ms)
+✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.1238ms)
+✔ getHealth() uptime_s is a non-negative number (0.0663ms)
+✔ CLI: node src/health.js exits 0 and prints JSON with status ok (28.626ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 74.1452
+exit: 0
