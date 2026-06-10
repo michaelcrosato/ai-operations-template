@@ -2,6 +2,7 @@
   "name": "ai-operations-template",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "Drop-in AI operations engine: orchestrator-managed, evidence-gated autonomous coding factory",
   "scripts": {
     "verify": "bash scripts/verify.sh",
