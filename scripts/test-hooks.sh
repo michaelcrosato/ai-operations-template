@@ -107,7 +107,6 @@ check "evidence refuses missing file"           1 "$(US --evidence F-0001 $FIX/n
 echo "some output... VERIFY: PASS (exit 0)" > "$FIX/verify.log"
 check "evidence accepts existing file"          0 "$(US --evidence F-0001 $FIX/verify.log)"
 check "passes accepts with green verify log"    0 "$(US --passes F-0001 true)"
-echo "no pass marker here" > "$FIX/verify2.log"
 cat > "$STATE_FILE.corrupt" <<'EOF'
 { "features": [ { "id": "BAD", "status": "nope" } ] }
 EOF
