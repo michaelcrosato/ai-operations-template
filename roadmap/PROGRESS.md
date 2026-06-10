@@ -4,6 +4,14 @@
 
 ---
 
+## 2026-06-10 — PROMOTION #1 — main created at v0.1.0
+
+**Done:** Operator ordered the first promotion. `main` created at develop HEAD `2b9f643` (API path — agent git-push to main is hook-blocked by design), tagged `v0.1.0`. `develop` stays the default branch. Stable baseline now exists: the disaster floor is "revert to v0.1.0".
+
+**Next step:** future promotions go develop→main as App-authored PRs with a `/qa-pack`. Branch protection on main (PR + operator approval) still needs the operator — Q-0001.
+
+---
+
 ## 2026-06-10 — housekeeping — self-audit after F-0006
 
 **Done:** Trust-but-monitor pass over the session's own output. Found and fixed: plan §3 layout tree missing six shipped artifacts (kaizen/downtime skills, test-hooks.sh, evidence/, briefs/, dependabot.yml); plan §4.2 overpromising ("validates against features.schema.json", "test-runner JSON report") vs what is actually implemented (in-code invariants; VERIFY-marker log + CI re-run backstop) — wording now matches code; dead line in test-hooks.sh; STATUS.md regenerated (was a day stale); ROADMAP bullets annotated ✅ shipped.
