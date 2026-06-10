@@ -6,10 +6,10 @@
 ──── lint: OK
 
 ──── verify: unit tests ────
-✔ getHealth() reports status ok and the correct service name (0.8395ms)
-✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.1233ms)
-✔ getHealth() uptime_s is a non-negative number (0.0642ms)
-✔ CLI: node src/health.js exits 0 and prints JSON with status ok (29.7552ms)
+✔ getHealth() reports status ok and the correct service name (0.8263ms)
+✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.1179ms)
+✔ getHealth() uptime_s is a non-negative number (0.0672ms)
+✔ CLI: node src/health.js exits 0 and prints JSON with status ok (32.7731ms)
 ℹ tests 4
 ℹ suites 0
 ℹ pass 4
@@ -17,13 +17,14 @@
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 76.4736
+ℹ duration_ms 78.3993
 ──── unit tests: OK
 (no build script — skipping)
 
 ──── verify: features.json schema + invariants ────
-[update-state] valid: 11 features, 4 passing (evidence re-verified).
-──── features.json schema + invariants: OK
+[update-state] ERROR: invalid backlog:
+  - F-0002: no green verify log among evidence (need a *verify*.log containing "VERIFY: PASS (exit 0)" from scripts/verify.sh)
+──── features.json schema + invariants: FAILED (exit 1)
 
 ──── verify: assertion shield ────
 [32m[Assertion Shield] Check passed. No deleted assertions detected in test files.[0m
@@ -109,5 +110,4 @@
 hook contract tests: 66 passed, 0 failed
 ──── hook contract tests: OK
 
-VERIFY-COMMIT: 0013aa00d2436a8797f9f7d0c2a443d889f60da3 @ 2026-06-10T13:36:05Z
-VERIFY: PASS (exit 0)
+VERIFY: FAIL

@@ -61,7 +61,7 @@
         "roadmap/evidence/F-0002/test-output.log",
         "roadmap/evidence/F-0002/cli-run.log"
       ],
-      "attempts": 0,
+      "attempts": 1,
       "blocked_reason": null
     },
     {
