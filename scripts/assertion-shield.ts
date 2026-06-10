@@ -1,5 +1,4 @@
 import { execSync } from 'child_process';
-import * as path from 'path';
 
 /**
  * Assertion Shield:
@@ -98,12 +97,17 @@ function run() {
       console.error(`  Line: \x1b[33m${v.line}\x1b[0m`);
     });
 
-    console.error('\nPlease restore the assertions or verify the diff manually. To bypass in rare cases, set ASSERTION_SHIELD_BYPASS=true.');
-    
-    if (process.env.ASSERTION_SHIELD_BYPASS !== 'true') {
-      process.exit(1);
+    console.error('\nRestore the assertions, or — if removal is genuinely intended (e.g. the tested feature was removed) — a HUMAN may bypass locally with ASSERTION_SHIELD_BYPASS=true. The bypass is ignored in CI, and agents are prohibited from setting it (guard-bash hook).');
+
+    const bypassRequested = process.env.ASSERTION_SHIELD_BYPASS === 'true';
+    const inCI = process.env.CI === 'true' || process.env.CI === '1';
+    if (bypassRequested && !inCI) {
+      console.log('\x1b[33m[Assertion Shield] Warning: local bypass active. CI will still enforce this check.\x1b[0m');
     } else {
-      console.log('\x1b[33m[Assertion Shield] Warning: Bypass environment variable detected. Continuing...\x1b[0m');
+      if (bypassRequested && inCI) {
+        console.error('\x1b[31m[Assertion Shield] Bypass requested in CI — refused. CI never honors the bypass.\x1b[0m');
+      }
+      process.exit(1);
     }
   } else {
     console.log('\x1b[32m[Assertion Shield] Check passed. No deleted assertions detected in test files.\x1b[0m');

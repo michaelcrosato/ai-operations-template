@@ -1,0 +1,18 @@
+{
+  "name": "ai-operations-template",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Drop-in AI operations engine: orchestrator-managed, evidence-gated autonomous coding factory",
+  "scripts": {
+    "verify": "bash scripts/verify.sh",
+    "shield": "ts-node scripts/assertion-shield.ts",
+    "state": "ts-node scripts/update-state.ts",
+    "state:validate": "ts-node scripts/update-state.ts --validate",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.0"
+  }
+}
