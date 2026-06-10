@@ -10,7 +10,7 @@
 
 **Still needs you (~15 minutes of clicking):**
 1. **Install the Claude GitHub App** on this repository (claude.ai/code → settings → GitHub) — lets cloud sessions and `@claude` comments work.
-2. **Add the `ANTHROPIC_API_KEY` secret** (repo → Settings → Secrets and variables → Actions → New repository secret) — without it, commenting `@claude fix this` on a PR does nothing.
+2. **Add your subscription token** (no API key needed — this runs on your Claude Max plan): open a terminal in the project folder, type `claude setup-token`, copy the token it prints. Then on GitHub: repo → Settings → Secrets and variables → Actions → New repository secret → name `CLAUDE_CODE_OAUTH_TOKEN`, paste, save. Without it, commenting `@claude fix this` on a PR does nothing.
 3. **Create the cloud environment** at claude.ai/code (network: Trusted; setup script: `scripts/init.sh`) — enables cloud/mobile sessions and, later, scheduled Routines.
 
 **Why it matters:** Until ② is set, CI failures don't self-heal and `@claude` comments are inert.
