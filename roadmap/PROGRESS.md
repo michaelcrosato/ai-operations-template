@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-06-10 — optional-modules catalog + operator-intent rule
+
+**Done:** Operator asked that repo-state-dependent ideas live outside the core. Shipped docs/optional-modules.md — every adopt-later/conditional module from the verified review, keyed by its activation trigger (product code lands / public flip / protection on / first external tool / other CLIs / adopters exist), explicitly marked NOT core. Wired: /downtime sentinel now checks the triggers and grooms modules when one fires; plan §2.3 adds the three-question core-vs-optional-vs-product rule; README points at the catalog. Also codified the operator's standing instruction in CLAUDE.md §8: remarks are intent, never literal edits — nothing bypasses the gates. MIT license landed earlier today (PR #11).
+
+**Verified:** gate green (63/63); docs-only diff — zero changes to hooks, gate scripts, or workflows.
+
+**Next step:** unchanged — F-0002, then wave-1 F-0008–F-0011; operator owes Q-0001.
+
+---
+
 ## 2026-06-10 — feedback-2 verification — 77 items, 14-agent fleet
 
 **Done:** Operator supplied feedback-2.md (consolidation of 6 model research reports, 77 items). Per P1, ran a full verification workflow: 11 group verifiers web-checked every load-bearing claim against primary sources (vendor docs, GitHub/advisory APIs) + repo ground truth, then 3 adversarial skeptics (lean-core, independent fact re-verifier, fork judge). 335 tool calls. Results: 26 adopt-now (groomed → F-0008 static analysis/lint, F-0009 security tripwires, F-0010 metrics.jsonl, F-0011 docs/convention pack), 27 adopt-later (sequenced on public flip / Q-0001 / Phase 1), 25 adapt (reshapes specified), 18 reject, 25 already-done, 5 operator-decision (Q-0002 license added). **52 claims in the feedback refuted** — headline: the "v1.0.94" claude-code-action floor is a phantom (real: GHSA-8q5r-mmjf-575q <1.0.74), AGENTS.md design was inverted vs official docs, sweep is abandoned, several "gaps" were already closed here. Report: docs/feedback-2-verification.md (+ verdicts JSON).
