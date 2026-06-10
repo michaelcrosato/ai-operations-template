@@ -14,7 +14,7 @@
 - Next up: four hardening work items from the verified review (better self-checks for the factory's own tools, security tripwires, performance metrics, and document templates).
 
 ## Blocked / needs you (~15 minutes)
-- Three clicks-only steps remain in `roadmap/QUESTIONS.md` Q-0001: install the Claude GitHub App, add your API key as a repo secret (turns on "@claude fix this" comments), and create the cloud workspace.
+- Three clicks-only steps remain in `roadmap/QUESTIONS.md` Q-0001: install the Claude GitHub App, add your **subscription token** as a repo secret (no API key — runs on your Max plan; turns on "@claude fix this" comments), and create the cloud workspace.
 
 ## Health
 - ✅ All 66 automated safety checks passing; 5 completed work items, every one with verified proof on file.

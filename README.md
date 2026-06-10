@@ -58,6 +58,7 @@ Nothing flips to `passes: true` without physical evidence on disk; nothing reach
 
 ## Requirements
 
+- **A Claude subscription — no API keys, from any provider, ever required.** Cloud sessions, Routines, and local sessions run on subscription login; the `@claude` PR-fix lane uses a subscription token (`claude setup-token`) that draws the agent credits included with Pro/Max plans. An API key is an optional alternative only.
 - Node.js ≥ 20 (engine meta-tooling; the product stack is whatever you choose)
 - Git + bash (hooks are bash scripts; on Windows use **Git Bash** — note that inside PowerShell, `bash` may resolve to WSL's bash, which has a different PATH and gives misleading results when testing hooks by hand)
 - GitHub repo with the Claude GitHub App installed (cloud sessions / `@claude` PR fixes)
