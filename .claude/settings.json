@@ -1,0 +1,27 @@
+{
+  "enabledPlugins": {
+    "security-guidance@claude-plugins-official": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(npm *)",
+      "Bash(pnpm *)",
+      "Bash(node *)",
+      "Bash(git *)",
+      "Bash(gh *)",
+      "Bash(npx *)",
+      "Bash(ts-node *)"
+    ],
+    "deny": [
+      "Bash(git push origin master*)",
+      "Bash(git push origin main*)",
+      "Bash(rm -rf /)",
+      "Bash(npm publish*)",
+      "Bash(pnpm publish*)"
+    ]
+  },
+  "environment": {
+    "setupScript": "scripts/init.sh",
+    "networkPolicy": "Trusted"
+  }
+}
