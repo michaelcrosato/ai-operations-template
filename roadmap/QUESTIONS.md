@@ -11,3 +11,13 @@
 **Why it matters:** Until ① is done, nothing mechanically prevents a misbehaving session from pushing straight to `develop`; until ②, CI failures don't self-heal.
 
 **Assumed meanwhile:** Work continues on feature branches + PRs as if protection were active (the constitution and hooks enforce the same rules in-session).
+
+---
+
+## Q-0002 (2026-06-10, open) — Pick a license
+
+**Question:** The repo has no LICENSE file, which means nobody else may legally reuse it — even though it's set up as a one-click GitHub template. Two sensible choices: **MIT** (shortest, most adoption-friendly — the usual pick for templates meant to be copied everywhere) or **Apache-2.0** (adds an explicit patent grant — the conservative pick if you expect companies to embed this in commercial products). One sentence back here is enough.
+
+**Why it matters:** Blocks nothing today (repo is private), but must be decided before sharing it with anyone or making it public.
+
+**Assumed meanwhile:** No license file; repo stays effectively all-rights-reserved.

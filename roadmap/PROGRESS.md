@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-06-10 — feedback-2 verification — 77 items, 14-agent fleet
+
+**Done:** Operator supplied feedback-2.md (consolidation of 6 model research reports, 77 items). Per P1, ran a full verification workflow: 11 group verifiers web-checked every load-bearing claim against primary sources (vendor docs, GitHub/advisory APIs) + repo ground truth, then 3 adversarial skeptics (lean-core, independent fact re-verifier, fork judge). 335 tool calls. Results: 26 adopt-now (groomed → F-0008 static analysis/lint, F-0009 security tripwires, F-0010 metrics.jsonl, F-0011 docs/convention pack), 27 adopt-later (sequenced on public flip / Q-0001 / Phase 1), 25 adapt (reshapes specified), 18 reject, 25 already-done, 5 operator-decision (Q-0002 license added). **52 claims in the feedback refuted** — headline: the "v1.0.94" claude-code-action floor is a phantom (real: GHSA-8q5r-mmjf-575q <1.0.74), AGENTS.md design was inverted vs official docs, sweep is abandoned, several "gaps" were already closed here. Report: docs/feedback-2-verification.md (+ verdicts JSON).
+
+**Verified:** every adopt-now claim carries a primary-source URL dated 2026-06; full gate green.
+
+**Surprises:** Claude Code now ships native OS-level sandboxing (bubblewrap/seatbelt + sandbox-runtime) — resolves the Docker fork in favor of first-party primitives; none of the 6 source reports knew.
+
+**Next step:** F-0002 (prove the loop) remains priority 1, then wave-1 F-0008–F-0011. Operator owes Q-0001 (protection) and Q-0002 (license).
+
+---
+
 ## 2026-06-10 — PROMOTION #1 — main created at v0.1.0
 
 **Done:** Operator ordered the first promotion. `main` created at develop HEAD `2b9f643` (API path — agent git-push to main is hook-blocked by design), tagged `v0.1.0`. `develop` stays the default branch. Stable baseline now exists: the disaster floor is "revert to v0.1.0".
