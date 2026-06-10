@@ -42,7 +42,8 @@
       ],
       "authorized_paths": [
         "src/**",
-        "roadmap/evidence/F-0002/**"
+        "roadmap/**",
+        "package.json"
       ],
       "forbidden_paths": [
         ".claude/**",
@@ -53,10 +54,14 @@
         "F-0001"
       ],
       "priority": 1,
-      "status": "in_progress",
-      "passes": false,
-      "evidence": [],
-      "attempts": 0,
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0002/verify.log",
+        "roadmap/evidence/F-0002/test-output.log",
+        "roadmap/evidence/F-0002/cli-run.log"
+      ],
+      "attempts": 1,
       "blocked_reason": null
     },
     {
