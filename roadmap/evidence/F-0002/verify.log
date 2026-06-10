@@ -6,10 +6,10 @@
 ──── lint: OK
 
 ──── verify: unit tests ────
-✔ getHealth() reports status ok and the correct service name (0.8263ms)
-✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.1179ms)
-✔ getHealth() uptime_s is a non-negative number (0.0672ms)
-✔ CLI: node src/health.js exits 0 and prints JSON with status ok (32.7731ms)
+✔ getHealth() reports status ok and the correct service name (0.8269ms)
+✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.1299ms)
+✔ getHealth() uptime_s is a non-negative number (0.0675ms)
+✔ CLI: node src/health.js exits 0 and prints JSON with status ok (29.77ms)
 ℹ tests 4
 ℹ suites 0
 ℹ pass 4
@@ -17,14 +17,14 @@
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 78.3993
+ℹ duration_ms 76.4414
 ──── unit tests: OK
 (no build script — skipping)
+──── test coverage guard: OK (every src test file is wired into npm test)
 
 ──── verify: features.json schema + invariants ────
-[update-state] ERROR: invalid backlog:
-  - F-0002: no green verify log among evidence (need a *verify*.log containing "VERIFY: PASS (exit 0)" from scripts/verify.sh)
-──── features.json schema + invariants: FAILED (exit 1)
+[update-state] valid: 11 features, 5 passing (evidence re-verified).
+──── features.json schema + invariants: OK
 
 ──── verify: assertion shield ────
 [32m[Assertion Shield] Check passed. No deleted assertions detected in test files.[0m
@@ -96,7 +96,8 @@
   [PASS] passes refuses without evidence
   [PASS] evidence refuses missing file
   [PASS] evidence accepts existing file
-  [PASS] passes accepts with green verify log
+  [PASS] passes rejects QUOTED marker in failed log
+  [PASS] passes accepts green verify log (exact line)
   [PASS] validate rejects corrupt backlog
 ── assertion-shield.ts (fixture repo)
   [PASS] shield catches STAGED assertion deletion
@@ -107,7 +108,8 @@
   [PASS] dependency cycle is rejected
   [PASS] validate audits evidence of passing features (missing file rejected)
 
-hook contract tests: 66 passed, 0 failed
+hook contract tests: 67 passed, 0 failed
 ──── hook contract tests: OK
 
-VERIFY: FAIL
+VERIFY-COMMIT: c2200f4dc5f5ef2d3cd603bc9bd31b3ddd1e9ff2 @ 2026-06-10T13:55:05Z
+VERIFY: PASS (exit 0)
