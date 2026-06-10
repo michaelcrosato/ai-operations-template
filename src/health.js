@@ -23,6 +23,6 @@ function getHealth() {
 module.exports = { getHealth };
 
 if (require.main === module) {
-  process.stdout.write(JSON.stringify(getHealth()) + '\n');
+  process.stdout.write(`${JSON.stringify(getHealth())}\n`);
   process.exitCode = 0;
 }

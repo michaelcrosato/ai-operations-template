@@ -226,10 +226,10 @@
       "dependencies": [
         "F-0001"
       ],
-      "status": "pending",
+      "status": "in_progress",
       "passes": false,
       "evidence": [],
-      "attempts": 0,
+      "attempts": 1,
       "blocked_reason": null,
       "forbidden_paths": [],
       "id": "F-0008",
@@ -257,10 +257,10 @@
       "dependencies": [
         "F-0001"
       ],
-      "status": "pending",
+      "status": "in_progress",
       "passes": false,
       "evidence": [],
-      "attempts": 0,
+      "attempts": 1,
       "blocked_reason": null,
       "forbidden_paths": [],
       "id": "F-0009",
