@@ -10,14 +10,14 @@ A 100% AI-coded project. Agents write every line; the human operator only plans 
 
 ## 3. Session protocol (detail: /work skill)
 1. Read top ~50 lines of `roadmap/PROGRESS.md` + backlog counts (the SessionStart hook injects both).
-2. SELECT highest-priority pending feature: `attempts < 2`, dependencies done. None → `/groom`, `/status`, `/kaizen`, exit.
+2. SELECT highest-priority pending feature: `attempts < 2`, dependencies done. None → `/groom`, then `/downtime` (sentinel scan, risk research, pre-briefs, kaizen, spot checks — idle time sharpens the axe, never make-work), `/status`, exit.
 3. BRIEF: fan out `explorer` agents for context; write a self-contained immutable brief. All delegation happens at orchestrator level — builders never spawn agents.
 4. BUILD on branch `feat/F-XXXX` from `origin/develop` (fetch first) via the `builder` agent.
 5. VERIFY: green `scripts/verify.sh` log + artifacts saved to `roadmap/evidence/F-XXXX/`.
 6. JUDGE: fresh-context `evaluator` (PASS/NEEDS_WORK). Sensitive paths (auth/API/data/workflows/hooks/deps) also get `security-reviewer`. NEEDS_WORK → `--attempt`, retry once; second strike → `--status blocked`, move on.
 7. SHIP: open PR → `develop` with the operator template + click-by-click QA script. On green CI: merge, `--evidence`, `--passes true`, `--status done`.
 8. RECORD: prepend PROGRESS.md block; log judgment calls in DECISIONS.md; commit. The Stop hook blocks exit with uncommitted/unpushed work.
-9. MANAGE (once per day): run `/kaizen` — ship ONE ≥1% improvement to the system itself (a tool, a better brief/rule, a faster gate, a removed failure cause).
+9. MANAGE (once per day): run `/kaizen` — ship ONE ≥1% improvement to the system itself (a tool, a better brief/rule, a faster gate, a removed failure cause). Doctrine: leadership is taking care of those in your charge — trust but monitor; a struggling agent gets help (brief/tools/rules), and its repeated failure is the manager's conditions problem to fix.
 
 ## 4. Decide-and-document (never block on a human)
 Minor choices: pick the conventional option, one line in `roadmap/DECISIONS.md`, continue. Escalate to `roadmap/QUESTIONS.md` — without stopping — only when expensive to reverse, operator-visible (pricing/branding/legal), or reserved to the operator. Unimplementable feature → `blocked` + reason + take the next one.

@@ -114,6 +114,42 @@
       "evidence": [],
       "attempts": 0,
       "blocked_reason": "Requires human operator actions (GitHub settings, secrets, claude.ai configuration) — see QUESTIONS.md"
+    },
+    {
+      "dependencies": [
+        "F-0001"
+      ],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0005/verify.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".github/workflows/**",
+        ".claude/hooks/**",
+        "scripts/**"
+      ],
+      "id": "F-0005",
+      "epic": "factory",
+      "title": "Philosophy in README + downtime/self-improvement protocol",
+      "spec_ref": "README.md#philosophy",
+      "description": "Operator-stated philosophy (six principles incl. servant leadership and axe-sharpening) added to README; orchestrator downtime protocol (proactive research, sentinel monitoring, pre-briefing, kaizen) added to the plan and wired into skills.",
+      "acceptance": [
+        "README Philosophy section covers all six operator considerations including both leadership maxims",
+        "AI_OPERATIONS_PLAN.md gains P6 and a Downtime & Idle Protocol section consistent with token-efficiency rules",
+        "/work and a new /downtime skill implement the protocol; CLAUDE.md references it and stays under 150 lines",
+        "bash scripts/verify.sh exits 0"
+      ],
+      "authorized_paths": [
+        "README.md",
+        "AI_OPERATIONS_PLAN.md",
+        "CLAUDE.md",
+        ".claude/skills/**",
+        "roadmap/**"
+      ],
+      "priority": 1
     }
   ]
 }
