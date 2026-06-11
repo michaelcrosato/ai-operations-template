@@ -390,6 +390,46 @@
         "roadmap/evidence/F-0012/**"
       ],
       "priority": 1
+    },
+    {
+      "dependencies": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0013/verify.log",
+        "roadmap/evidence/F-0013/install-demo.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/**",
+        "package.json",
+        "package-lock.json",
+        "src/**"
+      ],
+      "id": "F-0013",
+      "epic": "adoption",
+      "title": "Adopter-clean install path - scripts/install-into.sh + drop-in docs",
+      "spec_ref": "roadmap/DECISIONS.md",
+      "description": "Installs #1 (agy-software-2, fixed in its commit af92153) and #2 (BayLine) both had to hand-strip template self-proving artifacts from package.json: the test script points at src/health.test.js (adopters do not copy src/, so verify fails out of the box; copying src/ instead would flip product mode prematurely) and lint includes the not-yet-existing src path (Biome internal-error noise). Ship an adopter-clean install path: scripts/install-into.sh copies the documented drop-in set EXCLUDING roadmap state and self-test artifacts, transforms/merges package.json (no test script, lint scripts-only, placeholder-or-preserved name), seeds fresh roadmap state, and prints the remaining manual steps. Contract: a fresh adopter passes verify immediately after the documented procedure with zero hand-fixes. Also names the record-PR pattern (state flips ride the feature PR; post-merge records land via chore/ branch PRs because develop blocks direct pushes) in README + plan section 6.4.",
+      "acceptance": [
+        "bash scripts/install-into.sh <target> installs the documented drop-in set into the target and EXCLUDES template self-state and self-test artifacts: no src/, no template package.json/package-lock.json, no roadmap state content (backlog entries, progress/decisions/questions/status history, metrics records, evidence files, F-*.md briefs), no docs/feedback-* files",
+        "The target package.json ends with NO test script and lint exactly biome lint scripts when the target had no lint of its own; an existing target package.json is merged, never clobbered (its name and scripts kept, engine scripts and devDependencies added); a created package.json gets an obvious placeholder name that is not ai-operations-template",
+        "The installed roadmap/ is freshly seeded (empty backlog valid against features.schema.json, fresh PROGRESS/DECISIONS/QUESTIONS/ROADMAP headers, empty metrics.jsonl, evidence dir) and re-running the installer never overwrites existing roadmap state in the target (idempotent upgrade path)",
+        "The script finishes by printing the remaining manual steps (placeholders, package name, init.sh + verify.sh, default branch + protection, /groom backlog seeding) and prints a loud warning when the target already has src/ (product mode demands the adopter-defined test and lint gates)",
+        "README drop-in step 1 documents scripts/install-into.sh as the supported path with the manual copy list kept as fallback; README step 4 area and AI_OPERATIONS_PLAN section 6.4 name the record-PR pattern (state flips ride the feature PR; post-merge records land via chore/ branch PRs since develop blocks direct pushes)",
+        "Contract tests in scripts/test-hooks.sh cover: exclusions, package.json transform (fresh and merge cases), fresh-state seeding, idempotent re-run, product-mode warning; evidence includes a real end-to-end install into a scratch repo with bash scripts/verify.sh green INSIDE the target; bash scripts/verify.sh exits 0 in the template repo"
+      ],
+      "authorized_paths": [
+        "scripts/install-into.sh",
+        "scripts/test-hooks.sh",
+        "README.md",
+        "AI_OPERATIONS_PLAN.md",
+        "roadmap/briefs/F-0013.md",
+        "roadmap/evidence/F-0013/**"
+      ],
+      "priority": 1
     }
   ]
 }

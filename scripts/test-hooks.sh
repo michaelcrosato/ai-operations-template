@@ -227,6 +227,143 @@ check "validate audits evidence of passing features (missing file rejected)" 1 "
 unset STATE_FILE
 rm -rf "$FIX"
 
+echo "── install-into.sh"
+INSTALL_SCRIPT="$ROOT/scripts/install-into.sh"
+
+# helper: run install-into.sh against a target, capture stdout+stderr, return exit code
+run_install() { bash "$INSTALL_SCRIPT" "$@" >/dev/null 2>&1; echo $?; }
+
+# pkg_field <pkg_json_path> <js_expression> -- evaluate JS against a package.json safely;
+# uses a temp script file to avoid cross-platform path interpolation issues in node -e strings
+pkg_field() {
+  local pkgfile="$1" expr="$2" tmpjs
+  tmpjs="$(mktemp /tmp/pkg-field-XXXXXX.js)"
+  printf 'const fs=require("fs"),p=JSON.parse(fs.readFileSync(process.argv[2],"utf8"));%s\n' "$expr" > "$tmpjs"
+  node "$tmpjs" "$pkgfile" 2>/dev/null
+  rm -f "$tmpjs"
+}
+
+# path_absent <path> -- returns 0 if path does not exist, 1 if it does
+path_absent() { if [ -e "$1" ]; then echo 1; else echo 0; fi; }
+
+# ── 6. Refusals ──────────────────────────────────────────────────────────────
+check "refusal: missing arg exits 1"       1 "$(run_install)"
+check "refusal: template root exits 1"     1 "$(run_install "$ROOT")"
+ANCESTOR="$(dirname "$ROOT")"
+check "refusal: ancestor of template root exits 1" 1 "$(run_install "$ANCESTOR")"
+
+# ── fresh install target ─────────────────────────────────────────────────────
+IT="$(mktemp -d)"
+( cd "$IT" && git init -q && git config user.email t@t && git config user.name t ) >/dev/null 2>&1
+bash "$INSTALL_SCRIPT" "$IT" >/dev/null 2>&1
+
+# ── 1. Exclusions ────────────────────────────────────────────────────────────
+check "exclusion: no src/ copied"                  0 "$(path_absent "$IT/src")"
+check "exclusion: no package-lock.json"            0 "$(path_absent "$IT/package-lock.json")"
+check "exclusion: no docs/feedback-2-verification" 0 "$(path_absent "$IT/docs/feedback-2-verification.md")"
+check "exclusion: no docs/feedback-2-verdicts"     0 "$(path_absent "$IT/docs/feedback-2-verdicts.json")"
+check "exclusion: no roadmap/briefs/F-0012.md"     0 "$(path_absent "$IT/roadmap/briefs/F-0012.md")"
+check "exclusion: no roadmap/evidence/F-0001"      0 "$(path_absent "$IT/roadmap/evidence/F-0001")"
+FEAT_ARRAY_LEN="$(pkg_field "$IT/roadmap/features.json" 'console.log(p.features.length)')"
+check "exclusion: features.json has empty array"   "0" "$FEAT_ARRAY_LEN"
+
+# ── 2. Fresh package.json ────────────────────────────────────────────────────
+NO_TEST_RC="$(pkg_field "$IT/package.json" 'process.exit(p.scripts && p.scripts.test ? 1 : 0)'; echo $?)"
+check "fresh pkg: no test script"  0 "$NO_TEST_RC"
+LINT_VAL="$(pkg_field "$IT/package.json" 'console.log(p.scripts&&p.scripts.lint||"")')"
+check "fresh pkg: lint is biome lint scripts"      "biome lint scripts" "$LINT_VAL"
+PKG_NAME="$(pkg_field "$IT/package.json" 'console.log(p.name||"")')"
+check "fresh pkg: name is not ai-operations-template" 0 "$(if [ "$PKG_NAME" != 'ai-operations-template' ]; then echo 0; else echo 1; fi)"
+for DEP in "@biomejs/biome" "@types/node" "shellcheck" "ts-node" "typescript"; do
+  DEP_PRESENT="$(pkg_field "$IT/package.json" "process.exit(p.devDependencies&&p.devDependencies['$DEP']?0:1)"; echo $?)"
+  check "fresh pkg: devDep $DEP present" 0 "$DEP_PRESENT"
+done
+
+# ── 3. Merge package.json ────────────────────────────────────────────────────
+MT="$(mktemp -d)"
+( cd "$MT" && git init -q && git config user.email t@t && git config user.name t ) >/dev/null 2>&1
+printf '{"name":"my-app","scripts":{"test":"vitest","lint":"eslint ."}}\n' > "$MT/package.json"
+bash "$INSTALL_SCRIPT" "$MT" >/dev/null 2>&1
+MERGE_NAME="$(pkg_field "$MT/package.json" 'console.log(p.name||"")')"
+check "merge pkg: name preserved"         "my-app" "$MERGE_NAME"
+MERGE_TEST="$(pkg_field "$MT/package.json" 'console.log(p.scripts&&p.scripts.test||"")')"
+check "merge pkg: test script preserved"  "vitest" "$MERGE_TEST"
+MERGE_LINT="$(pkg_field "$MT/package.json" 'console.log(p.scripts&&p.scripts.lint||"")')"
+check "merge pkg: lint script preserved"  "eslint ." "$MERGE_LINT"
+MERGE_VERIFY="$(pkg_field "$MT/package.json" 'console.log(p.scripts&&p.scripts.verify||"")')"
+check "merge pkg: verify script added"    "bash scripts/verify.sh" "$MERGE_VERIFY"
+MERGE_SHIELD="$(pkg_field "$MT/package.json" 'console.log(p.scripts&&p.scripts.shield||"")')"
+check "merge pkg: shield script added"    "ts-node scripts/assertion-shield.ts" "$MERGE_SHIELD"
+MERGE_STATE="$(pkg_field "$MT/package.json" 'console.log(p.scripts&&p.scripts.state||"")')"
+check "merge pkg: state script added"     "ts-node scripts/update-state.ts" "$MERGE_STATE"
+for DEP in "@biomejs/biome" "@types/node" "shellcheck" "ts-node" "typescript"; do
+  DEP_OK="$(pkg_field "$MT/package.json" "process.exit(p.devDependencies&&p.devDependencies['$DEP']?0:1)"; echo $?)"
+  check "merge pkg: devDep $DEP added"  0 "$DEP_OK"
+done
+rm -rf "$MT"
+
+# ── 4. Idempotent re-run ─────────────────────────────────────────────────────
+# Mutate features.json with a marker feature (F-9xxx range per fixture convention)
+# Use a temp script to safely mutate the file without path interpolation issues
+MUTATE_SCRIPT="$(mktemp /tmp/mutate-features-XXXXXX.js)"
+cat > "$MUTATE_SCRIPT" << 'MUTATEEOF'
+const fs = require('fs');
+const p = process.argv[2];
+const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+data.features.push({
+  id: 'F-9901', epic: 't', title: 'marker', spec_ref: 't', description: 't',
+  acceptance: ['a'], authorized_paths: [], forbidden_paths: [], dependencies: [],
+  priority: 3, status: 'pending', passes: false, evidence: [], attempts: 0, blocked_reason: null
+});
+fs.writeFileSync(p, JSON.stringify(data, null, 2) + '\n');
+MUTATEEOF
+node "$MUTATE_SCRIPT" "$IT/roadmap/features.json" 2>/dev/null
+rm -f "$MUTATE_SCRIPT"
+
+# Re-run the installer
+bash "$INSTALL_SCRIPT" "$IT" >/dev/null 2>&1
+MARKER_SURVIVED="$(pkg_field "$IT/roadmap/features.json" 'process.exit(p.features.some(function(f){return f.id==="F-9901";})?0:1)'; echo $?)"
+check "idempotent: marker feature survives re-run" 0 "$MARKER_SURVIVED"
+# Engine-owned file (scripts/verify.sh) IS refreshed
+VERIFY_PRESENT="$(if [ -f "$IT/scripts/verify.sh" ]; then echo 0; else echo 1; fi)"
+check "idempotent: engine-owned scripts/verify.sh present after re-run" 0 "$VERIFY_PRESENT"
+
+# ── 5. Product-mode warning ───────────────────────────────────────────────────
+# Target with src/ should produce warning
+WT="$(mktemp -d)"
+( cd "$WT" && git init -q && git config user.email t@t && git config user.name t ) >/dev/null 2>&1
+mkdir -p "$WT/src"
+WARN_OUT="$(bash "$INSTALL_SCRIPT" "$WT" 2>&1)"
+WARN_FOUND="$(printf '%s' "$WARN_OUT" | grep -c 'PRODUCT MODE\|product mode' || true)"
+check "product-mode warning: present when src/ exists" 0 "$(if [ "$WARN_FOUND" -gt 0 ]; then echo 0; else echo 1; fi)"
+rm -rf "$WT"
+# Target without src/ should NOT produce warning
+NO_SRC_OUT="$(bash "$INSTALL_SCRIPT" "$IT" 2>&1)"
+NO_WARN_FOUND="$(printf '%s' "$NO_SRC_OUT" | grep -c 'PRODUCT MODE\|product mode' || true)"
+check "product-mode warning: absent when no src/" 0 "$(if [ "$NO_WARN_FOUND" -eq 0 ]; then echo 0; else echo 1; fi)"
+
+# ── 7. Seeded state validity ──────────────────────────────────────────────────
+VALIDATE_RC="$(STATE_FILE="$IT/roadmap/features.json" npx ts-node scripts/update-state.ts --validate >/dev/null 2>&1; echo $?)"
+check "seeded features.json validates against schema" 0 "$VALIDATE_RC"
+
+# ── 8. Merge-copy: adopter files survive install ──────────────────────────────
+# Seed the fresh-install target with adopter-owned files before re-running;
+# all three must survive AND the engine file scripts/verify.sh must be present.
+mkdir -p "$IT/scripts"
+printf '#!/usr/bin/env bash\necho "custom"\n' > "$IT/scripts/custom.sh"
+mkdir -p "$IT/.github/workflows"
+printf 'name: deploy\n' > "$IT/.github/workflows/deploy.yml"
+printf '{ "dangerouslyAllowedTools": [] }\n' > "$IT/.claude/settings.local.json"
+# Re-run installer (directories already exist — tests the merge-copy path)
+bash "$INSTALL_SCRIPT" "$IT" >/dev/null 2>&1
+check "merge-copy: adopter scripts/custom.sh survives install"         0 "$(if [ -f "$IT/scripts/custom.sh" ]; then echo 0; else echo 1; fi)"
+check "merge-copy: adopter .github/workflows/deploy.yml survives"      0 "$(if [ -f "$IT/.github/workflows/deploy.yml" ]; then echo 0; else echo 1; fi)"
+check "merge-copy: adopter .claude/settings.local.json survives"       0 "$(if [ -f "$IT/.claude/settings.local.json" ]; then echo 0; else echo 1; fi)"
+check "merge-copy: engine scripts/verify.sh present after install"     0 "$(if [ -f "$IT/scripts/verify.sh" ]; then echo 0; else echo 1; fi)"
+
+# cleanup fresh install target
+rm -rf "$IT"
+
 echo ""
 echo "hook contract tests: $PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] || exit 1
