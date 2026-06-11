@@ -430,6 +430,46 @@
         "roadmap/evidence/F-0013/**"
       ],
       "priority": 1
+    },
+    {
+      "dependencies": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0014/verify.log",
+        "roadmap/evidence/F-0014/lane-parity-tests.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/ci.yml",
+        ".github/workflows/claude.yml",
+        "scripts/verify.sh",
+        "src/**",
+        "package.json",
+        "package-lock.json"
+      ],
+      "id": "F-0014",
+      "epic": "hardening",
+      "title": "E2E workflow lane parity - e2e.yml must satisfy the gate it runs",
+      "spec_ref": "roadmap/DECISIONS.md",
+      "description": "Second field defect, hit independently by both adopters (agy-software-2 PR #18; claude-software-3 commit d234838): e2e.yml runs bash scripts/verify.sh --e2e, and verify.sh hard-fails when CI=true and actionlint is absent - but e2e.yml never installs actionlint, so the E2E lane breaks the moment an adopter defines an e2e script. The same lane also diverges from ci.yml on shallow checkout (assertion-shield diffs against origin/develop and needs fetch-depth 0) and Node version (20 vs 24 - that divergence already bit once, DECISIONS 2026-06-10), and its paths filter omits both e2e.yml itself and other verify.sh inputs. Port the union of the two proven adopter fixes and add a lane-parity contract test so workflows invoking verify.sh cannot silently diverge again.",
+      "acceptance": [
+        "e2e.yml installs actionlint before invoking verify.sh, using the identical pinned, checksum-verified step as ci.yml (same version, same sha256)",
+        "e2e.yml checkout uses fetch-depth 0 so the assertion shield can diff against origin/develop",
+        "e2e.yml pins node-version 24, matching ci.yml and the development environment",
+        "The e2e.yml pull_request paths filter includes .github/workflows/e2e.yml itself plus tests/**, package.json and package-lock.json alongside the existing src/e2e/config entries",
+        "Lane-parity contract tests in scripts/test-hooks.sh fail when a workflow that invokes verify.sh lacks the pinned actionlint install used by ci.yml, lacks fetch-depth 0, or pins a node-version different from ci.yml (negative-tested against a broken fixture workflow), and pass against the real .github/workflows",
+        "bash scripts/verify.sh exits 0"
+      ],
+      "authorized_paths": [
+        ".github/workflows/e2e.yml",
+        "scripts/test-hooks.sh",
+        "roadmap/briefs/F-0014.md",
+        "roadmap/evidence/F-0014/**"
+      ],
+      "priority": 1
     }
   ]
 }

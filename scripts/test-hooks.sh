@@ -364,6 +364,57 @@ check "merge-copy: engine scripts/verify.sh present after install"     0 "$(if [
 # cleanup fresh install target
 rm -rf "$IT"
 
+echo "── workflow lane parity (F-0014)"
+# Any workflow that invokes verify.sh must satisfy the gate it runs: verify.sh
+# hard-requires actionlint under CI, assertion-shield needs full history
+# (fetch-depth 0), and Node 20/24 divergence already bit once (DECISIONS
+# 2026-06-10). Reference values come from ci.yml so a future pin bump cannot
+# silently diverge the lanes.
+WF_DIR="$ROOT/.github/workflows"
+REF_NODE="$(grep -Eo 'node-version: *[0-9]+' "$WF_DIR/ci.yml" | head -1 | grep -Eo '[0-9]+')"
+REF_PIN="$(grep -Eo 'actionlint/releases/download/v[0-9][0-9.]*' "$WF_DIR/ci.yml" | head -1)"
+REF_SHA="$(grep -Eo '[0-9a-f]{64}' "$WF_DIR/ci.yml" | head -1)"
+
+# lane_parity <workflows-dir>: exit 0 iff every verify.sh-invoking workflow in
+# the dir carries ci.yml's pinned actionlint (version+sha), fetch-depth 0, and
+# ci.yml's node-version.
+lane_parity() {
+  local dir="$1" wf bad=0
+  for wf in "$dir"/*.yml; do
+    [ -f "$wf" ] || continue
+    grep -q 'verify\.sh' "$wf" || continue
+    grep -qF "$REF_PIN" "$wf" || bad=1
+    grep -qF "$REF_SHA" "$wf" || bad=1
+    grep -Eq 'fetch-depth: *0' "$wf" || bad=1
+    grep -Eq "node-version: *${REF_NODE}([^0-9]|$)" "$wf" || bad=1
+  done
+  return "$bad"
+}
+
+check "lane parity: every verify.sh workflow conforms" 0 "$(lane_parity "$WF_DIR"; echo $?)"
+check "lane parity: refs extracted from ci.yml" 0 "$(if [ -n "$REF_NODE" ] && [ -n "$REF_PIN" ] && [ -n "$REF_SHA" ]; then echo 0; else echo 1; fi)"
+
+# negative: a fixture workflow running verify.sh on Node 20 with shallow
+# checkout and no actionlint must FAIL the parity check
+LANE_FIX="$(mktemp -d)"
+cat > "$LANE_FIX/broken.yml" <<'LANEEOF'
+name: broken
+on: workflow_dispatch
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+      - run: bash scripts/verify.sh
+LANEEOF
+check "lane parity: broken fixture workflow rejected" 1 "$(lane_parity "$LANE_FIX"; echo $?)"
+rm -rf "$LANE_FIX"
+
+check "e2e.yml triggers on its own changes" 0 "$(grep -qF '.github/workflows/e2e.yml' "$WF_DIR/e2e.yml" && echo 0 || echo 1)"
+
 echo ""
 echo "hook contract tests: $PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] || exit 1
