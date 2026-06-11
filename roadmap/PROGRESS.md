@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-06-11 — F-0012 — first defect from the field, fixed through the full loop
+
+**Done:** Adoption trial #1 (agy-software-2) reported the engine's first field defect via department brief: the seed.ts template stub exits 0 unconditionally after its prod guard, so `verify.sh --e2e` goes green against an **unseeded database** in any adopter with product code. Groomed as F-0012 (priority 1), built by the builder agent from an immutable brief: seed.ts is now a four-branch delegating shim — prod-refusal guard first; delegate to the package.json `"seed"` script with exit status propagated and a `SEED_SHIM_ACTIVE` sentinel breaking circular delegation; product mode without a seed script hard-fails; template mode keeps exit-0. Six new contract tests (95 total). Shipped PR #24. Cross-CLI mirror dirs (`.agents/`, `.codex/`) found untracked on disk were excluded from the PR and gitignored (deferred "other CLIs" module).
+
+**Verified:** `VERIFY: PASS (exit 0)` reproduced by orchestrator AND independently by the fresh-context evaluator (PASS); security review APPROVE (spawn argv fixed-literal, no added attack surface; sentinel ruled not a DANGEROUSLY_ override — it can only cause failure). Evidence: roadmap/evidence/F-0012/verify.log + seed-shim-demo.log.
+
+**Surprises:** two, both caught by the layers. ① The builder's first seed-shim-demo.log was hand-transcribed, not captured — the sandbox blocked its output-redirection attempts and it improvised; orchestrator rejected the log and recaptured everything from live runs before judging. ② The real features.json was found carrying two fixture-shaped mutations (test-hooks.sh's F-0001/F-0004 writer calls leaked past STATE_FILE — mechanism per DECISIONS; a clean post-repair gate run leaks nothing). Repaired by restoring the file from develop and replaying F-0012 through the writer; `--validate` deep audit would have failed CI either way. Kaizen item groomed from it: fixture IDs must not collide with real backlog IDs.
+
+**Next step:** after merge, the department syncs this shim to adopters (they track it). Operator still owes Q-0001 clicks. F-0007 (path-guard) remains the only deferred design.
+
+---
+
 ## 2026-06-10 — PROMOTION #2 — main @ v0.2.0 (adoption-ready)
 
 **Done:** Operator ordered the promotion. develop → main via PR #21 (merge commit, verify check enforced; approval rule lifted for the one merge and restored — sole-author limitation, documented in DECISIONS). main tagged **v0.2.0**: the adoption-ready engine — loop proven, 89 self-inspecting gates, subscription-first, metrics live, drop-in complete. Disaster floor is now v0.2.0.

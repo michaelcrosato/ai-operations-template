@@ -354,6 +354,42 @@
         ".claude/rules/**"
       ],
       "priority": 2
+    },
+    {
+      "dependencies": [
+        "F-0001"
+      ],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0012/verify.log",
+        "roadmap/evidence/F-0012/seed-shim-demo.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**"
+      ],
+      "id": "F-0012",
+      "epic": "hardening",
+      "title": "seed.ts delegating shim - E2E gate must not pass unseeded in product mode",
+      "spec_ref": "roadmap/DECISIONS.md",
+      "description": "Adoption trial #1 (agy-software-2) surfaced an engine defect: verify.sh --e2e hard-codes scripts/seed.ts, and the template stub exits 0 unconditionally after the prod guard, so the E2E gate can go green against an unseeded database in every adopter repo. Rewrite the stub as a delegating shim: keep the prod-refusal guard; delegate to the package.json seed script when one is defined, propagating its exit status; hard-fail in product mode (src/ exists) when no seed script is defined; keep exit-0 stub behavior in template mode. Proven fix verified green in the adopter; adapt to template idiom.",
+      "acceptance": [
+        "seed.ts keeps the prod-refusal guard: exits 1 when DATABASE_URL matches /prod/i, before any delegation",
+        "When package.json defines a seed script, seed.ts runs npm run --silent seed and exits with the child exit status (success and failure both propagate)",
+        "Product mode (src/ exists) with no seed script defined exits 1 with a clear message - the E2E gate cannot pass unseeded",
+        "Template mode (no src/, no seed script) logs the stub message and exits 0",
+        "Circular delegation (a seed script that re-invokes scripts/seed.ts) fails fast with a clear error instead of looping",
+        "Contract tests in scripts/test-hooks.sh cover the five behaviors above; bash scripts/verify.sh exits 0"
+      ],
+      "authorized_paths": [
+        "scripts/seed.ts",
+        "scripts/test-hooks.sh",
+        "roadmap/evidence/F-0012/**"
+      ],
+      "priority": 1
     }
   ]
 }
