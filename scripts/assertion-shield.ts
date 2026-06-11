@@ -1,4 +1,4 @@
-import { execFileSync } from 'child_process';
+import { execFileSync } from 'node:child_process';
 
 /**
  * Assertion Shield:
@@ -43,6 +43,10 @@ function scanDiffForWeakening(diffText: string): Violation[] {
   const violations: Violation[] = [];
   const lines = diffText.split('\n');
   let currentFile = '';
+  let currentNewFile = '';
+  // Added-line weakening (F-0009): skipping a test mutes it as effectively as
+  // deleting its assertions.
+  const skipPatterns = [/\.(only|skip)\s*\(/, /\b(xit|xdescribe|xtest)\s*\(/];
 
   const testFileRegex = /\.(test|spec)\.(ts|js|py|rs|go|cpp|java)$|__tests__/;
   const assertionKeywords = [
@@ -70,8 +74,23 @@ function scanDiffForWeakening(diffText: string): Violation[] {
       currentFile = ''; // "--- /dev/null" → newly added file, nothing deletable
       continue;
     }
-    if (line.startsWith('+++ ')) {
+    if (line.startsWith('+++ b/')) {
+      currentNewFile = line.substring(6);
       continue;
+    }
+    if (line.startsWith('+++ ')) {
+      currentNewFile = ''; // "+++ /dev/null" → file deleted
+      continue;
+    }
+
+    // ADDED lines in test files: flag .skip/.only/xit/xdescribe introductions
+    if (currentNewFile && testFileRegex.test(currentNewFile) && line.startsWith('+') && !line.startsWith('+++')) {
+      const added = line.substring(1).trim();
+      if (!added.startsWith('//') && !added.startsWith('#') && !added.startsWith('/*')) {
+        if (skipPatterns.some((re) => re.test(added))) {
+          violations.push({ file: currentNewFile, line: `[skip/only added] ${added}` });
+        }
+      }
     }
 
     // Check if we are parsing a test file
@@ -108,8 +127,8 @@ function run() {
   const violations = scanDiffForWeakening(diff);
 
   if (violations.length > 0) {
-    console.error('\x1b[31m[Assertion Shield] CRITICAL ERROR: Deleted test assertions detected!\x1b[0m');
-    console.error('Agents are prohibited from deleting or weakening test assertions.');
+    console.error('\x1b[31m[Assertion Shield] CRITICAL ERROR: Deleted or muted test assertions detected!\x1b[0m');
+    console.error('Agents are prohibited from deleting, weakening, or skipping test assertions.');
     console.error('Violations found:');
     
     violations.forEach(v => {

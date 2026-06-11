@@ -4,7 +4,7 @@
 
 ## Now
 - Build the engine itself so it matches its own blueprint (agents, skills, hooks, gates, CI). ✅ shipped (PR #1, #3)
-- Prove the whole loop end-to-end on one deliberately trivial feature before trusting it.
+- Prove the whole loop end-to-end on one deliberately trivial feature before trusting it. ✅ shipped (PR #14)
 
 ## Next
 - Contract tests for every hook script — the safety net must be tested code, not vibes. ✅ shipped (PR #1, expanded PR #3)

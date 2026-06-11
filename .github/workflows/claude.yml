@@ -38,7 +38,11 @@ jobs:
       # upstream tag-move must not change what runs here. Hygiene routine rolls this.
       - uses: anthropics/claude-code-action@11ba60486e4aec9ddfeafcf4bb3f00b028ac2c16
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Subscription-first (verified 2026-06-10): Pro/Max OAuth token from
+          # `claude setup-token` — bills the agent credit pool included with the
+          # plan, never pay-per-token. An API key (anthropic_api_key input) is
+          # an OPTIONAL alternative, never a requirement.
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           claude_args: "--max-turns 30"
           prompt: |
             REPO RULES (binding): you are working in an autonomous-operations repo.

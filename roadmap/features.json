@@ -42,7 +42,8 @@
       ],
       "authorized_paths": [
         "src/**",
-        "roadmap/evidence/F-0002/**"
+        "roadmap/**",
+        "package.json"
       ],
       "forbidden_paths": [
         ".claude/**",
@@ -53,10 +54,14 @@
         "F-0001"
       ],
       "priority": 1,
-      "status": "pending",
-      "passes": false,
-      "evidence": [],
-      "attempts": 0,
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0002/verify.log",
+        "roadmap/evidence/F-0002/test-output.log",
+        "roadmap/evidence/F-0002/cli-run.log"
+      ],
+      "attempts": 1,
       "blocked_reason": null
     },
     {
@@ -216,6 +221,139 @@
         "scripts/**"
       ],
       "priority": 3
+    },
+    {
+      "dependencies": [
+        "F-0001"
+      ],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0008/verify.log"
+      ],
+      "attempts": 1,
+      "blocked_reason": null,
+      "forbidden_paths": [],
+      "id": "F-0008",
+      "epic": "hardening",
+      "title": "Guardrail static analysis + engine lint",
+      "spec_ref": "docs/feedback-2-verification.md",
+      "description": "Verified feedback items B-11/B-12: shellcheck + actionlint over hooks/scripts/workflows as engine meta-gates (hard in CI, command -v soft-skip locally); Biome lint for the engine TypeScript, removing the template-mode lint skip for engine code. Format hook follows as sequenced step 2.",
+      "acceptance": [
+        "verify.sh runs shellcheck over .claude/hooks/*.sh and scripts/*.sh and actionlint over .github/workflows, hard-failing in CI and soft-skipping when binaries are absent locally",
+        "Biome wired as devDependency with minimal config; engine TS lints clean; the (no lint script) skip message is gone for engine code",
+        "CI green; contract tests still 63+ passing"
+      ],
+      "authorized_paths": [
+        "scripts/**",
+        ".claude/hooks/**",
+        ".github/workflows/**",
+        "package.json",
+        "package-lock.json",
+        "biome.json",
+        "tsconfig.json"
+      ],
+      "priority": 2
+    },
+    {
+      "dependencies": [
+        "F-0001"
+      ],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0009/verify.log"
+      ],
+      "attempts": 1,
+      "blocked_reason": null,
+      "forbidden_paths": [],
+      "id": "F-0009",
+      "epic": "hardening",
+      "title": "Deterministic security tripwires",
+      "spec_ref": "docs/feedback-2-verification.md",
+      "description": "Verified feedback items #46/#50/#20-part/#48-reshape: exfil-shaped POST patterns in guard-bash + security-patterns (secret-shaped strings or non-allowlisted hosts in curl/gh POST shapes, not all POSTs); CI tripwire failing PRs that add trust-widening workflow keys or .mcp.json changes; assertion-shield detection of .skip/.only/xit/xdescribe added lines; model-policy last_verified staleness warning in update-state --validate.",
+      "acceptance": [
+        "guard-bash blocks exfil-shaped POSTs and allows the downtime sentinel gh api reads (contract-tested both ways)",
+        "CI fails a PR adding allowed_non_write_users-class keys or workflow .mcp.json changes",
+        "assertion-shield flags added .skip/.only lines in test files (contract-tested)",
+        "--validate warns when model-policy last_verified exceeds 30 days"
+      ],
+      "authorized_paths": [
+        ".claude/hooks/**",
+        ".claude/security-patterns.json",
+        "scripts/**",
+        ".github/workflows/**"
+      ],
+      "priority": 2
+    },
+    {
+      "dependencies": [
+        "F-0001"
+      ],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0010/verify.log"
+      ],
+      "attempts": 1,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".github/workflows/**",
+        ".claude/hooks/**"
+      ],
+      "id": "F-0010",
+      "epic": "observability",
+      "title": "Session metrics as data (metrics.jsonl)",
+      "spec_ref": "docs/feedback-2-verification.md",
+      "description": "Verified feedback item #26 + the useful half of #28: one JSONL record per /work session appended at RECORD (date, feature, attempts, evaluator/security verdicts, findings count, optional cost note); /kaizen reads it for its check-the-metric step; /status auto-fills the cost/health line; first-vs-second-attempt pass rate derivable from the two-strike data.",
+      "acceptance": [
+        "roadmap/metrics.jsonl append shape defined and written by the /work RECORD step",
+        "kaizen and status SKILL.md updated to consume it",
+        "Schema documented; a malformed record fails validation in verify.sh"
+      ],
+      "authorized_paths": [
+        "roadmap/**",
+        ".claude/skills/**",
+        "scripts/**"
+      ],
+      "priority": 2
+    },
+    {
+      "dependencies": [
+        "F-0001"
+      ],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0011/verify.log"
+      ],
+      "attempts": 1,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/hooks/**"
+      ],
+      "id": "F-0011",
+      "epic": "docs",
+      "title": "Docs and convention pack (verified wave 1)",
+      "spec_ref": "docs/feedback-2-verification.md",
+      "description": "Verified feedback items #1/#41/#61-adapted/#30-part/#32-line/#63-reshape/#53-gated: PR template (core operator sections only); dangerous-naming convention line; AGENTS.md 3-5 line pointer stub (Claude Code keeps CLAUDE.md per official docs); roadmap/briefs/TEMPLATE.md; one injection-size-bound sentence in plan section 9; 5-line constitution-edit checklist in CLAUDE.md section 9; PRODUCT_MODE-gated placeholder check in verify.sh.",
+      "acceptance": [
+        ".github/pull_request_template.md matches plan section 8.3 operator template",
+        "AGENTS.md stub exists and points to CLAUDE.md; no divergence-check machinery",
+        "briefs/TEMPLATE.md exists with the immutable-brief shape from /work step 2",
+        "verify.sh fails on remaining <PLACEHOLDER> tokens only when PRODUCT_MODE is true",
+        "CLAUDE.md stays under 150 lines"
+      ],
+      "authorized_paths": [
+        ".github/**",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "AI_OPERATIONS_PLAN.md",
+        "roadmap/briefs/**",
+        "scripts/verify.sh",
+        ".claude/rules/**"
+      ],
+      "priority": 2
     }
   ]
 }

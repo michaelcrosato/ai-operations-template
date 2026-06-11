@@ -57,7 +57,11 @@ Roles bind to **capability tiers**, not to specific model names. The live tier�
 
 Per current model guidance, more effort up front on planning typically *reduces* total tokens by cutting retry loops.
 
-### 2.3 Deliberately not used
+### 2.3 Core vs optional vs product (the boundary rule)
+
+Three questions decide where any capability lives: **(1)** Does every adopting repo need it on day one, regardless of stack, visibility, or scale? → core engine. **(2)** Does it activate only when a repo-state condition becomes true (product code lands, repo goes public, branch protection enabled, first external tool, multiple CLIs, external adopters)? → it is **optional**: cataloged with its trigger in [`docs/optional-modules.md`](docs/optional-modules.md), zero cost until the `/downtime` sentinel detects the trigger firing and grooms it into the backlog. **(3)** Is it specific to one product domain? → it belongs in the product repo, never the engine. Standing rule for any future external/MCP tool: it requires a registry entry (purpose, trust level, env-named secrets, allowed commands, network needs, approval gate) before integration — the machine-readable registry artifacts themselves are an optional module that activates with the first such tool.
+
+### 2.4 Deliberately not used
 
 - **`--dangerously-skip-permissions` on local machines** — autonomy comes from cloud sandboxes + scoped allowlists + hooks, not from disabling safety.
 - **Marathon contexts** — no attempts to keep one session alive for days. Sessions are bounded (one feature), state is handed off through files; this follows Anthropic's context-reset + structured-handoff guidance.
@@ -75,6 +79,7 @@ Phase 0 (§10) builds exactly this tree. One-line purpose per entry; detailed sp
 ├── AI_OPERATIONS_PLAN.md         # This file (the "how")
 ├── CLAUDE.md                     # Agent constitution, ≤150 lines (§4.1)
 ├── OPERATOR_GUIDE.md             # One-page plain-English manual for the human (§8.5)
+├── AGENTS.md                     # Pointer stub for non-Claude agents → CLAUDE.md
 │
 ├── roadmap/                      # ALL durable state shared between human and agents
 │   ├── ROADMAP.md                # Human-owned priorities, plain English bullets
@@ -85,7 +90,8 @@ Phase 0 (§10) builds exactly this tree. One-line purpose per entry; detailed sp
 │   ├── DECISIONS.md              # Append-only log of decisions agents made autonomously
 │   ├── STATUS.md                 # Auto-generated plain-English status report (§8.2)
 │   ├── evidence/F-XXXX/          # Physical proof per feature: verify logs, screenshots (§4.2, §7.3)
-│   └── briefs/F-XXXX.md          # Pre-written builder briefs from /downtime passes (§5.5)
+│   ├── briefs/F-XXXX.md          # Builder briefs (TEMPLATE.md is the canonical shape) (§5.5)
+│   └── metrics.jsonl             # One record per session: attempts, verdicts, findings (§5.1 RECORD)
 │
 ├── .claude/
 │   ├── settings.json             # Permissions, hooks, env, enabledPlugins (§6.2, §7.2)
@@ -126,6 +132,7 @@ Phase 0 (§10) builds exactly this tree. One-line purpose per entry; detailed sp
 │   └── seed.ts                   # Seed data generator for isolated manual & automated tests
 │
 ├── .github/
+│   ├── pull_request_template.md  # The operator PR template (§8.3), evaluator-checked
 │   ├── dependabot.yml            # Weekly dependency/action update PRs (§7.2)
 │   └── workflows/
 │       ├── ci.yml                # verify.sh + security jobs on every PR (§7.2)
@@ -346,7 +353,7 @@ One command, used identically by agents and CI: compiles/typechecks -> lints -> 
 
 - **ci.yml (every PR):** runs `verify.sh` and `npx ts-node scripts/assertion-shield.ts` along with security checks: authorization rules validation, secrets checking, database index checks, and validation of environment separation constraints.
 - **e2e.yml:** Runs E2E tests against the PR's preview deployment using seeded data.
-- **claude.yml (claude-code-action, pinned to an exact commit SHA, rolled forward by Dependabot):** responds to `@claude` comments and, on CI failures on agent PRs, triages and pushes fix commits to the PR branch (capped `--max-turns`, concurrency-limited). It pushes commits; opening PRs remains the orchestrator session's job — no workflow assumes the action creates PRs. Two disclosed incidents make the hardening rules above load-bearing (verified 2026-06-10): ① **GHSA-8q5r-mmjf-575q** (published 2026-05-20) — claude-code-action **< 1.0.74** allowed a malicious MCP server configuration in PRs to achieve remote code execution and secret exfiltration; ② Microsoft-documented prompt-injection research (2026-06-05) showed untrusted issue/PR text could drive the un-sandboxed Read tool to exfiltrate `/proc/self/environ` (API keys, OIDC credentials) — fixed in **Claude Code 2.1.128** (2026-05-05), which blocks sensitive `/proc` reads. Consequences for this repo: pin at or beyond the current v1 SHA (≫1.0.74), keep workflows on a current action release so the bundled CLI is ≥2.1.128, never check `.mcp.json` changes in from untrusted PRs without review, and follow the "Agents Rule of Two" — no workflow simultaneously processes untrusted input, holds secrets, and mutates state. Billing note: from **Jun 15, 2026**, GitHub Actions agent runs bill against the separate per-user agent credit pool, not subscription usage (§5.2).
+- **claude.yml (claude-code-action, pinned to an exact commit SHA, rolled forward by Dependabot):** responds to `@claude` comments and, on CI failures on agent PRs, triages and pushes fix commits to the PR branch (capped `--max-turns`, concurrency-limited). It pushes commits; opening PRs remains the orchestrator session's job — no workflow assumes the action creates PRs. Two disclosed incidents make the hardening rules above load-bearing (verified 2026-06-10): ① **GHSA-8q5r-mmjf-575q** (published 2026-05-20) — claude-code-action **< 1.0.74** allowed a malicious MCP server configuration in PRs to achieve remote code execution and secret exfiltration; ② Microsoft-documented prompt-injection research (2026-06-05) showed untrusted issue/PR text could drive the un-sandboxed Read tool to exfiltrate `/proc/self/environ` (API keys, OIDC credentials) — fixed in **Claude Code 2.1.128** (2026-05-05), which blocks sensitive `/proc` reads. Consequences for this repo: pin at or beyond the current v1 SHA (≫1.0.74), keep workflows on a current action release so the bundled CLI is ≥2.1.128, never check `.mcp.json` changes in from untrusted PRs without review, and follow the "Agents Rule of Two" — no workflow simultaneously processes untrusted input, holds secrets, and mutates state. Billing note: from **Jun 15, 2026**, GitHub Actions agent runs bill against the separate per-user agent credit pool included with the plan, not subscription session usage (§5.2). **Auth is subscription-first (verified 2026-06-10):** the workflow authenticates with `CLAUDE_CODE_OAUTH_TOKEN` (Pro/Max token from `claude setup-token`, drawing the included credit pool) — an `ANTHROPIC_API_KEY` is an optional alternative, never a requirement. This engine requires **no paid API key from any provider** in any lane: cloud sessions, Routines, and local sessions are subscription login; the Actions lane is the subscription token.
 - **CI hardening (all workflows):** every action pinned to a release tag or commit SHA; least-privilege `permissions:` blocks and explicit `timeout-minutes` on every job; `concurrency` groups keyed by PR/branch; `@claude` triggers restricted to actors with write access (no bot or non-write-user allowances of any kind); PR/issue/vendor-feed text always framed as untrusted input in prompts; no debug or full-tool-output logging into public logs; a leak check fails CI if production configurations or secret-shaped strings appear in config or workflow files; agent pushes use the GitHub App token. Dependency gates: Dependabot alerts on; lockfile audits as a required check; every new runtime dependency requires a `DECISIONS.md` entry; lockfile-heavy PRs get the security-reviewer.
 - **In-session security tooling:** the official **security-guidance plugin** is enabled at **project scope** via checked-in settings — `"enabledPlugins": {"security-guidance@claude-plugins-official": true}` in `.claude/settings.json` — because user-scoped installs do **not** carry into Claude Code web sessions (our primary surface). Its two checked-in config files: `.claude/claude-security-guidance.md` (this project's threat model: security controls, credentials policy, DAL/auth guidelines; ≤8 KB combined cap) and `.claude/security-patterns.json` (deterministic per-edit rules; schema per the plugin docs, verified 2026-06-10: `patterns[]` of `rule_name`/`reminder`(≤1 KB)/`regex`(Python flavor)|`substrings`, optional `paths`/`exclude_paths` globs, ≤50 rules; YAML is the plugin's native format — JSON is used here deliberately so the check works without PyYAML). Plugin prerequisites: Claude Code ≥2.1.144, Python ≥3.8 on PATH. Cost profile: the pattern layer is zero-token; the end-of-turn and commit reviews are model-backed and consume usage. All findings are **advisory** — they re-prompt the writing agent but block nothing — so anything that must be a hard gate is expressed as a deny-hook or CI check instead. It complements the security-reviewer agent and CI security jobs.
 
@@ -396,7 +403,8 @@ One page, 8th-grade reading level, written in Phase 0: the three surfaces, the d
 6. **Teams off by default** (§2.1); enable per-epic only when work items are provably independent.
 7. **Model tiering per §2.2;** effort tuned per role.
 8. **No narration:** builders work silently between tool calls; reporting happens once, in PROGRESS + PR.
-9. **Caching-aware context ordering:** stable always-loaded content (CLAUDE.md, rules) forms the cached prompt prefix — edit it sparingly and batch changes, since any byte change invalidates the cache for everything after it. Volatile state (PROGRESS.md, features.json, tool output) enters mid-conversation as tool results, never the prefix. With prompt caching, *re-reading* a large stable doc on demand is cheap — explorers exist to keep **conclusions** small in the orchestrator's context, not because reading files is expensive.
+9. **Bounded injections:** any new hook or skill that injects model-visible content must declare a hard size bound and redaction behavior at introduction (the session brief's `head -50` / `-10` caps are the pattern); unbounded injections are rejected in review.
+10. **Caching-aware context ordering:** stable always-loaded content (CLAUDE.md, rules) forms the cached prompt prefix — edit it sparingly and batch changes, since any byte change invalidates the cache for everything after it. Volatile state (PROGRESS.md, features.json, tool output) enters mid-conversation as tool results, never the prefix. With prompt caching, *re-reading* a large stable doc on demand is cheap — explorers exist to keep **conclusions** small in the orchestrator's context, not because reading files is expensive.
 
 ---
 
@@ -427,7 +435,7 @@ The only technical-adjacent actions the operator ever performs; each is a guided
 4. Database/Infrastructure: create two projects (dev + prod) via dashboard; paste the **dev** URL/keys into the Claude Code **environment variables** screen; paste prod keys into the production deployment provider environment settings only. ☐
 5. claude.ai/code: create the repo **environment** (network policy: Trusted + the domains from §6.2; setup script `scripts/init.sh`). ☐
 6. Enable the nightly + hygiene **Routines** when Phase 1 gate passes (one toggle each): remove all connectors they don't need, leave "Allow unrestricted branch pushes" OFF, and check at claude.ai/settings/usage that your plan's daily routine-run allowance covers the cadence. ☐
-7. Add `ANTHROPIC_API_KEY` as a GitHub Actions secret for `claude.yml` (or link via the app flow). ☐
+7. Generate a subscription token for the `@claude` PR lane: in a terminal in the project folder run `claude setup-token`, copy the token it prints, and add it as a GitHub Actions secret named `CLAUDE_CODE_OAUTH_TOKEN` (repo → Settings → Secrets and variables → Actions). **No API key required** — this token runs on your Claude subscription's included agent credits. (An `ANTHROPIC_API_KEY` remains an optional alternative, never a requirement.) ☐
 8. After **June 15, 2026**: check Settings → Billing on claude.ai that the separate per-user **agent credit pool** covers the CI-autofix lane (optionally enable overflow billing); after **June 23, 2026**, note Fable 5 usage bills as credits. ☐
 
 ---

@@ -1,5 +1,5 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 /**
  * update-state.ts — the ONLY writer for roadmap/features.json (plan §4.2).
@@ -12,6 +12,7 @@ import * as path from 'path';
  *   ts-node scripts/update-state.ts --attempt F-0001
  *   ts-node scripts/update-state.ts --evidence F-0001 <path> [<path>...]
  *   ts-node scripts/update-state.ts --passes F-0001 true
+ *   ts-node scripts/update-state.ts --paths F-0001 '<json-string-array>'   (replace authorized_paths — groom corrections)
  */
 
 // STATE_FILE override exists for contract tests (scripts/test-hooks.sh) so they
@@ -50,8 +51,8 @@ function load(): { $schema?: string; features: Feature[] } {
 function save(data: { features: Feature[] }): void {
   const errors = validate(data.features);
   if (errors.length) fail(`refusing to save invalid state:\n  - ${errors.join('\n  - ')}`);
-  const tmp = FILE + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2) + '\n', 'utf8');
+  const tmp = `${FILE}.tmp`;
+  fs.writeFileSync(tmp, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
   fs.renameSync(tmp, FILE);
   console.log('[update-state] saved.');
 }
@@ -121,7 +122,10 @@ function collectEvidenceErrors(f: Feature): string[] {
     if (stat.isFile() && stat.size === 0) errors.push(`${f.id}: evidence file is empty: ${rel}`);
     if (/verify.*\.log$/i.test(rel)) {
       const content = fs.readFileSync(p, 'utf8');
-      if (/VERIFY: PASS \(exit 0\)/.test(content)) hasGreenVerifyLog = true;
+      // Exact-line match, not substring: a failed run's log QUOTES the marker
+      // inside this very audit's error message, which once self-satisfied the
+      // check (found via PR #14). A quoted occurrence is never a whole line.
+      if (content.split(/\r?\n/).some((l) => l.trim() === 'VERIFY: PASS (exit 0)')) hasGreenVerifyLog = true;
     }
   }
   if (!hasGreenVerifyLog) {
@@ -140,6 +144,50 @@ switch (cmd) {
     // feature claiming passes:true, not just at flip time.
     for (const f of data.features.filter((x) => x.passes)) {
       errors.push(...collectEvidenceErrors(f));
+    }
+    // Model-policy freshness (F-0009): warn — never fail — when a tier's
+    // last_verified exceeds 30 days, so the next session's /research runs.
+    // A scheduled auto-PR cron was deliberately rejected (DECISIONS 2026-06-10).
+    const policyFile = process.env.MODEL_POLICY_FILE
+      ? path.resolve(process.env.MODEL_POLICY_FILE)
+      : path.join(process.cwd(), '.claude', 'model-policy.json');
+    if (fs.existsSync(policyFile)) {
+      try {
+        const policy = JSON.parse(fs.readFileSync(policyFile, 'utf8'));
+        const now = Date.now();
+        for (const [tier, cfg] of Object.entries(policy.tiers ?? {})) {
+          const stamp = (cfg as { last_verified?: string }).last_verified;
+          const parsed = stamp ? Date.parse(stamp) : Number.NaN;
+          if (Number.isNaN(parsed) || now - parsed > 30 * 24 * 3600 * 1000) {
+            console.warn(`[update-state] WARN: model-policy tier "${tier}" last_verified is stale (>30d or missing) — run /research to re-verify the mapping.`);
+          }
+        }
+      } catch {
+        console.warn('[update-state] WARN: model-policy.json unreadable — run /research.');
+      }
+    }
+    // Session metrics integrity (F-0010): roadmap/metrics.jsonl is consumed by
+    // /kaizen and /status — a malformed record fails validation.
+    const metricsFile = process.env.METRICS_FILE
+      ? path.resolve(process.env.METRICS_FILE)
+      : path.join(process.cwd(), 'roadmap', 'metrics.jsonl');
+    if (fs.existsSync(metricsFile)) {
+      const recordLines = fs.readFileSync(metricsFile, 'utf8').split(/\r?\n/).filter((l) => l.trim());
+      recordLines.forEach((l, idx) => {
+        // Bounded-injection rule (plan §9): metrics feed /kaizen and /status
+        // context, so an oversized record is a prompt-injection channel.
+        if (l.length > 500) {
+          errors.push(`metrics.jsonl line ${idx + 1}: record exceeds 500 chars (bounded-injection rule)`);
+          return;
+        }
+        try {
+          const rec = JSON.parse(l);
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(rec.date ?? '')) errors.push(`metrics.jsonl line ${idx + 1}: missing/invalid "date" (YYYY-MM-DD)`);
+          if (typeof rec.feature !== 'string' || !rec.feature) errors.push(`metrics.jsonl line ${idx + 1}: missing "feature"`);
+        } catch {
+          errors.push(`metrics.jsonl line ${idx + 1}: not valid JSON`);
+        }
+      });
     }
     if (errors.length) fail(`invalid backlog:\n  - ${errors.join('\n  - ')}`);
     console.log(`[update-state] valid: ${data.features.length} features, ` +
@@ -184,6 +232,36 @@ switch (cmd) {
       if (!fs.existsSync(path.join(process.cwd(), p))) fail(`evidence file does not exist: ${p}`);
       if (!f.evidence.includes(p)) f.evidence.push(p);
     }
+    save(data);
+    break;
+  }
+  case '--paths': {
+    const [id, json] = args;
+    if (!id || !json) fail('--paths requires <id> <json-string-array>');
+    let parsed: unknown;
+    try { parsed = JSON.parse(json); } catch (e) { fail(`--paths argument is not valid JSON: ${e}`); }
+    if (!Array.isArray(parsed) || parsed.length === 0 || !parsed.every((p) => typeof p === 'string' && p.length > 0)) {
+      fail('--paths requires a non-empty JSON array of glob strings');
+    }
+    const paths = parsed as string[];
+    // Scope-rewrite hardening (security review, PR #16): rescoping must never
+    // be able to grant a feature the guardrail surfaces, no matter what the
+    // current scope says. Guardrail edits are factory work with their own PRs.
+    const GUARD_SURFACES = /^(\.claude|\.github|scripts)(\/|$)/;
+    const BROAD = new Set(['*', '**', '**/*', '**/**', './**', '/**']);
+    for (const p of paths) {
+      if (p.includes('..')) fail(`--paths rejects parent-traversal glob: "${p}"`);
+      if (BROAD.has(p.trim())) fail(`--paths rejects catch-all glob "${p}" — scope must be explicit`);
+      if (GUARD_SURFACES.test(p.trim())) fail(`--paths rejects guardrail surface "${p}" (.claude/, .github/, scripts/ are never feature scope)`);
+    }
+    const f = find(data, id);
+    if (f.status !== 'pending' && f.status !== 'in_progress') fail(`${f.id}: can only rescope pending/in_progress features (status: ${f.status})`);
+    for (const p of paths) {
+      if ((f.forbidden_paths ?? []).some((fp) => fp === p || (fp.endsWith('/**') && p.startsWith(fp.slice(0, -2))))) {
+        fail(`${f.id}: "${p}" collides with the feature's own forbidden_paths`);
+      }
+    }
+    f.authorized_paths = paths;
     save(data);
     break;
   }

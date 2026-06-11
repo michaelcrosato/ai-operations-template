@@ -32,11 +32,12 @@ Six principles govern everything in this repository. Every agent session is boun
 | Hooks | `.claude/hooks/` | Mechanical guardrails: bash denylist, state-file write gate, commit-on-stop, session brief |
 | Gates | `scripts/` | `verify.sh` (the gate), `update-state.ts` (only writer of `features.json`), `assertion-shield.ts` |
 | CI | `.github/workflows/` | verify + shield + schema checks on every PR; `@claude` autofix |
+| Optional modules | `docs/optional-modules.md` | **Not core** — trigger-gated extras (public-flip governance, product-mode gates, eval scaling…) that the engine grooms in only when your repo's state actually calls for them |
 
 ## Drop-in instructions (existing repo)
 
-1. Copy `CLAUDE.md`, `AI_OPERATIONS_PLAN.md`, `OPERATOR_GUIDE.md`, `roadmap/`, `.claude/`, `scripts/`, `.github/workflows/` into the repo root. Merge `package.json` devDependencies/scripts if one already exists.
-2. Replace every `<PLACEHOLDER>` (repo name, deployment surface, database service, E2E framework) — `grep -r "<[A-Z_]*>" .` finds them all.
+1. Copy into the repo root: `CLAUDE.md`, `AGENTS.md`, `AI_OPERATIONS_PLAN.md`, `OPERATOR_GUIDE.md`, `roadmap/`, `.claude/`, `scripts/`, `.github/` (workflows, dependabot, PR template), `biome.json`, `tsconfig.json`, and `.gitattributes` (the LF pinning is load-bearing — CRLF silently breaks the bash hooks). Merge `.gitignore` entries and `package.json` scripts + devDependencies (`@biomejs/biome`, `shellcheck`, `ts-node`, `typescript`) if those files already exist. Keep or replace `LICENSE` (MIT) per your project.
+2. Replace every `<PLACEHOLDER>` (repo name, deployment surface, database service, E2E framework) — `grep -r "<[A-Z_]*>" .` finds them all — and set your own `name` in `package.json` (that rename activates the automatic leftover-placeholder check in the verify gate).
 3. Run `bash scripts/init.sh`, then `bash scripts/verify.sh` — both must pass before the first agent session.
 4. Set `develop` as the GitHub default branch; protect `master`/`main` (PR + human approval) and `develop` (PR + green CI).
 5. Seed the backlog: tell the orchestrator to run `/groom` against your product spec.
@@ -57,6 +58,7 @@ Nothing flips to `passes: true` without physical evidence on disk; nothing reach
 
 ## Requirements
 
+- **A Claude subscription — no API keys, from any provider, ever required.** Cloud sessions, Routines, and local sessions run on subscription login; the `@claude` PR-fix lane uses a subscription token (`claude setup-token`) that draws the agent credits included with Pro/Max plans. An API key is an optional alternative only.
 - Node.js ≥ 20 (engine meta-tooling; the product stack is whatever you choose)
 - Git + bash (hooks are bash scripts; on Windows use **Git Bash** — note that inside PowerShell, `bash` may resolve to WSL's bash, which has a different PATH and gives misleading results when testing hooks by hand)
 - GitHub repo with the Claude GitHub App installed (cloud sessions / `@claude` PR fixes)

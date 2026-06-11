@@ -4,6 +4,60 @@
 
 ---
 
+## 2026-06-10 — F-0008…F-0011 + subscription-first — adoption-readiness wave
+
+**Done:** ① Subscription-first auth verified against official docs and shipped (PR #17): every lane runs on the Claude Max plan — cloud/Routines = login, @claude lane = CLAUDE_CODE_OAUTH_TOKEN from `claude setup-token` billing the included agent credit pool; no API key required anywhere, from any provider. ② F-0008+F-0009 (PR #18): biome/shellcheck/actionlint as engine meta-gates (all findings fixed), exfil-upload guard, trust-widening + MCP CI tripwires, shield .skip/.only detection, model-policy staleness warning. ③ F-0010+F-0011 (PR #19): metrics.jsonl (seeded, validated, 500-char cap) wired into /work//kaizen//status; operator PR template; AGENTS.md stub; briefs/TEMPLATE.md; dangerous-naming + constitution-edit checklist; adoption-gated placeholder check.
+
+**Verified:** 89 contract tests green; every PR through evaluator + security review (cycles honestly logged: tripwire self-trip, wget gap, evidence-before-judging — each caught by a different layer and fixed with tests).
+
+**Surprises:** the --paths scope-hardening from the morning correctly refused to rescope a factory feature in the afternoon — rescope-cannot-grant-guard-surfaces held against its own author.
+
+**Next step:** operator's 3 clicks (Q-0001: App install, CLAUDE_CODE_OAUTH_TOKEN secret, cloud env), then first-repo live trial. F-0007 (path-guard) remains the only deferred design.
+
+---
+
+## 2026-06-10 — F-0002 — THE LOOP IS PROVEN END-TO-END
+
+**Done:** Branch protection enabled via API first (develop: PR+verify; main: +1 approval; enforce_admins — it blocked a red merge within the hour, working as designed). Then F-0002 ran the complete loop: SELECT (`--status in_progress`) → groom correction via new `--paths` verb (shipped PR #13 when grooming proved too narrow — caught honestly, fixed through its own gated PR) → BRIEF (roadmap/briefs/F-0002.md, immutable) → BUILD (builder sub-agent created src/health.js + src/health.test.js exactly to brief, hit a real Windows/Node-24 defect in MY prep, refused to exceed scope, escalated with a verified fix — the conditions-problem protocol worked) → VERIFY (first PRODUCT_MODE green: unit tests + lint now hard gates; evidence ×3) → JUDGE (fresh evaluator PASS, independently re-ran everything) → SHIP (PR #14, operator template) → RECORD (this entry).
+
+**Verified:** VERIFY: PASS with VERIFY-COMMIT signature; 4/4 unit tests, 66/66 contract tests; evaluator reproduced independently.
+
+**Surprises:** `node --test <dir>` silently broken on Windows Node 24 (glob form works everywhere); custom agent roster doesn't hot-load mid-session locally (mandates inlined — cloud unaffected).
+
+**Next step:** wave-1 hardening F-0008–F-0011. Operator owes the rest of Q-0001 (App install, ANTHROPIC_API_KEY, cloud env).
+
+---
+
+## 2026-06-10 — optional-modules catalog + operator-intent rule
+
+**Done:** Operator asked that repo-state-dependent ideas live outside the core. Shipped docs/optional-modules.md — every adopt-later/conditional module from the verified review, keyed by its activation trigger (product code lands / public flip / protection on / first external tool / other CLIs / adopters exist), explicitly marked NOT core. Wired: /downtime sentinel now checks the triggers and grooms modules when one fires; plan §2.3 adds the three-question core-vs-optional-vs-product rule; README points at the catalog. Also codified the operator's standing instruction in CLAUDE.md §8: remarks are intent, never literal edits — nothing bypasses the gates. MIT license landed earlier today (PR #11).
+
+**Verified:** gate green (63/63); docs-only diff — zero changes to hooks, gate scripts, or workflows.
+
+**Next step:** unchanged — F-0002, then wave-1 F-0008–F-0011; operator owes Q-0001.
+
+---
+
+## 2026-06-10 — feedback-2 verification — 77 items, 14-agent fleet
+
+**Done:** Operator supplied feedback-2.md (consolidation of 6 model research reports, 77 items). Per P1, ran a full verification workflow: 11 group verifiers web-checked every load-bearing claim against primary sources (vendor docs, GitHub/advisory APIs) + repo ground truth, then 3 adversarial skeptics (lean-core, independent fact re-verifier, fork judge). 335 tool calls. Results: 26 adopt-now (groomed → F-0008 static analysis/lint, F-0009 security tripwires, F-0010 metrics.jsonl, F-0011 docs/convention pack), 27 adopt-later (sequenced on public flip / Q-0001 / Phase 1), 25 adapt (reshapes specified), 18 reject, 25 already-done, 5 operator-decision (Q-0002 license added). **52 claims in the feedback refuted** — headline: the "v1.0.94" claude-code-action floor is a phantom (real: GHSA-8q5r-mmjf-575q <1.0.74), AGENTS.md design was inverted vs official docs, sweep is abandoned, several "gaps" were already closed here. Report: docs/feedback-2-verification.md (+ verdicts JSON).
+
+**Verified:** every adopt-now claim carries a primary-source URL dated 2026-06; full gate green.
+
+**Surprises:** Claude Code now ships native OS-level sandboxing (bubblewrap/seatbelt + sandbox-runtime) — resolves the Docker fork in favor of first-party primitives; none of the 6 source reports knew.
+
+**Next step:** F-0002 (prove the loop) remains priority 1, then wave-1 F-0008–F-0011. Operator owes Q-0001 (protection) and Q-0002 (license).
+
+---
+
+## 2026-06-10 — PROMOTION #1 — main created at v0.1.0
+
+**Done:** Operator ordered the first promotion. `main` created at develop HEAD `2b9f643` (API path — agent git-push to main is hook-blocked by design), tagged `v0.1.0`. `develop` stays the default branch. Stable baseline now exists: the disaster floor is "revert to v0.1.0".
+
+**Next step:** future promotions go develop→main as App-authored PRs with a `/qa-pack`. Branch protection on main (PR + operator approval) still needs the operator — Q-0001.
+
+---
+
 ## 2026-06-10 — housekeeping — self-audit after F-0006
 
 **Done:** Trust-but-monitor pass over the session's own output. Found and fixed: plan §3 layout tree missing six shipped artifacts (kaizen/downtime skills, test-hooks.sh, evidence/, briefs/, dependabot.yml); plan §4.2 overpromising ("validates against features.schema.json", "test-runner JSON report") vs what is actually implemented (in-code invariants; VERIFY-marker log + CI re-run backstop) — wording now matches code; dead line in test-hooks.sh; STATUS.md regenerated (was a day stale); ROADMAP bullets annotated ✅ shipped.
