@@ -87,7 +87,7 @@ fi
 if $PRODUCT_MODE && [ -f package.json ]; then
   PKG_NAME="$(node -e "console.log(require('./package.json').name || '')")"
   if [ "$PKG_NAME" != "ai-operations-template" ]; then
-    if grep -nE '<[A-Z_]{3,}>' CLAUDE.md AI_OPERATIONS_PLAN.md OPERATOR_GUIDE.md README.md 2>/dev/null; then
+    if grep -nE '<[A-Z][A-Z0-9_]{2,}>' CLAUDE.md AI_OPERATIONS_PLAN.md OPERATOR_GUIDE.md README.md 2>/dev/null; then
       echo "──── placeholder check: FAILED (replace the <PLACEHOLDER> tokens above — see README drop-in step 2)"
       FAILED=1
     else
