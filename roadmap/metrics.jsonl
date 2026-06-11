@@ -7,3 +7,4 @@
 {"date":"2026-06-10","feature":"F-0009","attempts":1,"evaluator":"NEEDS_WORK->PASS","security":"APPROVE","findings_fixed":2,"pr":18,"notes":"wget --post-data gap caught by security review"}
 {"date":"2026-06-10","feature":"F-0010","attempts":1,"evaluator":"NEEDS_WORK->PASS","security":"APPROVE","findings_fixed":3,"pr":19,"notes":"evidence-before-judging + metrics over-claim caught by evaluator"}
 {"date":"2026-06-10","feature":"F-0011","attempts":1,"evaluator":"NEEDS_WORK->PASS","security":"APPROVE","findings_fixed":2,"pr":19,"notes":"README scope ride documented; rescope-cannot-grant held"}
+{"date":"2026-06-11","feature":"F-0012","attempts":0,"evaluator":"PASS","security":"APPROVE","findings_fixed":0,"pr":24,"notes":"field defect from adoption trial 1; builder hand-transcribed demo evidence, orchestrator recaptured live pre-judging"}

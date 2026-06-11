@@ -23,8 +23,7 @@
       "status": "done",
       "passes": true,
       "evidence": [
-        "roadmap/evidence/F-0001/verify.log",
-        "tmp/hook-tests/verify.log"
+        "roadmap/evidence/F-0001/verify.log"
       ],
       "attempts": 0,
       "blocked_reason": null
@@ -119,7 +118,7 @@
       "passes": false,
       "evidence": [],
       "attempts": 0,
-      "blocked_reason": "waiting on operator"
+      "blocked_reason": "Requires human operator actions (GitHub settings, secrets, claude.ai configuration) — see QUESTIONS.md"
     },
     {
       "dependencies": [

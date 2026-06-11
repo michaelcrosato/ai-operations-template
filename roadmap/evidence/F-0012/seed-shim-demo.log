@@ -17,9 +17,11 @@ define. The exit-1 protects adopted repos that add product code and an e2e
 script without defining seeding.
 
 --- [B] All six contract behaviors, machine-verified ---
-From roadmap/evidence/F-0012/verify.log (bash scripts/verify.sh, this branch,
-run signature VERIFY-COMMIT: 653aedca129470dff1db39b0857fa5585978b72e @ 2026-06-11T06:14:59Z),
-the "── seed.ts delegating shim" contract-test section of scripts/test-hooks.sh:
+From the gate run on this branch (bash scripts/verify.sh; first captured at
+VERIFY-COMMIT 653aedca @ 2026-06-11T06:14:59Z, re-reproduced post-state-repair at
+VERIFY-COMMIT ee4d93cc @ 2026-06-11T06:31:32Z — the latter is the committed
+roadmap/evidence/F-0012/verify.log), the "── seed.ts delegating shim"
+contract-test section of scripts/test-hooks.sh:
 
 ── seed.ts delegating shim
   [PASS] template mode (no src, no seed script) exits 0

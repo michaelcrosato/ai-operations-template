@@ -11,10 +11,10 @@ Checked 6 files in 6ms. No fixes applied.
 ──── lint: OK
 
 ──── verify: unit tests ────
-✔ getHealth() reports status ok and the correct service name (0.8855ms)
-✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.1361ms)
-✔ getHealth() uptime_s is a non-negative number (0.0689ms)
-✔ CLI: node src/health.js exits 0 and prints JSON with status ok (33.1917ms)
+✔ getHealth() reports status ok and the correct service name (0.9997ms)
+✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.1292ms)
+✔ getHealth() uptime_s is a non-negative number (0.0749ms)
+✔ CLI: node src/health.js exits 0 and prints JSON with status ok (31.2213ms)
 ℹ tests 4
 ℹ suites 0
 ℹ pass 4
@@ -22,14 +22,14 @@ Checked 6 files in 6ms. No fixes applied.
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 83.8849
+ℹ duration_ms 78.6421
 ──── unit tests: OK
 (no build script — skipping)
 ──── test coverage guard: OK (every src test file is wired into npm test)
 (placeholder check: template repo — self-skipped; activates after adoption rename)
 
 ──── verify: features.json schema + invariants ────
-[update-state] valid: 12 features, 9 passing (evidence re-verified).
+[update-state] valid: 12 features, 10 passing (evidence re-verified).
 ──── features.json schema + invariants: OK
 
 ──── verify: assertion shield ────
@@ -37,7 +37,7 @@ Checked 6 files in 6ms. No fixes applied.
 ──── assertion shield: OK
 
 ──── verify: engine lint (biome) ────
-Checked 4 files in 6ms. No fixes applied.
+Checked 4 files in 7ms. No fixes applied.
 ──── engine lint (biome): OK
 
 ──── verify: shellcheck (hooks + gate scripts) ────
@@ -154,5 +154,5 @@ Checked 4 files in 6ms. No fixes applied.
 hook contract tests: 95 passed, 0 failed
 ──── hook contract tests: OK
 
-VERIFY-COMMIT: 653aedca129470dff1db39b0857fa5585978b72e @ 2026-06-11T06:14:59Z
+VERIFY-COMMIT: ee4d93cccd9dadb9c359f18a6cf7d1ba9890d74c @ 2026-06-11T06:31:32Z
 VERIFY: PASS (exit 0)
