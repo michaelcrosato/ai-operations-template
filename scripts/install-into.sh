@@ -232,6 +232,8 @@ echo ""
 echo "--- Transforming package.json ---"
 
 PKG_TRANSFORM_SCRIPT="$(mktemp /tmp/install-into-pkg-XXXXXX.js)"
+# Remove the temp script even on early exit (security review, F-0013)
+trap 'rm -f "$PKG_TRANSFORM_SCRIPT"' EXIT
 
 cat > "$PKG_TRANSFORM_SCRIPT" << 'NODEEOF'
 const fs = require('fs');

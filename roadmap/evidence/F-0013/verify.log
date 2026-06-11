@@ -7,10 +7,10 @@ Checked 6 files in 7ms. No fixes applied.
 ──── lint: OK
 
 ──── verify: unit tests ────
-✔ getHealth() reports status ok and the correct service name (0.8364ms)
-✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.1197ms)
-✔ getHealth() uptime_s is a non-negative number (0.0664ms)
-✔ CLI: node src/health.js exits 0 and prints JSON with status ok (33.0011ms)
+✔ getHealth() reports status ok and the correct service name (0.858ms)
+✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.1201ms)
+✔ getHealth() uptime_s is a non-negative number (0.073ms)
+✔ CLI: node src/health.js exits 0 and prints JSON with status ok (32.9113ms)
 ℹ tests 4
 ℹ suites 0
 ℹ pass 4
@@ -18,7 +18,7 @@ Checked 6 files in 7ms. No fixes applied.
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 82.022
+ℹ duration_ms 81.71
 ──── unit tests: OK
 (no build script — skipping)
 ──── test coverage guard: OK (every src test file is wired into npm test)
@@ -191,5 +191,5 @@ Checked 4 files in 7ms. No fixes applied.
 hook contract tests: 135 passed, 0 failed
 ──── hook contract tests: OK
 
-VERIFY-COMMIT: 02157101d36a5c4da4a20192d139e6a2215ea85c @ 2026-06-11T16:04:33Z
+VERIFY-COMMIT: 55717acd4bcc9b8321b1b8058668163e2d75b412 @ 2026-06-11T16:14:47Z
 VERIFY: PASS (exit 0)
