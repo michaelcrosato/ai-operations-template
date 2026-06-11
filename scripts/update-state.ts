@@ -203,6 +203,13 @@ switch (cmd) {
       attempts: 0, blocked_reason: null, forbidden_paths: ['.claude/**', '.github/workflows/**'],
       ...incoming
     } as Feature;
+    // Reserved fixture range (kaizen 2026-06-11): contract tests use F-9xxx ids,
+    // so a writer call that escapes its STATE_FILE fixture fails loudly here
+    // instead of silently planting fixture rows in the real backlog (incident
+    // found on PR #24: fixture mutations leaked into the live features.json).
+    if (!process.env.STATE_FILE && /^F-9\d{3}$/.test(feature.id ?? '')) {
+      fail(`${feature.id} is in the reserved contract-test fixture range (F-9xxx); it cannot be added to the real backlog`);
+    }
     if (feature.passes) fail('new features are born failing (default-FAIL contract); cannot --add with passes:true');
     data.features.push(feature);
     save(data);
