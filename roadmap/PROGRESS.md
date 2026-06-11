@@ -4,6 +4,14 @@
 
 ---
 
+## 2026-06-10 — PROMOTION #2 — main @ v0.2.0 (adoption-ready)
+
+**Done:** Operator ordered the promotion. develop → main via PR #21 (merge commit, verify check enforced; approval rule lifted for the one merge and restored — sole-author limitation, documented in DECISIONS). main tagged **v0.2.0**: the adoption-ready engine — loop proven, 89 self-inspecting gates, subscription-first, metrics live, drop-in complete. Disaster floor is now v0.2.0.
+
+**Next step:** operator's Q-0001 clicks, then the first live-trial adoption. Future promotions: App-authored PRs the operator approves.
+
+---
+
 ## 2026-06-10 — F-0008…F-0011 + subscription-first — adoption-readiness wave
 
 **Done:** ① Subscription-first auth verified against official docs and shipped (PR #17): every lane runs on the Claude Max plan — cloud/Routines = login, @claude lane = CLAUDE_CODE_OAUTH_TOKEN from `claude setup-token` billing the included agent credit pool; no API key required anywhere, from any provider. ② F-0008+F-0009 (PR #18): biome/shellcheck/actionlint as engine meta-gates (all findings fixed), exfil-upload guard, trust-widening + MCP CI tripwires, shield .skip/.only detection, model-policy staleness warning. ③ F-0010+F-0011 (PR #19): metrics.jsonl (seeded, validated, 500-char cap) wired into /work//kaizen//status; operator PR template; AGENTS.md stub; briefs/TEMPLATE.md; dangerous-naming + constitution-edit checklist; adoption-gated placeholder check.
