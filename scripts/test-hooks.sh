@@ -99,7 +99,7 @@ rm -rf "$FIX"; mkdir -p "$FIX"
 export STATE_FILE="$FIX/features.json"
 US() { npx ts-node scripts/update-state.ts "$@" >/dev/null 2>&1; echo $?; }
 cat > "$STATE_FILE" <<'EOF'
-{ "features": [ { "id": "F-0001", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+{ "features": [ { "id": "F-9101", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
   "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [],
   "priority": 1, "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null } ] }
 EOF
@@ -110,36 +110,43 @@ EOF
 OUT="$(MODEL_POLICY_FILE="$FIX/stale-policy.json" npx ts-node scripts/update-state.ts --validate 2>&1)"; RC=$?
 check "validate exits 0 despite stale policy"   0 "$RC"
 printf '%s' "$OUT" | grep -q "stale" ; check "validate warns on stale model-policy" 0 "$?"
-printf '%s\n' '{"date":"2026-06-10","feature":"F-0001"}' > "$FIX/metrics-good.jsonl"
+printf '%s\n' '{"date":"2026-06-10","feature":"F-9101"}' > "$FIX/metrics-good.jsonl"
 check "validate accepts well-formed metrics"    0 "$(METRICS_FILE="$FIX/metrics-good.jsonl" npx ts-node scripts/update-state.ts --validate >/dev/null 2>&1; echo $?)"
 printf '%s\n' 'not json at all' > "$FIX/metrics-bad.jsonl"
 check "validate rejects malformed metrics line" 1 "$(METRICS_FILE="$FIX/metrics-bad.jsonl" npx ts-node scripts/update-state.ts --validate >/dev/null 2>&1; echo $?)"
-printf '%s\n' '{"feature":"F-0001"}' > "$FIX/metrics-nodate.jsonl"
+printf '%s\n' '{"feature":"F-9101"}' > "$FIX/metrics-nodate.jsonl"
 check "validate rejects metrics missing date"   1 "$(METRICS_FILE="$FIX/metrics-nodate.jsonl" npx ts-node scripts/update-state.ts --validate >/dev/null 2>&1; echo $?)"
-printf '{"date":"2026-06-10","feature":"F-0001","notes":"%s"}\n' "$(printf 'x%.0s' $(seq 1 600))" > "$FIX/metrics-long.jsonl"
+printf '{"date":"2026-06-10","feature":"F-9101","notes":"%s"}\n' "$(printf 'x%.0s' $(seq 1 600))" > "$FIX/metrics-long.jsonl"
 check "validate rejects oversized metrics record" 1 "$(METRICS_FILE="$FIX/metrics-long.jsonl" npx ts-node scripts/update-state.ts --validate >/dev/null 2>&1; echo $?)"
 check "add rejects malformed JSON"              1 "$(US --add 'not-json')"
-check "add rejects passes:true at birth"        1 "$(US --add '{"id":"F-0002","epic":"t","title":"t","spec_ref":"t","description":"t","acceptance":["a"],"authorized_paths":[],"priority":1,"status":"pending","passes":true,"evidence":["x"],"attempts":0,"blocked_reason":null}')"
-check "add rejects dangling dependency"         1 "$(US --add '{"id":"F-0003","epic":"t","title":"t","spec_ref":"t","description":"t","acceptance":["a"],"authorized_paths":[],"dependencies":["F-9999"],"priority":1,"status":"pending","passes":false,"evidence":[],"attempts":0,"blocked_reason":null}')"
-check "add accepts valid feature"               0 "$(US --add '{"id":"F-0004","epic":"t","title":"t","spec_ref":"t","description":"t","acceptance":["a"],"authorized_paths":[],"priority":2,"status":"pending","passes":false,"evidence":[],"attempts":0,"blocked_reason":null}')"
+check "add rejects passes:true at birth"        1 "$(US --add '{"id":"F-9102","epic":"t","title":"t","spec_ref":"t","description":"t","acceptance":["a"],"authorized_paths":[],"priority":1,"status":"pending","passes":true,"evidence":["x"],"attempts":0,"blocked_reason":null}')"
+check "add rejects dangling dependency"         1 "$(US --add '{"id":"F-9103","epic":"t","title":"t","spec_ref":"t","description":"t","acceptance":["a"],"authorized_paths":[],"dependencies":["F-9999"],"priority":1,"status":"pending","passes":false,"evidence":[],"attempts":0,"blocked_reason":null}')"
+check "add accepts valid feature"               0 "$(US --add '{"id":"F-9104","epic":"t","title":"t","spec_ref":"t","description":"t","acceptance":["a"],"authorized_paths":[],"priority":2,"status":"pending","passes":false,"evidence":[],"attempts":0,"blocked_reason":null}')"
+# Leak tripwire (kaizen 2026-06-11, incident PR #24): without STATE_FILE the
+# writer targets the REAL backlog — the reserved F-9xxx fixture range must be
+# refused there, so an escaped fixture call fails loudly instead of corrupting.
+# Row-count snapshot proves "no write" directly (security review, this PR).
+PRE_COUNT="$(node -e "console.log(require('./roadmap/features.json').features.length)")"
+check "add refuses reserved F-9xxx range on real backlog" 1 "$(unset STATE_FILE; US --add '{"id":"F-9105","epic":"t","title":"t","spec_ref":"t","description":"t","acceptance":["a"],"authorized_paths":[],"priority":1,"status":"pending","passes":false,"evidence":[],"attempts":0,"blocked_reason":null}')"
+check "reserved-range refusal wrote nothing to real backlog" "$PRE_COUNT" "$(node -e "console.log(require('./roadmap/features.json').features.length)")"
 check "status rejects unknown id"               1 "$(US --status F-9999 'done')"
-check "status rejects invalid enum"             1 "$(US --status F-0001 finished)"
-check "status blocked requires+stores reason"   0 "$(US --status F-0004 blocked waiting on operator)"
-check "paths rejects non-array"                 1 "$(US --paths F-0001 '"not-an-array"')"
-check "paths rejects empty array"               1 "$(US --paths F-0001 '[]')"
-check "paths rejects guardrail surface .claude" 1 "$(US --paths F-0001 '[".claude/**"]')"
-check "paths rejects guardrail surface scripts" 1 "$(US --paths F-0001 '["scripts/update-state.ts"]')"
-check "paths rejects guardrail surface .github" 1 "$(US --paths F-0001 '[".github/workflows/ci.yml"]')"
-check "paths rejects catch-all glob"            1 "$(US --paths F-0001 '["**"]')"
-check "paths rejects parent traversal"          1 "$(US --paths F-0001 '["roadmap/../scripts/**"]')"
-check "paths replaces authorized_paths"         0 "$(US --paths F-0001 '["src/**","docs/**"]')"
-check "passes refuses without evidence"         1 "$(US --passes F-0001 true)"
-check "evidence refuses missing file"           1 "$(US --evidence F-0001 $FIX/nope.log)"
+check "status rejects invalid enum"             1 "$(US --status F-9101 finished)"
+check "status blocked requires+stores reason"   0 "$(US --status F-9104 blocked waiting on operator)"
+check "paths rejects non-array"                 1 "$(US --paths F-9101 '"not-an-array"')"
+check "paths rejects empty array"               1 "$(US --paths F-9101 '[]')"
+check "paths rejects guardrail surface .claude" 1 "$(US --paths F-9101 '[".claude/**"]')"
+check "paths rejects guardrail surface scripts" 1 "$(US --paths F-9101 '["scripts/update-state.ts"]')"
+check "paths rejects guardrail surface .github" 1 "$(US --paths F-9101 '[".github/workflows/ci.yml"]')"
+check "paths rejects catch-all glob"            1 "$(US --paths F-9101 '["**"]')"
+check "paths rejects parent traversal"          1 "$(US --paths F-9101 '["roadmap/../scripts/**"]')"
+check "paths replaces authorized_paths"         0 "$(US --paths F-9101 '["src/**","docs/**"]')"
+check "passes refuses without evidence"         1 "$(US --passes F-9101 true)"
+check "evidence refuses missing file"           1 "$(US --evidence F-9101 $FIX/nope.log)"
 echo 'audit said: need a verify.log containing "VERIFY: PASS (exit 0)" ... VERIFY: FAIL' > "$FIX/verify.log"
-check "evidence accepts existing file"          0 "$(US --evidence F-0001 $FIX/verify.log)"
-check "passes rejects QUOTED marker in failed log" 1 "$(US --passes F-0001 true)"
+check "evidence accepts existing file"          0 "$(US --evidence F-9101 $FIX/verify.log)"
+check "passes rejects QUOTED marker in failed log" 1 "$(US --passes F-9101 true)"
 printf 'gate output...\nVERIFY: PASS (exit 0)\n' > "$FIX/verify.log"
-check "passes accepts green verify log (exact line)" 0 "$(US --passes F-0001 true)"
+check "passes accepts green verify log (exact line)" 0 "$(US --passes F-9101 true)"
 cat > "$STATE_FILE.corrupt" <<'EOF'
 { "features": [ { "id": "BAD", "status": "nope" } ] }
 EOF
@@ -196,23 +203,23 @@ echo "── update-state.ts invariants (fixture: $FIX)"
 rm -rf "$FIX"; mkdir -p "$FIX"
 export STATE_FILE="$FIX/features.json"
 cat > "$STATE_FILE" <<'EOF'
-{ "features": [ { "id": "F-0001", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+{ "features": [ { "id": "F-9101", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
   "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [],
   "priority": 1, "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null } ] }
 EOF
-check "status:done without passes is rejected" 1 "$(US --status F-0001 'done')"
+check "status:done without passes is rejected" 1 "$(US --status F-9101 'done')"
 cat > "$STATE_FILE" <<'EOF'
 { "features": [
-  { "id": "F-0001", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"],
-    "authorized_paths": [], "forbidden_paths": [], "dependencies": ["F-0002"], "priority": 1,
+  { "id": "F-9101", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"],
+    "authorized_paths": [], "forbidden_paths": [], "dependencies": ["F-9102"], "priority": 1,
     "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null },
-  { "id": "F-0002", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"],
-    "authorized_paths": [], "forbidden_paths": [], "dependencies": ["F-0001"], "priority": 1,
+  { "id": "F-9102", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"],
+    "authorized_paths": [], "forbidden_paths": [], "dependencies": ["F-9101"], "priority": 1,
     "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null } ] }
 EOF
 check "dependency cycle is rejected" 1 "$(US --validate)"
 cat > "$STATE_FILE" <<'EOF'
-{ "features": [ { "id": "F-0001", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+{ "features": [ { "id": "F-9101", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
   "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [],
   "priority": 1, "status": "done", "passes": true, "evidence": ["tmp/hook-tests/forged.log"], "attempts": 0, "blocked_reason": null } ] }
 EOF

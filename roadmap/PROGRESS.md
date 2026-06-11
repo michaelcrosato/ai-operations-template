@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-06-11 — kaizen — fixture IDs can never corrupt the real backlog again
+
+### kaizen
+
+**Signal:** today's F-0012 incident — contract-test fixtures used real backlog IDs (F-0001, F-0004), so two writer calls that escaped their STATE_FILE fixture mutated the live features.json *silently*; only the deep evidence audit caught it.
+
+**Change:** all update-state fixture IDs moved to a reserved range (F-9101–F-9104); update-state.ts --add now refuses /^F-9\d{3}$/ when no STATE_FILE fixture is active; new tripwire contract test proves the refusal against the live backlog plus a row-count snapshot proving zero writes (security-review suggestion, adopted). 97 contract tests green. Security review: APPROVE.
+
+**Metric to watch next kaizen:** zero fixture-shaped rows/paths in features.json diffs (the failure class is now structurally loud — any recurrence means a new leak vector, investigate immediately).
+
+---
+
 ## 2026-06-11 — F-0012 — first defect from the field, fixed through the full loop
 
 **Done:** Adoption trial #1 (agy-software-2) reported the engine's first field defect via department brief: the seed.ts template stub exits 0 unconditionally after its prod guard, so `verify.sh --e2e` goes green against an **unseeded database** in any adopter with product code. Groomed as F-0012 (priority 1), built by the builder agent from an immutable brief: seed.ts is now a four-branch delegating shim — prod-refusal guard first; delegate to the package.json `"seed"` script with exit status propagated and a `SEED_SHIM_ACTIVE` sentinel breaking circular delegation; product mode without a seed script hard-fails; template mode keeps exit-0. Six new contract tests (95 total). Shipped PR #24. Cross-CLI mirror dirs (`.agents/`, `.codex/`) found untracked on disk were excluded from the PR and gitignored (deferred "other CLIs" module).
