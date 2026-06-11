@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-06-11 — F-0013 shipped + F-0014 — second field defect through the full loop; session-end rule adopted
+
+**Done:** ① Completed F-0013's interrupted cycle: the previous session exited while "watching CI" on PR #27 — the watcher died with the process, leaving a green, mergeable PR stranded overnight (3rd occurrence of this failure mode across the portfolio). This session merged PR #27 (one-command adopter install) and reconstructed the missing record (this block + metrics) from commits and state. ② F-0014, the second briefed field defect — both adopters hit it independently: e2e.yml runs `verify.sh --e2e` under CI without installing actionlint, which verify.sh hard-requires when CI=true, so the E2E lane breaks the moment an adopter defines an e2e script; the lane also diverged on shallow checkout (assertion-shield needs fetch-depth 0), Node version (20 vs 24), and a paths filter that omitted e2e.yml itself. Ported the union of the two proven adopter fixes (agy-software-2 PR #18; claude-software-3 d234838): pinned checksum-verified actionlint install byte-identical to ci.yml, fetch-depth 0, Node 24 parity, paths filter covering e2e.yml + tests/** + package manifests. Added 4 lane-parity contract tests (reference values derived from ci.yml; negative-tested against a broken fixture workflow) so no verify.sh-invoking workflow can silently diverge again. Shipped PR #28. ③ Rule adopted (CLAUDE.md §6): never end a session while a PR's CI is pending — watch `gh pr checks <n> --watch` to completion or leave an explicit `HANDOFF:` line naming the PR.
+
+**Verified:** `VERIFY: PASS (exit 0)`, 139 contract tests (was 135) — builder capture, orchestrator re-run, and the evaluator's independent re-run all green. Evaluator PASS (all 6 acceptance criteria mapped mechanically); security review APPROVE (zero findings: permissions stay read-only, pull_request-only triggers, download pin/checksum identical to ci.yml). Evidence: roadmap/evidence/F-0014/verify.log + lane-parity-tests.log. Live CI proof: PR #28 itself triggered the E2E lane through the new self-trigger path filter and passed.
+
+**Surprises:** none in the build — first-attempt PASS, zero security findings; the proven-fix-port pattern (F-0012, now F-0014) is the cleanest lane the factory has. The session-start state was itself the lesson: see rule ③.
+
+**Next step:** department syncs F-0014 to adopters (both already run local equivalents — sync is reconciliation, not a fix). Operator still owes Q-0001 clicks. F-0007 (path-guard) remains the only deferred design.
+
+---
+
 ## 2026-06-11 — kaizen — fixture IDs can never corrupt the real backlog again
 
 ### kaizen
