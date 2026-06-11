@@ -178,6 +178,20 @@ check "shield allows ADDED healthy test" 0 "$(cd "$AS" && BASE_BRANCH=base node 
 ( cd "$AS" && git reset -q --hard )
 rm -rf "$AS"
 
+echo "── seed.ts delegating shim"
+SD="$(mktemp -d)"
+printf '{ "name": "fixture", "scripts": {} }\n' > "$SD/package.json"
+check "template mode (no src, no seed script) exits 0" 0 "$(cd "$SD" && node "$TSNODE" "$ROOT/scripts/seed.ts" >/dev/null 2>&1; echo $?)"
+check "refuses prod DATABASE_URL" 1 "$(cd "$SD" && DATABASE_URL=postgres://u@prod-db/x node "$TSNODE" "$ROOT/scripts/seed.ts" >/dev/null 2>&1; echo $?)"
+mkdir -p "$SD/src"
+check "product mode without seed script fails" 1 "$(cd "$SD" && node "$TSNODE" "$ROOT/scripts/seed.ts" >/dev/null 2>&1; echo $?)"
+printf '{ "name": "fixture", "scripts": { "seed": "node -e \\"process.exit(0)\\"" } }\n' > "$SD/package.json"
+check "delegates to seed script (success)" 0 "$(cd "$SD" && node "$TSNODE" "$ROOT/scripts/seed.ts" >/dev/null 2>&1; echo $?)"
+printf '{ "name": "fixture", "scripts": { "seed": "node -e \\"process.exit(3)\\"" } }\n' > "$SD/package.json"
+check "propagates seed script failure" nonzero "$(cd "$SD" && node "$TSNODE" "$ROOT/scripts/seed.ts" >/dev/null 2>&1; rc=$?; [ "$rc" -ne 0 ] && echo nonzero || echo zero)"
+check "circular delegation fails fast" 1 "$(cd "$SD" && SEED_SHIM_ACTIVE=1 node "$TSNODE" "$ROOT/scripts/seed.ts" >/dev/null 2>&1; echo $?)"
+rm -rf "$SD"
+
 echo "── update-state.ts invariants (fixture: $FIX)"
 rm -rf "$FIX"; mkdir -p "$FIX"
 export STATE_FILE="$FIX/features.json"

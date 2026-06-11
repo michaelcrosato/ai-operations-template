@@ -1,0 +1,40 @@
+=== seed.ts delegating shim — behavior demonstration (F-0012) ===
+Provenance: every line below is verbatim captured output from live execution on
+2026-06-11 (orchestrator terminal, branch feat/F-0012). The builder's first
+version of this file was transcribed by hand; the orchestrator rejected it and
+recaptured from real runs (see DECISIONS.md 2026-06-11).
+
+--- [A] Direct run at repo root: npx ts-node scripts/seed.ts ---
+This repo has src/ (product mode) and no "seed" script in package.json,
+so branch 3 (product mode, no seed script) must refuse:
+
+[seed] FAILED: product code exists but package.json defines no "seed" script — the E2E gate must not pass against an unseeded database.
+(exit code 1)
+
+This is correct behavior for this repo: verify.sh only invokes seed.ts under
+--e2e when an e2e script is also defined, which this template repo does not
+define. The exit-1 protects adopted repos that add product code and an e2e
+script without defining seeding.
+
+--- [B] All six contract behaviors, machine-verified ---
+From roadmap/evidence/F-0012/verify.log (bash scripts/verify.sh, this branch,
+run signature VERIFY-COMMIT: 653aedca129470dff1db39b0857fa5585978b72e @ 2026-06-11T06:14:59Z),
+the "── seed.ts delegating shim" contract-test section of scripts/test-hooks.sh:
+
+── seed.ts delegating shim
+  [PASS] template mode (no src, no seed script) exits 0
+  [PASS] refuses prod DATABASE_URL
+  [PASS] product mode without seed script fails
+  [PASS] delegates to seed script (success)
+  [PASS] propagates seed script failure
+  [PASS] circular delegation fails fast
+
+hook contract tests: 95 passed, 0 failed
+VERIFY: PASS (exit 0)
+
+Each check executes the real shim (node node_modules/ts-node/dist/bin.js
+scripts/seed.ts) inside a mktemp fixture directory with the corresponding
+package.json / src/ / DATABASE_URL / SEED_SHIM_ACTIVE configuration — see
+scripts/test-hooks.sh "── seed.ts delegating shim" for the exact fixtures.
+
+=== demo complete ===
