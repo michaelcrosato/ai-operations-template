@@ -1,0 +1,9 @@
+── assertion-shield.ts (fixture repo)
+  [PASS] shield first-commit (no upstream) passes
+  [PASS] shield first-commit emits no git fatal
+  [PASS] shield first-commit prints a calm line
+── install-into.sh
+  [PASS] seeded ROADMAP: exactly one '## Now'
+  [PASS] seeded ROADMAP: exactly one '## Next'
+  [PASS] seeded ROADMAP: exactly one '## Later'
+  [PASS] seeded ROADMAP: exactly one '## Ideas'

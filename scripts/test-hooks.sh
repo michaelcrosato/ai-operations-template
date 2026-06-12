@@ -185,6 +185,22 @@ check "shield allows ADDED healthy test" 0 "$(cd "$AS" && BASE_BRANCH=base node 
 ( cd "$AS" && git reset -q --hard )
 rm -rf "$AS"
 
+# F-0016: a first commit before the upstream base exists must NOT leak git's
+# "fatal: ambiguous argument 'origin/develop...HEAD'" — detect the missing
+# upstream and print one calm line (all 9 fleet installs + curbcall, 2026-06-11).
+NU="$(mktemp -d)"
+(
+  cd "$NU" && git init -q && git config user.email t@t && git config user.name t
+  mkdir tests
+  printf 'test("a", () => {\n  expect(1).toBe(1);\n});\n' > tests/a.test.js
+  git add -A && git commit -qm first
+)
+NU_OUT="$(cd "$NU" && node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" 2>&1)"; NU_RC=$?
+check "shield first-commit (no upstream) passes" 0 "$NU_RC"
+printf '%s' "$NU_OUT" | grep -qi 'fatal' ; check "shield first-commit emits no git fatal" 1 "$?"
+printf '%s' "$NU_OUT" | grep -qi 'first commit' ; check "shield first-commit prints a calm line" 0 "$?"
+rm -rf "$NU"
+
 echo "── seed.ts delegating shim"
 SD="$(mktemp -d)"
 printf '{ "name": "fixture", "scripts": {} }\n' > "$SD/package.json"
@@ -345,6 +361,15 @@ check "product-mode warning: absent when no src/" 0 "$(if [ "$NO_WARN_FOUND" -eq
 # ── 7. Seeded state validity ──────────────────────────────────────────────────
 VALIDATE_RC="$(STATE_FILE="$IT/roadmap/features.json" npx ts-node scripts/update-state.ts --validate >/dev/null 2>&1; echo $?)"
 check "seeded features.json validates against schema" 0 "$VALIDATE_RC"
+
+# ── 7b. Seeded ROADMAP.md shape (F-0016) ─────────────────────────────────────
+# head -5 of the template used to capture its own "## Now" then append a second,
+# producing a duplicate heading (3/9 fleet installs, 2026-06-11). Each section
+# heading must now appear exactly once.
+check "seeded ROADMAP: exactly one '## Now'"   1 "$(grep -c '^## Now$'   "$IT/roadmap/ROADMAP.md")"
+check "seeded ROADMAP: exactly one '## Next'"  1 "$(grep -c '^## Next$'  "$IT/roadmap/ROADMAP.md")"
+check "seeded ROADMAP: exactly one '## Later'" 1 "$(grep -c '^## Later$' "$IT/roadmap/ROADMAP.md")"
+check "seeded ROADMAP: exactly one '## Ideas'" 1 "$(grep -c '^## Ideas$' "$IT/roadmap/ROADMAP.md")"
 
 # ── 8. Merge-copy: adopter files survive install ──────────────────────────────
 # Seed the fresh-install target with adopter-owned files before re-running;
