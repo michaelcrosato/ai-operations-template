@@ -30,6 +30,7 @@ Anything about AI models, tooling, pricing, or framework majors that comes from 
 - No force-push. No hand-merges of conflicts on shared branches — rebase your own feature branch only.
 - PR description uses the operator template (plan §8.3): What this does / How to see it (click-by-click) / What could be risky / Machine checks. Plain English above the fold.
 - Never end a session while a PR you opened has CI pending. Preferred mechanism: `bash scripts/ship.sh <pr#> [--merge]` — it watches `gh pr checks` to completion, fails closed if no checks ever register, and merges only on green (never master/main). Otherwise watch `gh pr checks <n> --watch` to completion by hand, or write an explicit `HANDOFF:` line naming the PR in PROGRESS.md. Watchers die with the session — an unwatched PR is stranded work.
+- After a feature PR **merges**, complete its RECORD step (state flip → PROGRESS + DECISIONS + metrics) in the same session, or write an explicit `HANDOFF:` line in PROGRESS.md naming the merged feature. The Stop hook sees dirty/unpushed trees but NOT a merged-yet-unrecorded feature, so a merge without records strands silently — state flips ride the feature PR; post-merge records land via a `chore/` record-PR (plan §6.4).
 
 ## 7. Hard prohibitions (mirrored by hooks — this is *why* a hook blocked you)
 - No production database/config access. No reading `.env*` or secret stores. No live customer data — synthetic seeds only.
