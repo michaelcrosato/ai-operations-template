@@ -509,6 +509,44 @@
         "roadmap/evidence/F-0015/**"
       ],
       "priority": 1
+    },
+    {
+      "dependencies": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0016/verify.log",
+        "roadmap/evidence/F-0016/field-fix-tests.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "scripts/update-state.ts",
+        "scripts/verify.sh",
+        "scripts/ship.sh"
+      ],
+      "id": "F-0016",
+      "epic": "factory-hardening",
+      "title": "Smooth three field-reported adoption rough edges (doctrine + installer seed + shield noise)",
+      "spec_ref": "department brief 2026-06-12; roadmap/DECISIONS.md",
+      "description": "Three independent field-reported defects fixed together as adopter-experience polish. (a) AI_OPERATIONS_PLAN.md record-PR doctrine bullet references this repo specific history (installs #1-#2) which adopters cannot inherit verbatim — reword template-neutral. (b) install-into.sh seeded ROADMAP.md emits a duplicate ## Now heading (head -5 of the template captured its own ## Now, then the skeleton appended another) — reported by 3/9 fleet installs 2026-06-11; seed the preamble before the first section heading then append the canonical skeleton, one heading each. (c) assertion-shield.ts emits git fatal: ambiguous argument origin/develop...HEAD on the first commit before origin/develop exists — reported by all 9 fleet installs + curbcall 2026-06-11; detect the missing upstream and print one calm line instead. Contract tests for (b) seeded shape and (c) no-upstream fixture.",
+      "acceptance": [
+        "AI_OPERATIONS_PLAN.md record-PR doctrine bullet no longer references this repo specific adoption history (e.g. installs #1-#2) and reads as template-neutral doctrine an adopter can inherit verbatim",
+        "install-into.sh seeded roadmap/ROADMAP.md contains each section heading exactly once with no duplicate ## Now, and a contract test asserts the seeded file has exactly one ## Now (and one each of Next/Later/Ideas)",
+        "assertion-shield.ts detects a missing base upstream (origin/develop) on a first commit and prints one calm informational line instead of git fatal: ambiguous argument, still exiting 0; a contract test with a no-upstream fixture asserts exit 0, no fatal in output, and the calm line present",
+        "no existing contract test is weakened or removed; bash scripts/verify.sh exits 0"
+      ],
+      "authorized_paths": [
+        "AI_OPERATIONS_PLAN.md",
+        "scripts/install-into.sh",
+        "scripts/assertion-shield.ts",
+        "scripts/test-hooks.sh",
+        "roadmap/briefs/F-0016.md",
+        "roadmap/evidence/F-0016/**"
+      ],
+      "priority": 1
     }
   ]
 }

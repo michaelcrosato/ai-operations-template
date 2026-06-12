@@ -8,20 +8,39 @@ import { execFileSync } from 'node:child_process';
 
 const BASE_BRANCH = process.env.BASE_BRANCH || 'origin/develop';
 
+function refExists(ref: string): boolean {
+  // --verify --quiet resolves the ref without printing anything; stdio 'pipe'
+  // keeps git's stderr off the console so a missing upstream is silent.
+  try {
+    execFileSync('git', ['rev-parse', '--verify', '--quiet', ref], { stdio: 'pipe' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function getGitDiff(): string {
   // execFileSync with arg arrays: BASE_BRANCH is env-supplied, so it must
   // never pass through a shell (security-guidance plugin finding).
   const diffs: string[] = [];
-  try {
+  if (refExists(BASE_BRANCH)) {
     // Committed work on this branch vs base
-    diffs.push(execFileSync('git', ['diff', `${BASE_BRANCH}...HEAD`], { encoding: 'utf8' }));
-  } catch {
     try {
-      // Fallback: diff last commit if base branch is not fetched or available
+      diffs.push(execFileSync('git', ['diff', `${BASE_BRANCH}...HEAD`], { encoding: 'utf8' }));
+    } catch {
+      // base resolved but the range diff failed — fall through to staged check
+    }
+  } else if (refExists('HEAD~1')) {
+    // base not fetched/available but prior history exists — diff the last commit
+    try {
       diffs.push(execFileSync('git', ['diff', 'HEAD~1'], { encoding: 'utf8' }));
     } catch {
       // no usable history — staged check below may still apply
     }
+  } else {
+    // First commit before the upstream base exists yet — not an error, just no
+    // base to diff against. The staged check below still guards this commit.
+    console.log(`[Assertion Shield] No '${BASE_BRANCH}' upstream and no prior commit yet (first commit) — auditing staged changes only.`);
   }
   try {
     // Staged-but-uncommitted changes — what a pre-commit hook is actually
