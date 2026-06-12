@@ -470,6 +470,45 @@
         "roadmap/evidence/F-0014/**"
       ],
       "priority": 1
+    },
+    {
+      "dependencies": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0015/verify.log",
+        "roadmap/evidence/F-0015/ship-tests.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "scripts/update-state.ts",
+        "scripts/verify.sh"
+      ],
+      "id": "F-0015",
+      "epic": "factory-hardening",
+      "title": "Adopt ship.sh — mechanize the CI-watch-then-merge rule (CLAUDE.md section 6)",
+      "spec_ref": "CLAUDE.md section 6; roadmap/DECISIONS.md",
+      "description": "Port claude-software-3 scripts/ship.sh <pr#> [--merge]: block on gh pr checks --watch until terminal, wait bounded for checks to REGISTER post-creation and FAIL CLOSED if none appear (refuse to merge an unchecked PR), merge only on green, never merge a PR based on master/main. Add a contract-test section (stubbed gh on PATH). Reference it from CLAUDE.md section 6 as the preferred mechanism.",
+      "acceptance": [
+        "scripts/ship.sh exists and takes a PR number plus an optional --merge flag; it rejects a missing or non-numeric PR number and an unknown flag with a non-zero exit and a usage message",
+        "ship.sh waits a bounded time for checks to register on the PR after creation and, if no check ever registers, FAILS CLOSED — non-zero exit with no merge attempted (refusing to merge an unchecked PR)",
+        "ship.sh blocks on the PR checks until a terminal state and treats only an all-green result as success; a failing (or pending-then-failing) result exits non-zero and does not merge",
+        "with --merge and an all-green result ship.sh merges the PR; without --merge it reports green and exits 0 without merging; it never merges a PR whose base branch is master or main",
+        "scripts/test-hooks.sh gains a ship.sh contract-test section of at least 9 checks using a stubbed gh on PATH, covering arg validation, fail-closed-on-no-checks, green+merge, green+no-merge, failing-checks-no-merge, delayed registration, base-branch refusal, and merge-command-failure propagation; no existing test is weakened",
+        "CLAUDE.md section 6 references scripts/ship.sh as the preferred mechanism for the CI-watch-then-merge rule",
+        "bash scripts/verify.sh exits 0"
+      ],
+      "authorized_paths": [
+        "scripts/ship.sh",
+        "scripts/test-hooks.sh",
+        "CLAUDE.md",
+        "roadmap/briefs/F-0015.md",
+        "roadmap/evidence/F-0015/**"
+      ],
+      "priority": 1
     }
   ]
 }
