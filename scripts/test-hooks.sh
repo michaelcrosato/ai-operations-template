@@ -441,7 +441,9 @@ case "$sub" in
       exit 1
     fi
     printf 'CI\tpass\t1s\thttps://x\n'; exit 0 ;;
-  "pr view") echo "${FAKE_BASE:-develop}"; exit 0 ;;
+  "pr view")
+    if [ "${FAKE_PRVIEW_RC:-0}" -ne 0 ]; then exit "${FAKE_PRVIEW_RC}"; fi
+    echo "${FAKE_BASE:-develop}"; exit 0 ;;
   "pr merge") [ -n "${FAKE_MERGE_MARKER:-}" ] && : > "$FAKE_MERGE_MARKER"; exit "${FAKE_MERGE_RC:-0}" ;;
 esac
 exit 0
@@ -504,6 +506,15 @@ rm -f "$MARK"
 export FAKE_BASE=main
 check "ship: refuses to merge PR based on main" 1 "$(run_ship 5 --merge)"
 check "ship: main-based PR not merged" no "$(merged)"
+
+# 10b. base cannot be determined (gh pr view errors) → fail closed (security review)
+printf '0' > "$NOCHECK_FILE"
+rm -f "$MARK"
+export FAKE_BASE=develop
+export FAKE_PRVIEW_RC=1
+check "ship: refuses when base cannot be determined" 1 "$(run_ship 5 --merge)"
+check "ship: undetermined-base PR not merged" no "$(merged)"
+unset FAKE_PRVIEW_RC
 
 # 11. merge-command failure propagates
 printf '0' > "$NOCHECK_FILE"

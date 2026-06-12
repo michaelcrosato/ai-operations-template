@@ -20,13 +20,20 @@ command -v gh >/dev/null 2>&1 || { echo "ERROR: gh (GitHub CLI) not found on PAT
 
 # SHIP_REGISTER_TIMEOUT / SHIP_REGISTER_INTERVAL are timing knobs ONLY — a smaller
 # value fails closed sooner, never opens a bypass, so no DANGEROUSLY_ prefix.
+# Sanitize to non-negative integers; clamp the interval to >=1 so the register
+# wait can never busy-spin without advancing toward the timeout (security review).
 TIMEOUT="${SHIP_REGISTER_TIMEOUT:-180}"
 INTERVAL="${SHIP_REGISTER_INTERVAL:-6}"
+case "$TIMEOUT" in ''|*[!0-9]*) TIMEOUT=180 ;; esac
+case "$INTERVAL" in ''|*[!0-9]*) INTERVAL=6 ;; esac
+if [ "$INTERVAL" -lt 1 ]; then INTERVAL=1; fi
 
 if [ "$MERGE" = true ]; then
+  # Fail closed on an empty/errored base too: a transient `gh pr view` failure
+  # must never let a master/main-based PR slip through (security review).
   BASE="$(gh pr view "$PR" --json baseRefName --jq .baseRefName 2>/dev/null || echo '')"
   case "$BASE" in
-    main|master) echo "ERROR: PR #$PR targets '$BASE' — refusing to merge (never master/main, §6)." >&2; exit 1 ;;
+    ''|main|master) echo "ERROR: PR #$PR base is '$BASE' — refusing to merge (need a confirmed non-master/main base; §6)." >&2; exit 1 ;;
   esac
 fi
 

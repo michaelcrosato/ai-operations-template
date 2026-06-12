@@ -7,10 +7,10 @@ Checked 6 files in 6ms. No fixes applied.
 ──── lint: OK
 
 ──── verify: unit tests ────
-✔ getHealth() reports status ok and the correct service name (0.8353ms)
-✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.1156ms)
-✔ getHealth() uptime_s is a non-negative number (0.0669ms)
-✔ CLI: node src/health.js exits 0 and prints JSON with status ok (43.1527ms)
+✔ getHealth() reports status ok and the correct service name (0.8244ms)
+✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.1174ms)
+✔ getHealth() uptime_s is a non-negative number (0.0733ms)
+✔ CLI: node src/health.js exits 0 and prints JSON with status ok (30.8166ms)
 ℹ tests 4
 ℹ suites 0
 ℹ pass 4
@@ -18,14 +18,14 @@ Checked 6 files in 6ms. No fixes applied.
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 89.09
+ℹ duration_ms 77.4863
 ──── unit tests: OK
 (no build script — skipping)
 ──── test coverage guard: OK (every src test file is wired into npm test)
 (placeholder check: template repo — self-skipped; activates after adoption rename)
 
 ──── verify: features.json schema + invariants ────
-[update-state] valid: 15 features, 12 passing (evidence re-verified).
+[update-state] valid: 15 features, 13 passing (evidence re-verified).
 ──── features.json schema + invariants: OK
 
 ──── verify: assertion shield ────
@@ -208,10 +208,12 @@ Checked 4 files in 6ms. No fixes applied.
   [PASS] ship: delayed registration merged
   [PASS] ship: refuses to merge PR based on main
   [PASS] ship: main-based PR not merged
+  [PASS] ship: refuses when base cannot be determined
+  [PASS] ship: undetermined-base PR not merged
   [PASS] ship: merge failure propagates
 
-hook contract tests: 155 passed, 0 failed
+hook contract tests: 157 passed, 0 failed
 ──── hook contract tests: OK
 
-VERIFY-COMMIT: d41805061bc9173b3410d073d88f2faa033800fe @ 2026-06-12T06:42:47Z
+VERIFY-COMMIT: b8ff93caf8603db8952a9098576cb9561380f087 @ 2026-06-12T06:53:20Z
 VERIFY: PASS (exit 0)

@@ -14,4 +14,8 @@
   [PASS] ship: delayed registration merged
   [PASS] ship: refuses to merge PR based on main
   [PASS] ship: main-based PR not merged
+  [PASS] ship: refuses when base cannot be determined
+  [PASS] ship: undetermined-base PR not merged
   [PASS] ship: merge failure propagates
+
+hook contract tests: 157 passed, 0 failed
