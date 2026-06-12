@@ -415,6 +415,107 @@ rm -rf "$LANE_FIX"
 
 check "e2e.yml triggers on its own changes" 0 "$(grep -qF '.github/workflows/e2e.yml' "$WF_DIR/e2e.yml" && echo 0 || echo 1)"
 
+echo "── ship.sh"
+SHIP_FIX="$(mktemp -d)"
+STUB="$SHIP_FIX/bin"; mkdir -p "$STUB"
+cat > "$STUB/gh" <<'GHSTUB'
+#!/usr/bin/env bash
+# Fake gh for ship.sh contract tests. Driven by env:
+#   FAKE_NOCHECK_FILE  — path to a file holding an integer: how many more
+#                        `pr checks` probes should report "no checks" before
+#                        checks "register". Decremented each probe.
+#   FAKE_WATCH_RC      — exit code for `pr checks <pr> --watch` (default 0).
+#   FAKE_BASE          — base branch reported by `pr view` (default develop).
+#   FAKE_MERGE_MARKER  — file touched when `pr merge` is invoked.
+#   FAKE_MERGE_RC      — exit code for `pr merge` (default 0).
+sub="${1:-} ${2:-}"
+case "$*" in
+  *"--watch"*) echo "watch: done"; exit "${FAKE_WATCH_RC:-0}" ;;
+esac
+case "$sub" in
+  "pr checks")
+    n=0; [ -n "${FAKE_NOCHECK_FILE:-}" ] && n="$(cat "$FAKE_NOCHECK_FILE" 2>/dev/null || echo 0)"
+    if [ "$n" -gt 0 ]; then
+      echo $((n - 1)) > "$FAKE_NOCHECK_FILE"
+      echo "no checks reported on the 'feat/x' branch" >&2
+      exit 1
+    fi
+    printf 'CI\tpass\t1s\thttps://x\n'; exit 0 ;;
+  "pr view") echo "${FAKE_BASE:-develop}"; exit 0 ;;
+  "pr merge") [ -n "${FAKE_MERGE_MARKER:-}" ] && : > "$FAKE_MERGE_MARKER"; exit "${FAKE_MERGE_RC:-0}" ;;
+esac
+exit 0
+GHSTUB
+chmod +x "$STUB/gh"
+
+SHIP="$ROOT/scripts/ship.sh"
+MARK="$SHIP_FIX/merged"
+run_ship() {
+  ( PATH="$STUB:$PATH" SHIP_REGISTER_TIMEOUT="${SHIP_REGISTER_TIMEOUT:-3}" SHIP_REGISTER_INTERVAL="${SHIP_REGISTER_INTERVAL:-1}" \
+      FAKE_MERGE_MARKER="$MARK" bash "$SHIP" "$@" >/dev/null 2>&1; echo $? )
+}
+merged() { if [ -f "$MARK" ]; then echo yes; else echo no; fi; }
+
+# 1. arg validation
+check "ship: rejects missing PR number" 1 "$(run_ship)"
+check "ship: rejects non-numeric PR" 1 "$(run_ship abc)"
+check "ship: rejects unknown flag" 1 "$(run_ship 5 --bogus)"
+
+# 4-5. fail closed when no checks ever register
+NOCHECK_FILE="$SHIP_FIX/nocheck_count"
+printf '9999' > "$NOCHECK_FILE"
+rm -f "$MARK"
+export FAKE_NOCHECK_FILE="$NOCHECK_FILE"
+export FAKE_WATCH_RC=0
+export FAKE_BASE=develop
+export FAKE_MERGE_RC=0
+check "ship: fails closed when no checks ever register" 1 "$(SHIP_REGISTER_TIMEOUT=2 SHIP_REGISTER_INTERVAL=1 run_ship 5 --merge)"
+check "ship: no-checks path does not merge" no "$(merged)"
+
+# 6. green + --merge merges
+printf '0' > "$NOCHECK_FILE"
+rm -f "$MARK"
+check "ship: green + --merge merges" 0 "$(run_ship 5 --merge)"
+check "ship: merge happened" yes "$(merged)"
+
+# 7. green without --merge does not merge
+printf '0' > "$NOCHECK_FILE"
+rm -f "$MARK"
+check "ship: green without --merge exits 0" 0 "$(run_ship 5)"
+check "ship: no merge without --merge" no "$(merged)"
+
+# 8. failing checks → no merge
+printf '0' > "$NOCHECK_FILE"
+rm -f "$MARK"
+export FAKE_WATCH_RC=1
+check "ship: failing checks exit non-zero" nonzero "$(rc=$(run_ship 5 --merge); [ "$rc" -ne 0 ] && echo nonzero || echo zero)"
+check "ship: failing checks do not merge" no "$(merged)"
+
+# 9. delayed registration: one "no checks" probe then succeeds
+printf '1' > "$NOCHECK_FILE"
+rm -f "$MARK"
+export FAKE_WATCH_RC=0
+check "ship: registers after a delay then merges" 0 "$(SHIP_REGISTER_TIMEOUT=5 SHIP_REGISTER_INTERVAL=1 run_ship 5 --merge)"
+check "ship: delayed registration merged" yes "$(merged)"
+
+# 10. base main refused
+printf '0' > "$NOCHECK_FILE"
+rm -f "$MARK"
+export FAKE_BASE=main
+check "ship: refuses to merge PR based on main" 1 "$(run_ship 5 --merge)"
+check "ship: main-based PR not merged" no "$(merged)"
+
+# 11. merge-command failure propagates
+printf '0' > "$NOCHECK_FILE"
+rm -f "$MARK"
+export FAKE_BASE=develop
+export FAKE_WATCH_RC=0
+export FAKE_MERGE_RC=1
+check "ship: merge failure propagates" nonzero "$(rc=$(run_ship 5 --merge); [ "$rc" -ne 0 ] && echo nonzero || echo zero)"
+
+unset FAKE_NOCHECK_FILE FAKE_WATCH_RC FAKE_BASE FAKE_MERGE_RC
+rm -rf "$SHIP_FIX"
+
 echo ""
 echo "hook contract tests: $PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] || exit 1

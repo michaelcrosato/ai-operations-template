@@ -1,0 +1,17 @@
+── ship.sh
+  [PASS] ship: rejects missing PR number
+  [PASS] ship: rejects non-numeric PR
+  [PASS] ship: rejects unknown flag
+  [PASS] ship: fails closed when no checks ever register
+  [PASS] ship: no-checks path does not merge
+  [PASS] ship: green + --merge merges
+  [PASS] ship: merge happened
+  [PASS] ship: green without --merge exits 0
+  [PASS] ship: no merge without --merge
+  [PASS] ship: failing checks exit non-zero
+  [PASS] ship: failing checks do not merge
+  [PASS] ship: registers after a delay then merges
+  [PASS] ship: delayed registration merged
+  [PASS] ship: refuses to merge PR based on main
+  [PASS] ship: main-based PR not merged
+  [PASS] ship: merge failure propagates
