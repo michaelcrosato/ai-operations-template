@@ -4,7 +4,19 @@
 
 ---
 
-## 2026-06-13 — 1min scheduled orchestrator eval (early 60s cadence) + F-0017 BUILD advancing (293s/81c/11e, evidence/F-0017/ + src/forge/ + package edits appearing) + PR#37/#36 no checks
+## 2026-06-13 — 1min scheduled orchestrator eval (early 60s cadence) + F-0017 BUILD 392s/85c/11e (artifacts: evidence/F-0017/, src/forge/; edits package/test-hooks) + PR#37/#36 no checks
+
+**Done:** Per prompt - read top 50 PROGRESS (previous 1min block at top + history) + full features.json (18 features; F-0017 pending/in_progress from SELECT, F-0018 pending; product tracked). Git: feat/F-0017 ahead 3, dirt M package.json M scripts/test-hooks.sh + ?? roadmap/evidence/F-0017/ ?? src/forge/ (builder artifacts!). Sub outputs: F-0017 builder still running (392s, turn 1, 85 calls, 11 errors, 18% ctx; tools read_file/run/list/grep/write/search_replace - kaizen). PRs: #37 F-0007 OPEN "no checks"; #36 F-0018 OPEN "no checks". Evidence: F-0017 dir present (progress). AGENT_STOP absent. Schedulers active.
+
+**Compromised:** No (no AGENT_STOP). Builder sub advancing (calls 81→85, artifacts present and builder editing per kaizen after Grep/Glob; on correct feat/F-0017). Recent state (prior prepend commit + builder output). Ship #37 fail-closed *correct* (no checks per rules). No cascading (errors 11 but sub alive; pwsh noise known). Backlog product fixed prior. Velocity positive (BUILD producing artifacts this cycle).
+
+**Pause/fix/relaunch:** n/a. (Builder errors 11 - pwsh compat as history; continue poll. No 2-cycle stall: sub calls up, artifacts now.)
+
+**Advance:** F-0017 (current highest pending/in_progress): BUILD active via sub (ID 019ec1d6-...; 392s/85c/11e, now writing - poll continue). F-0007 PR#37: OPEN no checks (previous ship fail-closed correctly; PR not merged). F-0018 PR#36: OPEN no checks (monitored via gh; feature pending in backlog - no merge/fail-closed; no new create). F-0019: not visible. No new spawns (BUILD sub running). Prepended this fresh block. 
+
+**Telemetry:** Time since start ~ (schedulers ~15:51, now ~16:42+; ~2min since last 1min). Velocity: F-0017 BUILD (85 calls, +artifacts), +prior +2 backlog. Bottlenecks: CI checks not registering (#37/#36 - repeated, ship fail-closed); builder errors 11/slow (pwsh/env); no full verify yet (early). Align: xAI 4/16 (builder sub active w/ kaizen + guard; prior groom/babysit; orchestrator 1min monitoring). Subs productive (calls up, now edits). Exit clean.
+
+(1min cycle complete; fresh block. Schedulers continue. Next: poll F-0017 builder (ID 019ec1d6-...); if checks on #37/#36, gh monitor/re-ship; when F-0017 done, SELECT F-0018, BRIEF (groom outline), BUILD align w/ existing PR#36 + rebase; prepend; commit.)
 
 **Done:** Per prompt - read top 50 PROGRESS (previous 1min block at top + history) + full features.json (18 features; F-0017 pending/in_progress from SELECT, F-0018 pending; product tracked). Git: feat/F-0017 ahead 2, dirt M package.json M scripts/test-hooks.sh + new ?? roadmap/evidence/F-0017/ ?? src/forge/ (builder artifacts!). Sub outputs: F-0017 builder still running (293s, turn 1, 81 calls, 11 errors, 16% ctx; tools now include write/search_replace - kaizen targeted after Grep/Glob). PRs: #37 F-0007 OPEN "no checks"; #36 F-0018 OPEN "no checks". Evidence: F-0017 dir now present (progress, ls via git status). AGENT_STOP absent. Schedulers active.
 
