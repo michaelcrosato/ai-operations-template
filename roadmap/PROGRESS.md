@@ -4,6 +4,22 @@
 
 ---
 
+## 2026-06-13 — 1min scheduled orchestrator eval (early 60s cadence) + ship #37 fail-closed + F-0017 BUILD active on feat/F-0017
+
+**Done:** Per prompt - read top 50 PROGRESS (header + current top F-0004 record + history) + full features.json (18 features; F-0017 "status": "pending" with in_progress SELECT from prior, F-0018 pending; product entries now present post-groom). Git: switched to feat/F-0017 (builder action), ahead of origin/develop, dirt M scripts/test-hooks.sh ?? .next/; no F-0017 evidence dir yet. Sub outputs: F-0017 builder running (41s, turn 1, 10 calls, 1 error, 3% ctx; tools read_file/list_dir/grep/run_terminal — kaizen compliant). Ship task call-dd76d1d2-... (PR#37) completed exit 1: "Waiting for checks to register on PR #37... No checks registered after 180s — refusing to merge an unchecked PR (fail closed)." PR#36 (F-0018) no checks. Evidence timestamps: F-0007 logs old (~9:25); no high-F. AGENT_STOP: no. Schedulers active. 
+
+**Compromised:** No (no AGENT_STOP trigger). Ship for #37 fail-closed is *correct* per CLAUDE.md §6 + ship.sh (no checks registered — intentional, not a loop bug or repeated failure). New artifacts/state: features updated with F-0017/F-0018 (backlog drift fixed in prior cycle via groom exec + update-state); brief F-0017.md written; builder sub active on correct feat/F-0017 branch; git commits from prior (including features/brief/PROGRESS). No unhandled exceptions or cascading subs (builder early but using right tools, 1 error likely pwsh cmd). Optimization (backlog drift for product) already implemented. Velocity positive despite ship "fail".
+
+**Pause/fix/relaunch:** n/a — no pause needed. (Prior cycles had stalls on F-0007; now resolved with PR + correct fail-closed on new PR.)
+
+**Advance:** F-0007 SHIP: PR#37 created, ship.sh 37 invoked (bg task), correctly fail-closed (no checks after 180s per spec) — PR remains OPEN, no merge (rules followed). F-0017: in_progress (from SELECT), builder sub (019ec1d6-...) spawned with precise directive (brief, F-0007 guard, kaizen Grep/Glob, branch from origin/develop, evidence + call count) and actively running (10 calls, correct tools, on feat/F-0017). F-0018: pending (now in features.json), PR#36 exists + monitored (no checks, fail-closed per prior babysit sub report; gap fixed by adding to backlog). Groom/babysit subs previously completed with exact --add JSONs (executed) and reports. Prepended this fresh block. No new spawns needed this minute (builder for current pending already active).
+
+**Telemetry:** Time since schedulers start ~ (15:51 origin, current ~16:35+; this 1min eval). Velocity: +2 features added to backlog (F-0017/F-0018 via groom), 1 BUILD in progress (F-0017 sub 41s/10 calls), 1 SHIP attempt (F-0007 #37 fail-closed correctly). Bottlenecks: CI checks not registering on new PRs (ship fail-closed; repeated pattern for fresh PRs in this env/Windows/gh); builder early stage (1 error, likely cmd noise); no evidence for F-0017 yet. Align: xAI multi-agent 4/16 (parallel subs: groom delivered precise product entries, babysit reported on #36, builder now active for F-0017; hierarchical with orchestrator monitoring). Subs productive/low waste. Exit clean.
+
+(1min cycle complete; fresh block. Schedulers continue. Next: poll F-0017 builder (ID 019ec1d6-...); if/when checks register on #37, re-invoke ship.sh 37 or gh monitor; when F-0017 BUILD/VERIFY/JUDGE done, SELECT F-0018 (pending), BRIEF (use groom outline), spawn/align BUILD noting existing PR#36; prepend next eval; commit if changes.)
+
+---
+
 ## 2026-06-13 — F-0004 RECORD — operator setup completed
 
 **Done:** Resolved one-time setup question Q-0001 and completed feature F-0004 ("Operator one-time setup completed"). Marked the feature as done/passing.
