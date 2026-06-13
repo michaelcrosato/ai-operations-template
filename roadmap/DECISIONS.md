@@ -2,6 +2,7 @@
 
 > One entry per autonomous judgment call: context → decision → reversible? → where it lives.
 
+- **2026-06-13** · Autoloop activation groom decision (user "activiate the autoloop" + ForgeOps context) → groomed and prioritized the two pre-briefed product pri-1 features (F-0018 canvas, F-0019 tests) into backlog over the sole engine pending F-0007 (pri 3); F-0007 remains for dedicated engine work or downtime. Reversible (just re-prioritize later). Product momentum from the F-0017 orchestrator initiative takes precedence for this AFK run. → PROGRESS groom block + features.json (via update-state).
 - **2026-06-09** · Bootstrap branch model → initialized repo with `develop` as the root/default branch so the constitution's "never touch master/main" rule is never violated, even at bootstrap; stable branch gets created at first promotion. Reversible (branch settings). → git history, AI_OPERATIONS_PLAN §6.4.
 - **2026-06-09** · Repo visibility → **private** (safe default for an unreviewed engine); marked as GitHub *template repository* for one-click reuse. Reversible in repo settings. → github.com/michaelcrosato/ai-operations-template.
 - **2026-06-09** · Permission rule `"publish"` (intent unclear) → interpreted as package-publishing ban: `Bash(npm publish*)` + `Bash(pnpm publish*)`. Reversible. → .claude/settings.json.
