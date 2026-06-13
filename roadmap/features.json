@@ -114,11 +114,13 @@
         "F-0001"
       ],
       "priority": 2,
-      "status": "blocked",
-      "passes": false,
-      "evidence": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0004/verify.log"
+      ],
       "attempts": 0,
-      "blocked_reason": "Requires human operator actions (GitHub settings, secrets, claude.ai configuration) — see QUESTIONS.md"
+      "blocked_reason": null
     },
     {
       "dependencies": [
