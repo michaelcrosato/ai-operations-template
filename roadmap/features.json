@@ -200,9 +200,11 @@
       "dependencies": [
         "F-0001"
       ],
-      "status": "pending",
+      "status": "in_progress",
       "passes": false,
-      "evidence": [],
+      "evidence": [
+        "roadmap/evidence/F-0007/contract-tests.log"
+      ],
       "attempts": 0,
       "blocked_reason": null,
       "forbidden_paths": [
