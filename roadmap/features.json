@@ -631,6 +631,72 @@
         "package.json"
       ],
       "priority": 1
+    },
+    {
+      "dependencies": [
+        "F-0007"
+      ],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "scripts/**",
+        "roadmap/**"
+      ],
+      "spec_ref": "roadmap/briefs/F-0017.md",
+      "title": "ForgeOps promptToGraph core — natural language to executable agent graph JSON (F-0017 ghost remediation slice 1)",
+      "priority": 1,
+      "acceptance": [
+        "promptToGraph(prompt) or equiv in src/forge|src/lib produces valid JSON (>=1 node + edges); keys include nodes[].id/type/label + edges[].source/target; no touches outside authorized",
+        "Unit test asserts output JSON parseable, has required keys, deterministic (same input same shape)",
+        "CLI smoke or integration (product src/ present) runs without error and can emit sample-graph.json",
+        "bash scripts/verify.sh exits 0 (units + product-mode); evidence/F-0019/ includes sample-graph.json + unit exercising the fn",
+        "Edits confined to authorized (src/**, package.json if dep); F-0007 guard not violated"
+      ],
+      "authorized_paths": [
+        "src/**",
+        "package.json"
+      ],
+      "id": "F-0019",
+      "epic": "forgeops",
+      "description": "Minimal product-mode core: promptToGraph(prompt) or equivalent produces valid executable agent graph JSON (nodes with id/type/label/position/model/prompt/estimatedCost + edges source/target). Deterministic foundation for canvas/sim/export; 1 builder session; delivers first F-0017 AC under real src/ to un-ghost."
+    },
+    {
+      "dependencies": [
+        "F-0007"
+      ],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "scripts/**",
+        "roadmap/**"
+      ],
+      "spec_ref": "roadmap/briefs/F-0017.md; PROGRESS (groom for ForgeOps auth/RBAC/deploy post F-0007)",
+      "title": "ForgeOps RBAC simulation + deploy/export scaffold foundations (owner/viewer 403/404, portable JSON + minimal Dockerfile/docker-compose)",
+      "priority": 1,
+      "acceptance": [
+        "RBAC module exports check(principal, res, act): allow/deny; owner allows all, viewer denies mutations (403/404); unit tests use two principals (owner allowed, non-owner 403/404) per security.md",
+        "Export helper writes graph.json + minimal Dockerfile (node base, COPY graph, healthcheck) + docker-compose.yml (DEMO_MODE, health); artifacts valid, no engine src changes",
+        "Units cover RBAC deny for viewer + export file contents contain DEMO_MODE/healthcheck strings; evidence includes sample artifacts",
+        "bash scripts/verify.sh exits 0 (units + product); evidence/F-0020/ has RBAC logs + Dockerfile/compose snippets + graph.json",
+        "Only src/** + package.json; forbidden .claude/** .github/workflows/** scripts/** roadmap/**; F-0007 guard honored"
+      ],
+      "authorized_paths": [
+        "src/**",
+        "package.json"
+      ],
+      "id": "F-0020",
+      "epic": "forgeops",
+      "description": "RBAC sim (synthetic owner full edit/run/export, non-owner read-only 403/404 on resources; no client-supplied ID trust per security.md) + export (portable graph JSON + minimal Dockerfile + docker-compose with DEMO_MODE/healthcheck). Small testable slice of F-0017 vision; auth/RBAC/deploy foundation now engine guard stable."
     }
   ]
 }
