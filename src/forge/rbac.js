@@ -8,7 +8,7 @@
  * Matches src/health.js style (module.exports + CLI-if-main, stdout JSON, exit 0).
  */
 
-function check(principal, res, act) {
+function check(principal, _res, act) {
   const p = String(principal || '').toLowerCase();
   const a = String(act || '').toLowerCase();
   if (p === 'owner') return 'allow';

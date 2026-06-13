@@ -6,7 +6,7 @@ const { execFileSync } = require('node:child_process');
 const path = require('node:path');
 const fs = require('node:fs');
 
-const { exportArtifacts, dockerfileContent, dockerComposeContent } = require('./exportArtifacts.js');
+const { exportArtifacts } = require('./exportArtifacts.js');
 
 const EXPORT_CLI = path.join(__dirname, 'exportArtifacts.js');
 
@@ -15,7 +15,7 @@ const EXPORT_CLI = path.join(__dirname, 'exportArtifacts.js');
 const emitted = exportArtifacts();
 const EV = path.resolve(__dirname, '../../roadmap/evidence/F-0020');
 fs.mkdirSync(EV, { recursive: true });
-fs.writeFileSync(path.join(EV, 'graph.json'), JSON.stringify(emitted.graph, null, 2) + '\n');
+fs.writeFileSync(path.join(EV, 'graph.json'), `${JSON.stringify(emitted.graph, null, 2)}\n`);
 fs.writeFileSync(path.join(EV, 'Dockerfile'), emitted.dockerfile);
 fs.writeFileSync(path.join(EV, 'docker-compose.yml'), emitted.dockerCompose);
 

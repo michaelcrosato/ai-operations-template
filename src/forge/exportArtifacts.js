@@ -49,17 +49,17 @@ function minimalGraph() {
 
 function dockerfileContent() {
   // node base, COPY graph, healthcheck
-  return [
+  return `${[
     'FROM node:20-alpine',
     'WORKDIR /app',
     'COPY graph.json .',
     'HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD node -e "process.exit(0)" || exit 1'
-  ].join('\n') + '\n';
+  ].join('\n')}\n`;
 }
 
 function dockerComposeContent() {
   // DEMO_MODE + health (healthcheck)
-  return [
+  return `${[
     "version: '3.8'",
     'services:',
     '  forge:',
@@ -71,13 +71,13 @@ function dockerComposeContent() {
     '      interval: 30s',
     '      timeout: 3s',
     '      retries: 3'
-  ].join('\n') + '\n';
+  ].join('\n')}\n`;
 }
 
 function exportArtifacts() {
   ensureDir(EVIDENCE_DIR);
   const g = minimalGraph();
-  fs.writeFileSync(path.join(EVIDENCE_DIR, 'graph.json'), JSON.stringify(g, null, 2) + '\n');
+  fs.writeFileSync(path.join(EVIDENCE_DIR, 'graph.json'), `${JSON.stringify(g, null, 2)}\n`);
   fs.writeFileSync(path.join(EVIDENCE_DIR, 'Dockerfile'), dockerfileContent());
   fs.writeFileSync(path.join(EVIDENCE_DIR, 'docker-compose.yml'), dockerComposeContent());
   return { graph: g, dockerfile: dockerfileContent(), dockerCompose: dockerComposeContent() };
