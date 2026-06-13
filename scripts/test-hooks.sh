@@ -78,6 +78,35 @@ check "sed branch ignores decoy file_path in content" 2 "$RES"
 RES="$(printf '{"tool_input":{"file_path":"docs/ok.md"}}' | VERIFY_GATE_PARSER='sed' bash "$HOOKS/verify-gate.sh" >/dev/null 2>&1; echo $?)"
 check "sed branch still allows other files" 0 "$RES"
 
+echo "── verify-gate.sh per-feature authz (F-0007, AC1/2/3)"
+AFIX="$(mktemp -d)"
+AST="$AFIX/features.json"
+cat > "$AST" <<'AEOF'
+{ "features": [
+  { "id": "F-9999", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+    "acceptance": ["a"], "authorized_paths": ["scripts/**", ".claude/hooks/**"], "forbidden_paths": ["scripts/forbidden-for-9999.ts"],
+    "dependencies": [], "priority": 1, "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null }
+] }
+AEOF
+# AC2: no-active-feature — orchestrator/maintenance sessions must not be broken (allow edits)
+check "no-active-feature (orchestrator) allows file outside any feature scope" 0 "$(hook_file 'roadmap/ROADMAP.md')"
+check "no-active-feature (orchestrator) allows file in scripts" 0 "$(hook_file 'scripts/seed.ts')"
+# AC1 + AC3: active feature — block outside authz, block forbidden, allow inside; exercised via STATE_FILE fixture
+check "allows edit inside authorized_paths (scripts/**)" 0 "$(CLAUDE_ACTIVE_FEATURE=F-9999 STATE_FILE="$AST" hook_file 'scripts/test-hooks.sh')"
+check "allows edit inside authorized_paths (.claude/hooks/**)" 0 "$(CLAUDE_ACTIVE_FEATURE=F-9999 STATE_FILE="$AST" hook_file '.claude/hooks/verify-gate.sh')"
+check "blocks edit outside authorized_paths" 2 "$(CLAUDE_ACTIVE_FEATURE=F-9999 STATE_FILE="$AST" hook_file 'src/some-ui.tsx')"
+check "blocks edit to package.json (outside F-9999 authorized_paths)" 2 "$(CLAUDE_ACTIVE_FEATURE=F-9999 STATE_FILE="$AST" hook_file 'package.json')"
+check "blocks edit inside forbidden_paths" 2 "$(CLAUDE_ACTIVE_FEATURE=F-9999 STATE_FILE="$AST" hook_file 'scripts/forbidden-for-9999.ts')"
+# fail-closed (AC1 block behavior)
+check "blocks when active feature unknown (fail-closed)" 2 "$(CLAUDE_ACTIVE_FEATURE=F-NOPE STATE_FILE="$AST" hook_file 'scripts/test-hooks.sh')"
+cat > "$AST" <<'AEOF'
+{ "features": [ { "id": "F-EMPTY", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+    "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [],
+    "priority": 1, "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null } ] }
+AEOF
+check "blocks when active feature has empty authorized_paths (fail-closed)" 2 "$(CLAUDE_ACTIVE_FEATURE=F-EMPTY STATE_FILE="$AST" hook_file 'scripts/verify.sh')"
+rm -rf "$AFIX"
+
 echo "── commit-on-stop.sh"
 TG="$(mktemp -d)"
 ( cd "$TG" && git init -q && git config user.email t@t && git config user.name t )

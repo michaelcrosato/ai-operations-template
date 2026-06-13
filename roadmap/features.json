@@ -201,9 +201,10 @@
         "F-0001"
       ],
       "status": "in_progress",
-      "passes": false,
+      "passes": true,
       "evidence": [
-        "roadmap/evidence/F-0007/contract-tests.log"
+        "roadmap/evidence/F-0007/contract-tests.log",
+        "roadmap/evidence/F-0007/verify.log"
       ],
       "attempts": 0,
       "blocked_reason": null,
@@ -549,6 +550,85 @@
         "scripts/test-hooks.sh",
         "roadmap/briefs/F-0016.md",
         "roadmap/evidence/F-0016/**"
+      ],
+      "priority": 1
+    },
+    {
+      "dependencies": [
+        "F-0007"
+      ],
+      "status": "in_progress",
+      "passes": false,
+      "evidence": [
+        "roadmap/evidence/F-0017/verify.log",
+        "roadmap/evidence/F-0017/sample-graph.json",
+        "roadmap/evidence/F-0017/sample-ab-logs.txt",
+        "roadmap/evidence/F-0017/sample-exports.txt",
+        "roadmap/evidence/F-0017/forge-units.log"
+      ],
+      "attempts": 1,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/**",
+        "scripts/**",
+        "roadmap/**"
+      ],
+      "id": "F-0017",
+      "epic": "forgeops",
+      "title": "ForgeOps MVP Core: prompt-to-graph, A-B simulation foundation, RBAC, real-time logs, exports/Docker",
+      "spec_ref": "roadmap/briefs/F-0017.md",
+      "description": "Core non-UI foundations for the ForgeOps agent operations platform: promptToGraph (natural language to executable graph JSON), basic A/B simulation with real-time structured logs, owner/viewer RBAC sim, exports (portable JSON + minimal Dockerfile + docker-compose with DEMO_MODE). Enables visual canvas and sellable product experience. Depends on F-0007 guard.",
+      "acceptance": [
+        "promptToGraph(prompt: string) or equivalent core produces valid executable agent graph JSON (nodes + edges) consumable by the engine",
+        "A/B simulator executes two graph variants over synthetic inputs and emits real-time structured logs viewable via CLI/UI hook",
+        "RBAC layer enforces owner (full edit/run) vs non-owner (read-only 403/404 on resources)",
+        "Export produces portable JSON + minimal Dockerfile/docker-compose scaffold for the graph; integrates cleanly with existing engine",
+        "bash scripts/verify.sh exits 0 (units + product-mode checks; --e2e if UI surface added)"
+      ],
+      "authorized_paths": [
+        "src/**",
+        "app/**",
+        "components/**",
+        "package.json"
+      ],
+      "priority": 1
+    },
+    {
+      "dependencies": [
+        "F-0007",
+        "F-0017"
+      ],
+      "status": "blocked",
+      "passes": false,
+      "evidence": [
+        "roadmap/evidence/F-0018/verify.log"
+      ],
+      "attempts": 1,
+      "blocked_reason": "second strike JUDGE NEEDS_WORK: missing green verify.log containing \"VERIFY: PASS (exit 0)\" from scripts/verify.sh + E2E artifacts/screenshots per frontend.md rule for UI features (stub only; host env + F-0007 residual blocks full gate despite 22 units + build 0 + chart fix + ACs covered in code/tests). PR template body + git diff procedure steps not executed by judge. Core + canvas delivery solid (BUILD COMPLETE, guard honored, kaizen followed) but gate not satisfied in this tree per contract. Move on per protocol.",
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/**",
+        "scripts/**",
+        "roadmap/**"
+      ],
+      "id": "F-0018",
+      "epic": "forgeops",
+      "title": "ForgeOps Visual Canvas — ReactFlow graph editor, live A/B sim, RBAC modes, exports",
+      "spec_ref": "roadmap/briefs/F-0018.md",
+      "description": "Interactive visual canvas for ForgeOps: ReactFlow (@xyflow/react) graph authoring from prompt or direct manipulation, A/B sim execution with live structured log ticker/charts (Recharts), RBAC owner/viewer persona toggle, one-click exports (JSON + Docker scaffold from core). Pure consumer of F-0017 engine. All UI states handled. Matches existing demo/theme patterns per frontend.md.",
+      "acceptance": [
+        "Canvas renders and allows interactive editing of graphs produced by F-0017 promptToGraph using ReactFlow (@xyflow/react)",
+        "A/B simulation runs from canvas, streams real-time structured logs (from abSim/generateGraphAwareLog) to UI ticker/chart",
+        "RBAC persona toggle enforces owner (full edit/run/export) vs viewer (read-only, mutations rejected visibly)",
+        "Export actions produce valid JSON + Dockerfile/docker-compose from F-0017 export; downloadable and match spec",
+        "UI handles all states (loading/empty/error/success) with plain messages, follows frontend.md and existing demo patterns, verify green"
+      ],
+      "authorized_paths": [
+        "src/**",
+        "app/**",
+        "components/**",
+        "package.json"
       ],
       "priority": 1
     }
