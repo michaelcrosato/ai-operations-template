@@ -557,7 +557,7 @@
       "dependencies": [
         "F-0007"
       ],
-      "status": "in_progress",
+      "status": "done",
       "passes": true,
       "evidence": [
         "roadmap/evidence/F-0017/verify.log",
