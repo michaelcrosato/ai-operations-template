@@ -118,7 +118,7 @@
       "passes": false,
       "evidence": [],
       "attempts": 0,
-      "blocked_reason": "Requires human operator actions (GitHub settings, secrets, claude.ai configuration) — see QUESTIONS.md"
+      "blocked_reason": "Requires human operator actions: Claude GitHub App install, CLAUDE_CODE_OAUTH_TOKEN secret, and cloud environment setup — see QUESTIONS.md."
     },
     {
       "dependencies": [
@@ -198,9 +198,11 @@
       "dependencies": [
         "F-0001"
       ],
-      "status": "pending",
-      "passes": false,
-      "evidence": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0007/verify.log"
+      ],
       "attempts": 0,
       "blocked_reason": null,
       "forbidden_paths": [

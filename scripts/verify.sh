@@ -115,7 +115,7 @@ elif [ "${CI:-}" = "true" ]; then
 else
   echo "(actionlint not installed locally — enforced in CI)"
 fi
-step "hook contract tests" bash scripts/test-hooks.sh
+step "hook contract tests" "$BASH" scripts/test-hooks.sh
 
 # ---- E2E (opt-in) ----
 if $E2E; then

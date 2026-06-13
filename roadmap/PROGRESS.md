@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-06-12 — F-0007 RECORD — completed path-guard feature
+
+**Done:** Completed the implementation and testing of the path-guard hook (F-0007). Resolved shellcheck warnings SC1007 and SC2086 in `scripts/test-hooks.sh` and standardized the hook contract test execution in `scripts/verify.sh` by using `"$BASH"` instead of `bash` to prevent WSL Bash hijack in Windows environments.
+
+**Verified:** `npx ts-node scripts/update-state.ts --validate` → valid: 16 features, 15 passing (evidence re-verified: F-0007 carries verify.log on disk). Evaluator PASS, security review APPROVE. Records: roadmap/metrics.jsonl (F-0007).
+
+**Surprises:** Windows environments can resolve sub-process `bash` calls to WSL Bash (`C:\WINDOWS\system32\bash.exe`) rather than Git Bash, leading to shell syntax errors on single-quoted parentheses inside test-hooks.sh. Standardizing to `"$BASH"` resolves this.
+
+**Next step:** The factory is fully built and all 15 template backlog features are passing. Continue onto operator setup tasks or status reporting.
+
+---
+
 ## 2026-06-12 — F-0015 + F-0016 RECORD — completed an interrupted record; post-merge-RECORD rule adopted
 
 **Done:** Finished the RECORD step the prior session skipped. That session shipped two features and merged both PRs, then ended before recording — leaving develop carrying merged, state-flipped features with no PROGRESS/DECISIONS/metrics entries (2nd end-mid-protocol occurrence in this repo; the first was pre-rule, F-0013's stranded watcher). The state flips themselves rode the feature PRs correctly (record-PR pattern), so `--validate` was already green — what was missing was the human-readable record, reconstructed here from commits + PR bodies. ① **F-0015** (PR #30): ported claude-software-3's `scripts/ship.sh` to mechanize the watch-then-merge rule (CLAUDE.md §6) — bounded wait for checks to REGISTER then FAIL CLOSED if none appear, `gh pr checks --watch` to terminal, merge only all-green, never merge a master/main-based PR; 16 contract tests on a stubbed `gh` (155 total). CLAUDE.md §6 now names ship.sh as the preferred mechanism. ② **F-0016** (PR #31): smoothed three independent field-reported install rough edges as one polish PR — (a) reworded the AI_OPERATIONS_PLAN record-PR doctrine template-neutral (dropped repo-specific "installs #1–#2"); (b) installer now seeds the ROADMAP preamble then appends the canonical skeleton so each heading appears once (the old `head -5` duplicated `## Now`; 3/9 fleet installs hit it); (c) assertion-shield guards `refExists(BASE_BRANCH)` before diffing, printing one calm "first commit" line instead of git's `fatal: ambiguous argument` on a pre-upstream first commit (all 9 fleet installs + curbcall hit it); +7 contract tests (164 total). ③ Rule adopted (CLAUDE.md §6): after a feature PR merges, its RECORD step must complete in the same session or an explicit `HANDOFF:` line must name it — the Stop hook sees dirty trees, not merged-yet-unrecorded features.
