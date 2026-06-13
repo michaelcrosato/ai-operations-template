@@ -3,29 +3,41 @@
 ──── typecheck: OK
 
 ──── verify: lint ────
-Checked 6 files in 6ms. No fixes applied.
+Checked 14 files in 7ms. No fixes applied.
 ──── lint: OK
 
 ──── verify: unit tests ────
-✔ getHealth() reports status ok and the correct service name (0.8453ms)
-✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.1284ms)
-✔ getHealth() uptime_s is a non-negative number (0.0636ms)
-✔ CLI: node src/health.js exits 0 and prints JSON with status ok (32.845ms)
-ℹ tests 4
+✔ abSim executes two graph variants over synthetic inputs and emits real-time structured logs (AC2) (2.236ms)
+✔ abSim logs are JSON serializable (for CLI/UI hook consumption) (0.5463ms)
+✔ abSim.test covers RBAC 2 principals (owner allowed, non-owner 403/404 deny on mut) per security.md (0.1315ms)
+✔ CLI: node src/forge/abSim.js exits 0 and prints chain + structured logs (45.2335ms)
+✔ exportArtifacts writes graph.json + Dockerfile + docker-compose.yml with required strings (0.8641ms)
+✔ CLI: node src/forge/exportArtifacts.js exits 0 and emits artifacts (41.0787ms)
+✔ promptToGraph(prompt) produces valid JSON (>=1 node + >=1 edge) with required keys id/type/label + source/target (0.9772ms)
+✔ promptToGraph is deterministic (same prompt => exact same shape and values) (0.1156ms)
+✔ CLI: node src/forge/promptToGraph.js exits 0 and prints valid graph JSON (with sample emit side-effect) (41.2826ms)
+✔ check: owner allows all actions (read/edit/export/run) (0.4672ms)
+✔ check: viewer allows reads, denies mutations (403/404 per security.md) (0.0919ms)
+✔ CLI: node src/forge/rbac.js exits 0 and prints JSON with owner/viewer results (41.3333ms)
+✔ getHealth() reports status ok and the correct service name (0.9799ms)
+✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.1532ms)
+✔ getHealth() uptime_s is a non-negative number (0.071ms)
+✔ CLI: node src/health.js exits 0 and prints JSON with status ok (40.1563ms)
+ℹ tests 16
 ℹ suites 0
-ℹ pass 4
+ℹ pass 16
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 78.5902
+ℹ duration_ms 109.9674
 ──── unit tests: OK
 (no build script — skipping)
 ──── test coverage guard: OK (every src test file is wired into npm test)
 (placeholder check: template repo — self-skipped; activates after adoption rename)
 
 ──── verify: features.json schema + invariants ────
-[update-state] valid: 18 features, 16 passing (evidence re-verified).
+[update-state] valid: 20 features, 17 passing (evidence re-verified).
 ──── features.json schema + invariants: OK
 
 ──── verify: assertion shield ────
@@ -232,5 +244,5 @@ Checked 4 files in 6ms. No fixes applied.
 hook contract tests: 173 passed, 0 failed
 ──── hook contract tests: OK
 
-VERIFY-COMMIT: 8797024e2ef994f11ef191e5c3c03c26015da275 @ 2026-06-13T17:42:36Z
+VERIFY-COMMIT: 9a66e4abf82545e77c8c4506fae552ebd23bd20c @ 2026-06-13T19:24:54Z
 VERIFY: PASS (exit 0)
