@@ -49,29 +49,27 @@ function minimalGraph() {
 
 function dockerfileContent() {
   // node base, COPY graph, healthcheck
-  return `${[
-    'FROM node:20-alpine',
-    'WORKDIR /app',
-    'COPY graph.json .',
-    'HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD node -e "process.exit(0)" || exit 1'
-  ].join('\n')}\n`;
+  return `FROM node:20-alpine
+WORKDIR /app
+COPY graph.json .
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD node -e "process.exit(0)" || exit 1
+`;
 }
 
 function dockerComposeContent() {
   // DEMO_MODE + health (healthcheck)
-  return `${[
-    "version: '3.8'",
-    'services:',
-    '  forge:',
-    '    build: .',
-    '    environment:',
-    '      - DEMO_MODE=1',
-    '    healthcheck:',
-    '      test: ["CMD", "node", "-e", "process.exit(0)"]',
-    '      interval: 30s',
-    '      timeout: 3s',
-    '      retries: 3'
-  ].join('\n')}\n`;
+  return `version: '3.8'
+services:
+  forge:
+    build: .
+    environment:
+      - DEMO_MODE=1
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+`;
 }
 
 function exportArtifacts() {
