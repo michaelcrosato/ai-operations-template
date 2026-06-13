@@ -14,7 +14,7 @@ description: The idle protocol — what the orchestrator does when no feature is
    - Stale branches, green-but-unmerged PRs, `npx ts-node scripts/update-state.ts --validate` drift.
    - `.claude/model-policy.json` entries with `last_verified` older than 30 days → `/research`.
    - **Optional-module triggers** (`docs/optional-modules.md`): check each trigger condition against the repo's actual state (src/ exists? public? protection on? external tool added?). A newly-true trigger → groom the module via `--add` (or QUESTIONS.md if it's an operator call). Never adopt silently; never load the catalog into routine context.
-   - Small finding → fix now on a `fix/...` branch through the normal loop. Big finding → backlog feature via `--add`.
+   - **Long-term 35-60min+ or complex systemic research/sentinel (per xAI 4-agent best practices for focused/quick research + our complex assess velocity/bottlenecks/weak outputs/groom/kaizen opp):** fan out 4 parallel explorer subs (Grep/Glob + targeted read_file FIRST on every path before runs/ls; share full context; precise contracts with kaizen/TOOL_CALLS_APPROX + 0e + velocity + early stop; report per sub + synthesize for report). Use 16 Heavy style only for deep JUDGE. Small finding → fix now on a `fix/...` branch through the normal loop. Big finding → backlog feature via `--add`.
 
 2. **Risk research for the next moves.** For the top 2–3 pending/upcoming features, identify the riskiest external assumption each rests on (API shape, framework major, pricing, a "we think X works" claim) and `/research` it now. Write verified findings into the feature's description via `update-state.ts` so the future builder starts from facts. This is what "maximize the success probability of future moves" means in practice.
 
