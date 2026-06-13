@@ -637,8 +637,11 @@
         "F-0007"
       ],
       "status": "pending",
-      "passes": false,
-      "evidence": [],
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0019/verify.log",
+        "roadmap/evidence/F-0019/sample-graph.json"
+      ],
       "attempts": 0,
       "blocked_reason": null,
       "forbidden_paths": [
