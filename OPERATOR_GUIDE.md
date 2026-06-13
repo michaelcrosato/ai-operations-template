@@ -55,3 +55,8 @@ If staging gets into a messy state and you want to restore the last known workin
 2. **One-click revert (do it yourself):** open the pull request that introduced the problem (the newest one on the "Pull requests → Closed" list), and click GitHub's **Revert** button at the bottom. That opens a ready-made undo PR — merge it and staging rolls back.
 
 Either way, the agents detect the rollback automatically and put the reverted work back into the backlog as "needs another attempt."
+
+---
+
+**Product note for adopters building UIs on top of the engine (ForgeOps example):**  
+The demo surfaces at `/` and `/demo` (plus the dedicated `/pricing` route) are built with the same stack adopters will use once the factory is running. All marketing copy, hero value props, comparison tables, launch threads, and visual placeholders live in the product README (this repo's README.md after the engine install). Follow the same plain-English 8th-grade rule the operator sees everywhere. The self-built-with-own-engine angle is not hidden — it is the strongest proof point you can ship.

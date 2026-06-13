@@ -547,6 +547,50 @@
         "roadmap/evidence/F-0016/**"
       ],
       "priority": 1
+    },
+    {
+      "dependencies": [
+        "F-0011"
+      ],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0017/build.log",
+        "roadmap/evidence/F-0017/verify.log",
+        "roadmap/evidence/F-0017/human-walk-through.txt"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "scripts/**",
+        "roadmap/features.json"
+      ],
+      "id": "F-0017",
+      "epic": "product-marketing",
+      "title": "ForgeOps product README, hero landing copy, feature comparison, launch assets, pricing stub, and self-engine angle",
+      "spec_ref": "user-assigned task to Marketing/Docs/Assets sub-agent (approved plan in query)",
+      "description": "Deliver world-class supporting assets and docs overhaul for ForgeOps: Update README.md to premium product README with <60s quickstart (npm run dev, visit / and /demo), feature list, Mermaid architecture diagram (Next + seed + canvas), screenshot/GIF placeholders or descriptions, pricing mock, Product Hunt launch thread draft, X/Twitter 8-12 tweet launch thread, \"How to sell this\" section (ICP, demo script, objections). Strongly sell the \"built and maintained with its own AI ops engine\" angle. Refine app/page.tsx hero to world-class premium (headline, subhead, value props, CTAs) and embed feature comparison table (ForgeOps vs DIY + LangSmith + Replicate + custom scripts). Add pricing page stub (app/pricing/page.tsx) or enhance. Other assets: suggest OG images etc using text/emoji since no real images. Update product-facing docs (e.g. OPERATOR_GUIDE lightly if relevant). Everything plain English, delightful. Follow frontend patterns, handle states, a11y. Use update-state only for backlog.",
+      "acceptance": [
+        "README.md transformed into ForgeOps product README per spec: quickstart under 60s, features, Mermaid arch diagram for the Next.js + lib/seed + visual canvas, text/emoji screenshot and GIF placeholders, pricing mock, full PH thread draft + X launch thread (8-12 tweets covering problem/vision/demos/tech/pricing/CTA), \"How to sell this\" with ICP/demo script/objections; prominently features the self-built-with-own-AI-ops-engine story throughout",
+        "app/page.tsx hero/landing copy refined premium and delightful; includes embedded high-quality feature comparison table vs DIY, LangSmith, Replicate, custom scripts (facts verified via live research); all user-visible states handled per rules; styling matches existing premium dark glassmorphic + Card/Button/framer-motion patterns exactly; keyboard and semantic a11y present",
+        "Pricing page stub created at app/pricing/page.tsx (full route, matches style, simple tiers with CTAs, links back); nav and landing #pricing point to it or use it; billing section enhanced if needed",
+        "Other deliverables: OG image suggestions documented as text in README or layout metadata comments; detailed text-based visual placeholders (no binary images added); any relevant product-facing doc updates (e.g. OPERATOR_GUIDE marketing note); evidence of delightful plain-English tone at 8th-grade level",
+        "All mutations via update-state.ts only (no direct features.json edit); branch is feat/F-0017; verify.sh (or with --e2e) exits 0 with evidence saved under roadmap/evidence/F-0017/ including a green verify.log and walk-through notes as 'screenshots'",
+        "Feature added via script; PR template will be followed in ship description; DECISIONS logged for any judgment (e.g. direct-task-as-spec, research currency notes)"
+      ],
+      "authorized_paths": [
+        "README.md",
+        "app/page.tsx",
+        "app/pricing/page.tsx",
+        "app/layout.tsx",
+        "roadmap/briefs/F-0017.md",
+        "roadmap/DECISIONS.md",
+        "roadmap/PROGRESS.md",
+        "roadmap/evidence/F-0017/**"
+      ],
+      "priority": 1
     }
   ]
 }

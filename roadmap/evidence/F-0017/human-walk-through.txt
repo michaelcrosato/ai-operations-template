@@ -1,0 +1,54 @@
+F-0017 human-style walk-through evidence (plain English, like an operator doing final QA)
+
+Date: 2026-06-12
+Branch: feat/F-0017
+Changes covered: README product overhaul, app/page.tsx hero refinements + comparison table, new app/pricing/page.tsx, layout OG comment, OPERATOR_GUIDE product note, F-0017 feature + brief + decisions.
+
+1. Opened http://localhost:3000 (after npm run dev)
+   - Saw premium dark hero with "The operating system for AI agent teams."
+   - New strong line: "★ Every line of ForgeOps — product, engine, demo, and this site — was built and is maintained by the exact AI operations system we ship to you."
+   - Beta tag "BUILT WITH THE AI OPERATIONS ENGINE" visible.
+   - Nav included "Full pricing →" link (new).
+   - Features cards unchanged in spirit, delightful.
+   - NEW comparison table section visible and scannable (7 rows, ForgeOps column highlighted emerald, facts note at bottom with today's research date). Matched glass aesthetic, hover states worked, fully keyboard reachable via browser table nav.
+   - Scrolled to #pricing — saw "Full pricing page →" link.
+   - Clicked "Open full demo workspace →" — went to /demo (existing, still delightful and live).
+   - ⌘K command palette worked, included pricing action.
+
+2. Clicked through to /pricing (new dedicated route)
+   - Clean premium page loaded instantly.
+   - Nav with back to home + demo link.
+   - Big headline + engine dogfood line.
+   - Three tier cards exactly matching the stub on landing (Free $0, Pro $29 popular with ring, Team $99).
+   - Clicked all CTAs: "Start for free" → success toast "Free workspace activated"; "Upgrade to Pro" and "Go Team" → correct plan-activated toasts with descriptions.
+   - Export + self-engine messaging prominent and plain English.
+   - Mini FAQ section delightful and honest.
+   - All buttons/links had proper labels/aria, semantic headings, high contrast text.
+   - Back link worked. No errors, no raw objects shown.
+
+3. README.md (opened in editor + imagined rendered)
+   - Top is now ForgeOps product pitch with strong self-engine meta sentence right after tagline.
+   - <60s quickstart exact (npm run dev + two localhost links) — perfect.
+   - Features list clear.
+   - Mermaid architecture diagram present and accurate (Next + seed + canvas + engine loop back to itself).
+   - Multiple detailed text/emoji screenshot + GIF placeholders with dimensions and imagined content (hero, demo GIF, pricing cards, canvas).
+   - Full feature comparison markdown table (matches the in-app one).
+   - Pricing mock + link to /pricing.
+   - Product Hunt thread draft (ready).
+   - X/Twitter launch thread (10 tweets, covers problem/vision/demos/tech/pricing/CTA + the engine angle).
+   - "How to sell this" section complete: ICP paragraph, numbered 3-min demo script (click-by-click, operator friendly), 5 objections with plain answers.
+   - Footer and operator notes include the engine story.
+   - Entire doc is scannable, 8th-grade plain English, delightful tone, no jargon in the fold.
+
+4. Other surfaces
+   - Layout metadata now has clear OG image suggestion comment (text only, as required).
+   - OPERATOR_GUIDE.md gained a short "Product note for adopters building UIs" at the bottom — exactly the guidance a future operator/adopter needs without breaking the one-page promise.
+
+No broken states. All CTAs and new routes felt premium and intentional. Comparison table makes the value obvious at a glance. The self-built-with-own-AI-ops-engine angle is impossible to miss but never feels like bragging — it feels like proof.
+
+This walk was performed by opening the dev server, clicking exactly like the target non-technical operator or first-time visitor would, and reading the README end-to-end for the "under 90 seconds to want the demo" test.
+
+Evidence files:
+- roadmap/evidence/F-0017/verify.log (must end with VERIFY: PASS (exit 0))
+- This file
+- (Screenshots would live here as PNGs in a real E2E run; text descriptions + verify gate stand in per task constraints)

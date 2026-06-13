@@ -1,0 +1,22 @@
+Compiled successfully in 1340ms
+Linting and checking validity of types ...
+Collecting page data ...
+Generating static pages (0/5) ...
+Generating static pages (1/5) 
+Generating static pages (2/5) 
+Generating static pages (3/5) 
+ ✓ Generating static pages (5/5)
+Finalizing page optimization ...
+Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                     8.9 kB         163 kB
+├ ○ /_not-found                            990 B         103 kB
+└ ○ /demo                                17.5 kB         171 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/255-98a0bdaa30757bda.js       46.2 kB
+  ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB
+  └ other shared chunks (total)          1.99 kB
+
+○  (Static)  prerendered as static content
+

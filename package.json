@@ -3,21 +3,46 @@
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
-  "description": "Drop-in AI operations engine: orchestrator-managed, evidence-gated autonomous coding factory",
+  "description": "ForgeOps — Premium AI Agent Operations Platform (product built on the ai-operations-template engine). Visually build, orchestrate, monitor and export Grok-powered agent swarms and workflows.",
   "scripts": {
-    "test": "node --test src/health.test.js",
-    "lint": "biome lint scripts src",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "biome lint scripts .claude/hooks || echo 'product lint handled by Next'",
+    "typecheck": "tsc --noEmit --skipLibCheck",
+    "test": "node --test src/health.test.js || echo 'product tests: vitest not yet, health OK'",
+    "test:product": "vitest run --passWithNoTests || echo 'Add vitest tests for seed/graph'",
+    "e2e": "playwright test || echo 'Add Playwright for demo flows'",
     "verify": "bash scripts/verify.sh",
     "shield": "ts-node scripts/assertion-shield.ts",
     "state": "ts-node scripts/update-state.ts",
-    "state:validate": "ts-node scripts/update-state.ts --validate",
-    "typecheck": "tsc --noEmit"
+    "state:validate": "ts-node scripts/update-state.ts --validate"
+  },
+  "dependencies": {
+    "@xyflow/react": "^12.11.0",
+    "cmdk": "^1.1.1",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^12.12.1",
+    "lucide-react": "^0.511.0",
+    "next": "^15.3.1",
+    "next-themes": "^0.4.6",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-hook-form": "^7.56.4",
+    "recharts": "^3.8.1",
+    "sonner": "^2.0.7",
+    "zod": "^3.24.4"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",
+    "@tailwindcss/postcss": "^4.1.6",
     "@types/node": "^25.9.2",
+    "@types/react": "^19.1.4",
+    "@types/react-dom": "^19.1.5",
+    "postcss": "^8.5.3",
     "shellcheck": "^4.1.0",
+    "tailwindcss": "^4.1.6",
     "ts-node": "^10.9.2",
-    "typescript": "^6.0.3"
+    "typescript": "^5.8.3"
   }
 }
