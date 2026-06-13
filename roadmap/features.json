@@ -200,7 +200,7 @@
       "dependencies": [
         "F-0001"
       ],
-      "status": "in_progress",
+      "status": "done",
       "passes": true,
       "evidence": [
         "roadmap/evidence/F-0007/contract-tests.log",
@@ -683,9 +683,14 @@
       "dependencies": [
         "F-0007"
       ],
-      "status": "pending",
-      "passes": false,
-      "evidence": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0020/verify.log",
+        "roadmap/evidence/F-0020/graph.json",
+        "roadmap/evidence/F-0020/Dockerfile",
+        "roadmap/evidence/F-0020/docker-compose.yml"
+      ],
       "attempts": 0,
       "blocked_reason": null,
       "forbidden_paths": [
