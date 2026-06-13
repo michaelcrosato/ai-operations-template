@@ -205,3 +205,46 @@ kbd, .kbd {
 .light .border-white\/10 {
   border-color: rgba(0,0,0,0.08);
 }
+
+/* === F-0018: React Flow canvas polish (no new deps, premium feel) === */
+.react-flow {
+  background: #0a0a0c;
+}
+.react-flow__node {
+  font-size: 12px;
+}
+.react-flow__node.selected .canvas-node,
+.react-flow__node:focus .canvas-node {
+  border-color: rgba(255,255,255,0.7) !important;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.35);
+}
+.react-flow__node.running {
+  animation: rf-running 1400ms ease-in-out infinite;
+  border-color: #10b981 !important;
+}
+.react-flow__node.highlight {
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.55);
+}
+@keyframes rf-running {
+  0%,100% { box-shadow: 0 0 0 2px rgba(16,185,129,0.35); }
+  50% { box-shadow: 0 0 0 4px rgba(16,185,129,0.55); }
+}
+.react-flow__edge.animated path {
+  stroke: #10b981;
+  stroke-width: 1.5;
+}
+.react-flow__controls button {
+  background: #111113;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #fff;
+}
+.react-flow__minimap {
+  background: rgba(10,10,12,0.85);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.react-flow__background {
+  opacity: 0.6;
+}
+.react-flow__panel {
+  font-size: 10px;
+}

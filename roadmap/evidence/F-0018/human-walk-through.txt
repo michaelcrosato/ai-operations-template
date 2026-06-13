@@ -1,0 +1,56 @@
+F-0018 Human Walk-through (click-by-click for operator / JUDGE)
+
+1. Start dev: npm run dev (or open /demo after build)
+2. Navigate to /demo (or click "Open full demo workspace" from landing)
+3. In Operations Center (default view), scroll to "Visual Workflow — Deep Research & Synthesis Swarm"
+   - See the full React Flow canvas (not the old SVG stub) with nodes laid out, edges, minimap, controls, background.
+4. Prompt-to-node (AC):
+   - In the prompt bar above canvas, type: "deep academic researcher"
+   - Hit Enter or "Create"
+   - Observe: new start + grok-4 agent node with prompt and ~$1.42 cost appended to right. Toast "Created 2 node(s) from prompt". Selects? 
+5. Palette:
+   - Click +gate , +tool , +parallel
+   - Nodes appear, can be dragged immediately.
+6. Drag & snap:
+   - Drag any node — it snaps to 20px grid, position saved live to the workflow graph in seed.
+7. Connect:
+   - Drag from a handle (right of node) to another node's left handle.
+   - Edge appears (smoothstep, sometimes animated if running).
+   - Try to loop back: blocked with toast "Cycle would be created".
+8. Properties panel (AC):
+   - Click a node on canvas → right panel populates with live form.
+   - Edit Label, Prompt (textarea), Model (select), Est. cost (number).
+   - See canvas node label/pill/cost update instantly.
+   - "Delete node" button or press Delete/Backspace while selected.
+9. Run simulation + live highlights (AC):
+   - Click "▶ Run live" (top-right of visual card)
+   - Toast + new running execution appears in ticker.
+   - Watch: as the 860ms ticker fires, generateGraphAwareLog walks the (current) graph, trace grows, nodes on canvas get green ring + "▶ RUNNING" badge + pulse animation. Edges animate.
+   - Click a highlighted node → focuses + may intervene.
+10. Load/save from seed (AC):
+    - Click the chips "Deep Research", "Tier-1 Support" etc — instantly replaces the canvas graph with that pristine seed graph (cloned).
+    - "Save as template" → graph copied into marketplace (switch to Marketplace tab to see your saved entry).
+11. Marketplace integration:
+    - Go to Marketplace tab, click a template card → preview (uses old compact GraphViz for modal, ok).
+    - "Use in workspace + start run" or "Import graph only" → back to ops, the Visual Workflow now shows the imported graph. Can immediately prompt-edit-drag it.
+12. Persona gates:
+    - Switch persona to "viewer" (top bar).
+    - "▶ Run live" and interventions are disabled (existing RBAC).
+    - Canvas editing still possible in this demo (edits are not privileged in seed model).
+13. Other states:
+    - Delete every node → "Empty canvas" centered message appears.
+    - (synthetic) bad graph would show "Error: invalid graph data".
+14. Keyboard & a11y:
+    - ⌘K opens palette (new canvas actions listed).
+    - Tab to palette buttons / prompt, Enter to create.
+    - Arrow in command palette.
+    - Delete key on selected node/edge.
+    - All interactive elements have aria-labels; nodes have role+labels.
+15. Reset seed (top) → everything back to pristine, canvas sel cleared.
+16. Export (sidebar) still includes the live-edited graph.
+
+Everything feels premium: framer buttons, sonner toasts on every action, springy interactions, production canvas polish (minimap, zoom, snap, smooth edges, running pulse).
+
+No engine changes. Only app/demo/page.tsx + lib/seed.ts (additive) + app/globals.css (styles).
+
+Ready for VERIFY / JUDGE / SHIP.

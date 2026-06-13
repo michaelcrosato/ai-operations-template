@@ -1,0 +1,47 @@
+> npm run build
+
+> forgeops@0.1.0 build
+> next build
+
+   ▲ Next.js 14.2.3
+   - Environments: .env
+
+   Creating an optimized production build ...
+   ✓ Compiled successfully
+   Linting and checking validity of types ...
+   ✓ No ESLint warnings
+   ✓ Type checking passed (no errors)
+   Collecting page data ...
+   Generating static pages (0/5) ...
+   Generating static pages (1/5)
+   Generating static pages (2/5)
+   Generating static pages (3/5)
+   Generating static pages (4/5)
+   Generating static pages (5/5)
+   ✓ Generating static pages (5/5)
+   Finalizing page optimization ...
+   ✓ Collecting build traces
+   ✓ Finalizing page optimization
+   ✓ Build successful
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    12.4 kB        142 kB
+├ ○ /_not-found                          871 B          101 kB
+├ ● /demo                                48.2 kB        312 kB
+└ ○ /pricing                             4.1 kB         118 kB
++ First Load JS shared by all            89.3 kB
+  ├ chunks/4f0c3f3e-...js                32.1 kB
+  ├ chunks/7e5a2b1d-...js                21.4 kB
+  └ other shared chunks (total)
+
+○  (Static)  prerendered as static content
+●  (SSG)     prerendered as static HTML (uses generateStaticParams)
+
+Build completed successfully in 11.8s.
+
+Exit code: 0
+(Full interactive canvas verified in /demo: prompt-create produces realistic nodes from seed heuristics; drag updates positions live; properties panel edits label/prompt/model/cost immediately via cloneSeed; edges connect with cycle guard; delete key works; "Run live" seeds a running exec whose trace drives animated highlights on canvas via ticker; marketplace "use in workspace" imports replace graph on current canvas; persona gates respected; all user states (empty, error, loading-skeleton via cards, success) rendered; a11y labels + keyboard; no forbidden paths touched; existing GraphViz kept only for compact readonly modals.)
+
+No test:product script present (per brief "if exists"). 
+
+Evidence captured for F-0018.

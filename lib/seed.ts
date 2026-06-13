@@ -580,3 +580,96 @@ export function generateGraphAwareLog(
     latencyMs: latency,
   };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Test helpers (pure functions for Vitest coverage of clone, get*, graph, costs, RBAC gating)
+// Authorized for test helpers only per F-0019 brief. No core data changes.
+export function canIntervene(role: TeamMember['role']): boolean {
+  return role !== 'viewer';
+}
+
+export function canEdit(role: TeamMember['role']): boolean {
+  return role !== 'viewer';
+}
+
+export function computeGraphCost(graph: WorkflowGraph): number {
+  return (graph.nodes || []).reduce((sum, n) => sum + (n.estimatedCost || 0), 0);
+}
+
+export function getNodeCount(graph: WorkflowGraph): number {
+  return (graph.nodes || []).length;
+}
+
+export function getEdgeCount(graph: WorkflowGraph): number {
+  return (graph.edges || []).length;
+}
+
+// === F-0018 additive helpers (prompt-to-graph, seed graph loader, node/edge creators) ===
+// Only additive; no changes to existing data or behavior.
+
+export function createGraphNode(id: string, type: NodeType, label: string, position: { x: number; y: number }, extra: Partial<GraphNode> = {}): GraphNode {
+  return { id, type, label, position, ...extra };
+}
+
+export function createGraphEdge(id: string, source: string, target: string, label?: string): GraphEdge {
+  return { id, source, target, label };
+}
+
+export function getSeedGraphs(): Array<{ id: string; name: string; graph: WorkflowGraph }> {
+  // Deep clone so callers can mutate safely
+  return [
+    { id: 'research', name: 'Deep Research & Synthesis Swarm', graph: JSON.parse(JSON.stringify(researchGraph)) },
+    { id: 'support', name: 'Tier-1 Support Triage', graph: JSON.parse(JSON.stringify(supportGraph)) },
+    { id: 'content', name: 'Content Factory v3', graph: JSON.parse(JSON.stringify(contentGraph)) },
+    { id: 'intel', name: 'Competitive Intel Daily', graph: JSON.parse(JSON.stringify(intelGraph)) },
+    { id: 'devops', name: 'Incident & Bug Triage', graph: JSON.parse(JSON.stringify(triageGraph)) },
+  ];
+}
+
+export function promptToGraph(prompt: string, baseX = 120, baseY = 180): { nodes: GraphNode[]; edges: GraphEdge[] } {
+  const p = (prompt || '').toLowerCase().trim();
+  const ts = Date.now().toString(36).slice(-6);
+  const n = (s: string) => `${s}_${ts}`;
+  const nodes: GraphNode[] = [];
+  const edges: GraphEdge[] = [];
+
+  // High-quality heuristics drawing from real seed examples (no external calls)
+  if (p.includes('gate') || p.includes('review') || p.includes('approve') || p.includes('human') || p.includes('sign-off') || p.includes('signoff')) {
+    nodes.push(createGraphNode(n('gate'), 'human-gate', 'Human Review Gate', { x: baseX + 180, y: baseY }, { timeoutSec: 3600 }));
+  } else if (p.includes('parallel') || p.includes('swarm') || p.includes('multiple') || p.includes('branches') || p.includes('concurrent')) {
+    const par = n('par');
+    nodes.push(createGraphNode(par, 'parallel', 'Parallel Branch', { x: baseX + 140, y: baseY }));
+    nodes.push(createGraphNode(n('a1'), 'agent', 'Branch A (Grok-4)', { x: baseX + 320, y: baseY - 70 }, { model: 'grok-4', prompt: 'Deep subtask A from prompt', estimatedCost: 0.81 }));
+    nodes.push(createGraphNode(n('a2'), 'agent', 'Branch B (Grok-3)', { x: baseX + 320, y: baseY + 70 }, { model: 'grok-3', prompt: 'Fast subtask B from prompt', estimatedCost: 0.29 }));
+    nodes.push(createGraphNode(n('m'), 'merge', 'Merge Results', { x: baseX + 480, y: baseY }));
+    edges.push(createGraphEdge(n('e1'), par, n('a1')));
+    edges.push(createGraphEdge(n('e2'), par, n('a2')));
+    edges.push(createGraphEdge(n('e3'), n('a1'), n('m')));
+    edges.push(createGraphEdge(n('e4'), n('a2'), n('m')));
+  } else if (p.includes('tool') || p.includes('search') || p.includes('scrape') || p.includes('export') || p.includes('lookup') || p.includes('send') || p.includes('kb') || p.includes('vector')) {
+    const tool = p.includes('search') ? 'web.search + vector' : p.includes('scrape') ? 'firecrawl.batch' : p.includes('export') ? 'notion.export + pdf' : p.includes('kb') || p.includes('vector') ? 'kb.search + pinecone' : 'external.api';
+    nodes.push(createGraphNode(n('tool'), 'tool', 'Tool: ' + tool.split(' ')[0], { x: baseX + 160, y: baseY }, { tool, estimatedCost: 0.14 }));
+  } else {
+    // default: high-quality agent node, realistic prompt + cost + model choice
+    const isDeep = p.includes('deep') || p.includes('research') || p.includes('analyze') || p.includes('synthes') || p.includes('report') || prompt.length > 55;
+    const model = isDeep ? 'grok-4' : 'grok-3';
+    const cost = isDeep ? 1.42 : 0.47;
+    const refined = prompt.length > 8 ? prompt : 'Process input with high accuracy and cite sources';
+    nodes.push(createGraphNode(n('agent'), 'agent', prompt.slice(0, 28) || 'New Agent', { x: baseX + 160, y: baseY }, {
+      model,
+      prompt: refined,
+      estimatedCost: cost,
+    }));
+  }
+
+  // Prepend a start for new flows when it makes sense (demo friendliness)
+  if ((p.includes('start') || p.includes('from') || p.includes('begin') || nodes.length <= 2) && nodes.length > 0) {
+    const startId = n('start');
+    nodes.unshift(createGraphNode(startId, 'start', 'Start', { x: baseX, y: baseY }));
+    if (nodes.length > 1) {
+      edges.unshift(createGraphEdge(n('e0'), startId, nodes[1].id));
+    }
+  }
+
+  return { nodes, edges };
+}
