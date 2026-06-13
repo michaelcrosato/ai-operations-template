@@ -591,6 +591,84 @@
         "roadmap/evidence/F-0017/**"
       ],
       "priority": 1
+    },
+    {
+      "dependencies": [
+        "F-0017"
+      ],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        "scripts/**",
+        "roadmap/features.json",
+        ".github/workflows/**",
+        "roadmap/**"
+      ],
+      "id": "F-0018",
+      "epic": "product-forgeops",
+      "title": "Full interactive visual canvas with @xyflow/react",
+      "spec_ref": "roadmap/briefs/F-0018.md",
+      "description": "Replace any placeholder/stub canvas in the ForgeOps /demo with a full, production-feeling @xyflow/react implementation. Support drag-drop from a palette or via prompt-to-agent, node/edge editing, properties panel, integration with lib/seed.ts graphs for workflows, live execution simulation tied to the monitoring ticker (highlight running nodes, step-by-step).",
+      "acceptance": [
+        "Real ReactFlow canvas in /demo with drag, drop, connect nodes",
+        "Prompt input creates high-quality agent nodes from natural language",
+        "Properties panel for editing prompt, model, cost estimates",
+        "Tied to seed: load/save graphs for workflows, highlight running nodes",
+        "No engine files modified",
+        "npm run build succeeds, demo flows work"
+      ],
+      "authorized_paths": [
+        "app/**",
+        "components/**",
+        "lib/**"
+      ],
+      "priority": 1
+    },
+    {
+      "dependencies": [
+        "F-0017"
+      ],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        "scripts/verify.sh",
+        "roadmap/features.json",
+        ".github/workflows/**",
+        "roadmap/**"
+      ],
+      "id": "F-0019",
+      "epic": "product-forgeops",
+      "title": "Production-grade tests, E2E, CI for ForgeOps app",
+      "spec_ref": "roadmap/briefs/F-0019.md",
+      "description": "Harden the ForgeOps product with proper tests and CI so the engine gate passes in PRODUCT_MODE. Add Vitest for unit/integration (seed, graph utils, costs, RBAC sim), Playwright E2E for critical user journeys (landing to demo, canvas creation/run, marketplace import, monitoring intervention, export, billing upgrade). Update package.json scripts (test, e2e, build) to satisfy verify.sh. Add basic CI parity if safe. Dockerfile/compose already present.",
+      "acceptance": [
+        "Vitest tests for key product logic (seed, graph, costs)",
+        "Playwright E2E covering main demo user journeys",
+        "package.json has test, e2e, build scripts that satisfy verify",
+        "npm run build and test pass",
+        "No engine breakage"
+      ],
+      "authorized_paths": [
+        "app/**",
+        "components/**",
+        "lib/**",
+        "package.json",
+        "vitest.config.ts",
+        "playwright.config.ts",
+        "tests/**",
+        "e2e/**",
+        "Dockerfile",
+        "docker-compose.yml"
+      ],
+      "priority": 1
     }
   ]
 }
