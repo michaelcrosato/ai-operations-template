@@ -1,5 +1,5 @@
 import { DEFAULT_MODEL } from '@/lib/models';
-import { promptToGraph as forgePromptToGraph, type ForgeNode } from '@/src/forge/promptToGraph.ts';
+import { promptToGraph as forgePromptToGraph, type ForgeNode } from '@/src/forge/promptToGraph';
 
 /**
  * ForgeOps Demo Seed

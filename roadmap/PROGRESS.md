@@ -1,3 +1,13 @@
+## 2026-06-14 — Deferrals cleared: F-0032 (page.tsx decomp) + F-0033 (Next 16) shipped — 33/33 passing
+
+Picked up the two items deliberately deferred earlier and finished them as careful, gated cycles, so nothing in the review queue or recommended backlog remains deferred.
+
+- **F-0032 (PR #68) — page.tsx decomposition complete.** Moved the workflow canvas (`GraphViz` + `InteractiveCanvas`, ≈340 lines) into `app/demo/_components/InteractiveCanvas.tsx`; page.tsx 1742→1382. Byte-equivalent move, no behavior change (evaluator PASS; E2E + 50 units green; all data-testids + viewer-RBAC gating preserved).
+- **F-0033 (PR #69) — Next.js 15→16.2.9 (Turbopack) upgrade.** The last deferred backlog item. Researched the upgrade guide live (freshness §5); narrow exposure; removed a no-op webpack config (would break the Turbopack-default build) + made one import Turbopack-safe. Evaluator PASS, security-reviewer APPROVE (deps registry-clean, audit 0). Also root-caused + fixed the residual exit-127 ts-node flake (Next-16 jsx:react-jsx libuv race → ts-node transpileOnly).
+- **Spawned follow-up merged:** the RBAC fail-CLOSED hardening chip (#66) was built + merged by its own session.
+- **Capstone verification:** an independent 6-agent adversarial workflow on develop confirmed earlier — no privilege escalation, guardrails not weakened (15 hostile bypass attempts blocked), migration sound, all claims present, gate green.
+- **Final state: 33 features, 33 passing, 0 blocked, 0 pending.** Every named queue item (F-0021/22/23), Q-0003, and the entire recommended backlog (TS migration, decomposition, AST/judge tests, E2E program, guard hardening, **all** major dep upgrades incl. Next 16) are done. Open: the shellcheck dev-audit follow-up (#67) is a spawned-session PR still resolving a merge conflict — a dev-only advisory cleanup, not queue work.
+
 ## 2026-06-14 — Security hygiene: cleared 5 moderate npm-audit advisories (dev-only `file-type`)
 
 Scoped `fix` off `develop` (operator-reported). `npm audit` flagged 5 moderate advisories — GHSA-5v7r-6r5c-r473 (ASF parser infinite loop) and GHSA-j47w-4g3g-c36v (ZIP decompression-bomb DoS) — all from `file-type@20.5.0`, dragged in transitively by the `shellcheck` devDependency wrapper. Production was already clean (`npm audit --omit=dev` = 0); this was dev-tooling only.

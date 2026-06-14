@@ -126,3 +126,68 @@ test('check: viewer read-only across multiple resources', () => {
   assert.equal(check('viewer', 'template', 'edit'), 'deny');
   assert.equal(check('viewer', 'billing', 'edit'), 'deny');
 });
+
+// ── Defensive hardening: fail-CLOSED input contract ──────────────────────────
+// (a) Require an explicit known action — empty/unknown actions deny, never read.
+test('check: empty action denies for bounded roles (no implicit read)', () => {
+  // editor/viewer previously read-defaulted on '' — now fail-closed
+  assert.equal(check('viewer', 'graph', ''), 'deny', 'viewer empty action -> deny');
+  assert.equal(check('viewer', 'logs', ''), 'deny', 'viewer empty action on logs -> deny');
+  assert.equal(check('editor', 'graph', ''), 'deny', 'editor empty action on mutable graph -> deny');
+  assert.equal(check('editor', 'template', ''), 'deny', 'editor empty action on template -> deny');
+  // explicit read is still allowed — no regression on the read path
+  assert.equal(check('viewer', 'graph', 'read'), 'allow', 'viewer explicit read still allowed');
+  assert.equal(check('editor', 'graph', 'read'), 'allow', 'editor explicit read still allowed');
+});
+
+test('check: unknown action denies for bounded roles (not read, not a mutation)', () => {
+  // an unrecognized verb must NOT slip through as a graph/template mutation for editor
+  assert.equal(check('editor', 'graph', 'frobnicate'), 'deny', 'editor unknown action on graph -> deny');
+  assert.equal(check('editor', 'template', 'sudo'), 'deny', 'editor unknown action on template -> deny');
+  assert.equal(check('viewer', 'graph', 'frobnicate'), 'deny', 'viewer unknown action -> deny');
+  // sanity: a KNOWN mutation on an editor-mutable resource still works
+  assert.equal(check('editor', 'graph', 'edit'), 'allow', 'editor known mutation (edit) still allowed');
+  assert.equal(check('editor', 'graph', 'update'), 'allow', 'editor known mutation (update) on graph allowed');
+});
+
+// (b) .trim() — padded-but-valid input resolves to its intended (still gated) role,
+//     and a padded resource cannot bypass the exact-match org/billing denial.
+test('check: padded principal resolves to its intended role (not silent default-deny)', () => {
+  assert.equal(check('owner ', 'graph', 'edit'), 'allow', 'padded owner -> allow');
+  assert.equal(check(' OWNER ', 'graph', 'edit'), 'allow', 'padded/upper owner -> allow');
+  assert.equal(check(' viewer ', 'graph', 'read'), 'allow', 'padded viewer read -> allow');
+  assert.equal(check('  editor', 'graph', 'edit'), 'allow', 'padded editor -> allow on graph mutation');
+  // still correctly gated after trimming — padding does not grant anything new
+  assert.equal(check(' viewer ', 'graph', 'edit'), 'deny', 'padded viewer mutation still -> deny');
+  assert.equal(check(' bogus ', 'graph', 'read'), 'deny', 'padded unknown principal still default-denies');
+});
+
+test('check: padded resource/action are trimmed (padded billing cannot bypass org/billing)', () => {
+  // BEFORE the trim, a padded resource was an exact-match miss that fell through to
+  // 'allow' for admin (and to a read for editor) — this is the resource-axis fail-open
+  // the trim closes.
+  assert.equal(check('admin', 'billing ', 'edit'), 'deny', 'padded billing denied for admin (no bypass)');
+  assert.equal(check('admin', ' org ', 'manage'), 'deny', 'padded org denied for admin');
+  assert.equal(check('editor', ' billing ', 'read'), 'deny', 'padded billing read denied for editor');
+  // a padded but valid action still resolves to its action
+  assert.equal(check('viewer', 'graph', ' read '), 'allow', 'padded read action still resolves to read');
+});
+
+// Monotonicity (lower 'allow' ⟹ higher 'allow') must STILL hold under the hardened
+// fail-closed contract — including for empty, unknown, and padded actions/resources.
+test('check: monotonic under fail-closed contract (empty/unknown/padded inputs)', () => {
+  const resources = ['graph', 'template', 'logs', 'run', 'billing', 'org', 'secrets', ' billing '];
+  const actions = ['', 'frobnicate', ' read ', 'edit ', '  '];
+  const order = ['viewer', 'editor', 'admin', 'owner']; // ascending privilege
+  for (const r of resources) {
+    for (const a of actions) {
+      for (let i = 0; i < order.length - 1; i++) {
+        const lower = check(order[i], r, a);
+        const higher = check(order[i + 1], r, a);
+        if (lower === 'allow') {
+          assert.equal(higher, 'allow', `${order[i + 1]} must allow what ${order[i]} allows: ${r}/'${a}'`);
+        }
+      }
+    }
+  }
+});
