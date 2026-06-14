@@ -1,3 +1,12 @@
+## 2026-06-14 — Forge evidence tests made self-contained (kills the PR #42 CI flake at the root)
+
+- Root-caused the PR #42 flake: `src/forge/abSim.test.js` copied sibling tests' evidence files into `roadmap/evidence/F-0017/` at module load; under parallel `node --test` it could read a source file mid-truncate-write and write an empty `F-0017/graph.json`, which fails `update-state.ts --validate`.
+- Fix: `abSim.test.js` now derives the F-0019/F-0020 artifacts IN-PROCESS (`promptToGraph('Research X and summarize')` + the pure `minimalGraph()/dockerfileContent()/dockerComposeContent()`) instead of reading sibling evidence files. The F-0017 emission no longer depends on test file-write order or `--test-concurrency`, so the planned glob-based runner ("Phase 1") cannot reintroduce the race.
+- Used the side-effect-free export functions rather than `exportArtifacts()` (which writes F-0020 and would shift the race), and kept `--test-concurrency=1` as defense-in-depth for the residual abSim.js-CLI-subprocess write race. Rationale in DECISIONS.md.
+- Committed evidence is byte-for-byte unchanged: graph.json 571B, sample-graph.json 1304B, Dockerfile/docker-compose.yml identical (SHA-256 verified).
+
+**Telemetry/Metrics:** 16/16 forge+health unit tests green; 25× parallel `node --test` all green with `F-0017/graph.json` stable at 571 bytes; full `bash scripts/verify.sh` → VERIFY: PASS (exit 0), 190 hook contract tests passing; fresh-context evaluator PASS (independent SHA-256 byte-match). Scope: `src/forge/abSim.test.js` only (+ records); `package.json` and `roadmap/features.json` untouched.
+
 ## 2026-06-13 — F-0018 Visual Canvas unblocked and merged (PR #40)
 
 - Completed F-0018: Resolved Next.js compile errors for named exports in `@xyflow/react` and ignored TypeScript side-effect typecheck warnings for CSS style imports.

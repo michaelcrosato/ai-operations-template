@@ -8,33 +8,33 @@ const fs = require('node:fs');
 
 const { abSim } = require('./abSim.js');
 const { check } = require('./rbac.js');
+const { minimalGraph, dockerfileContent, dockerComposeContent } = require('./exportArtifacts.js');
+const { promptToGraph } = require('./promptToGraph.js');
 
 const AB_CLI = path.join(__dirname, 'abSim.js');
 
 // Top-level side-effect: ensure sample-ab-logs.txt + unified samples (graph, Dockerfile, compose, exports.txt)
-// emitted to F-0017/ whenever test loads (provides AC2 evidence + ghost close unification; mirrors F-0019/F-0020 pattern).
+// emitted to F-0017/ whenever test loads (provides AC2 evidence + ghost close unification).
 const emittedLogs = abSim();
 const EV = path.resolve(__dirname, '../../roadmap/evidence/F-0017');
 fs.mkdirSync(EV, { recursive: true });
 fs.writeFileSync(path.join(EV, 'sample-ab-logs.txt'), `${JSON.stringify(emittedLogs, null, 2)}\n`);
-// unify current slice samples into F-0017/ for F-0017 close (attach prior ev/marker + ab)
+// Unify the current-slice samples into F-0017/ for the F-0017 close. The F-0019/F-0020
+// artifacts are derived IN-PROCESS from the same pure (side-effect-free) functions their own
+// tests use — never read back from roadmap/evidence/F-0019|F-0020/* — so this emission is
+// independent of test file-write order and --test-concurrency. (Previously this copied sibling
+// tests' evidence files, which under parallel `node --test` could be mid-truncate-write, landing
+// an empty graph.json in F-0017/ and failing `update-state.ts --validate`; flaked CI on PR #42.)
 try {
-  const g19p = path.resolve(__dirname, '../../roadmap/evidence/F-0019/sample-graph.json');
-  if (fs.existsSync(g19p)) {
-    fs.writeFileSync(path.join(EV, 'sample-graph.json'), fs.readFileSync(g19p, 'utf8'));
-  }
-  const g20p = path.resolve(__dirname, '../../roadmap/evidence/F-0020/graph.json');
-  if (fs.existsSync(g20p)) {
-    fs.writeFileSync(path.join(EV, 'graph.json'), fs.readFileSync(g20p, 'utf8'));
-  }
-  const d20p = path.resolve(__dirname, '../../roadmap/evidence/F-0020/Dockerfile');
-  if (fs.existsSync(d20p)) {
-    fs.writeFileSync(path.join(EV, 'Dockerfile'), fs.readFileSync(d20p, 'utf8'));
-  }
-  const c20p = path.resolve(__dirname, '../../roadmap/evidence/F-0020/docker-compose.yml');
-  if (fs.existsSync(c20p)) {
-    fs.writeFileSync(path.join(EV, 'docker-compose.yml'), fs.readFileSync(c20p, 'utf8'));
-  }
+  // reproduces committed F-0017/sample-graph.json byte-for-byte: promptToGraph() with the prompt
+  // the promptToGraph.js CLI smoke uses (the value last written to F-0019/sample-graph.json).
+  const sampleGraph = promptToGraph('Research X and summarize');
+  fs.writeFileSync(path.join(EV, 'sample-graph.json'), `${JSON.stringify(sampleGraph, null, 2)}\n`);
+  // reproduces committed F-0017/{graph.json,Dockerfile,docker-compose.yml} byte-for-byte: the same
+  // pure functions exportArtifacts.test.js uses to write F-0020 (minimalGraph/dockerfile/compose).
+  fs.writeFileSync(path.join(EV, 'graph.json'), `${JSON.stringify(minimalGraph(), null, 2)}\n`);
+  fs.writeFileSync(path.join(EV, 'Dockerfile'), dockerfileContent());
+  fs.writeFileSync(path.join(EV, 'docker-compose.yml'), dockerComposeContent());
   fs.writeFileSync(path.join(EV, 'sample-exports.txt'), 'unified: graph.json + Dockerfile + docker-compose.yml (from F-0020) + sample-ab-logs.txt\n');
 } catch (_) { /* best effort for unification */ }
 
