@@ -1,0 +1,9 @@
+diff --git a/src/feature-x.ts b/src/feature-x.ts
+index 1111111..2222222 100644
+--- a/src/feature-x.ts
++++ b/src/feature-x.ts
+@@ -1,5 +1,10 @@
+ export function featureX(): string {
+-  return 'old';
++  return 'new';
+ }
