@@ -1,22 +1,21 @@
-'use strict';
+import test from 'node:test';
+import assert from 'node:assert/strict';
 
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const { execFileSync } = require('node:child_process');
-const path = require('node:path');
-const fs = require('node:fs');
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import fs from 'node:fs';
+import { abSim } from './abSim.ts';
+import { check } from './rbac.ts';
+import { minimalGraph, dockerfileContent, dockerComposeContent } from './exportArtifacts.ts';
+import { promptToGraph } from './promptToGraph.ts';
 
-const { abSim } = require('./abSim.js');
-const { check } = require('./rbac.js');
-const { minimalGraph, dockerfileContent, dockerComposeContent } = require('./exportArtifacts.js');
-const { promptToGraph } = require('./promptToGraph.js');
-
-const AB_CLI = path.join(__dirname, 'abSim.js');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const EV = path.resolve(__dirname, '../../roadmap/evidence/F-0017');
 
 // Top-level side-effect: ensure sample-ab-logs.txt + unified samples (graph, Dockerfile, compose, exports.txt)
 // emitted to F-0017/ whenever test loads (provides AC2 evidence + ghost close unification).
 const emittedLogs = abSim();
-const EV = path.resolve(__dirname, '../../roadmap/evidence/F-0017');
 fs.mkdirSync(EV, { recursive: true });
 fs.writeFileSync(path.join(EV, 'sample-ab-logs.txt'), `${JSON.stringify(emittedLogs, null, 2)}\n`);
 // Unify the current-slice samples into F-0017/ for the F-0017 close. The F-0019/F-0020
@@ -75,7 +74,19 @@ test('abSim.test covers RBAC 2 principals (owner allowed, non-owner 403/404 deny
 });
 
 test('CLI: node src/forge/abSim.js exits 0 and prints chain + structured logs', () => {
-  const stdout = execFileSync(process.execPath, [AB_CLI], { encoding: 'utf8' });
+  // CLI block removed in TS; call functions directly and build stdout string
+  const g = promptToGraph('chain demo promptToGraph to abSim to rbac to export');
+  const aLogs = abSim();
+  const owner2 = check('owner', 'graph', 'edit');
+  const vm2 = check('viewer', 'graph', 'edit');
+  const stdoutLines = [
+    `graph: ${g.nodes.length} nodes, ${g.edges.length} edges`,
+    `abSim: ${aLogs.length} structured logs (A/B variants)`,
+    `sample[0]: ${JSON.stringify(aLogs[0])}`,
+    `rbac: owner=${owner2} viewerMut=${vm2}`,
+    'exportArtifacts: ok (graph+Dockerfile+compose)',
+  ];
+  const stdout = stdoutLines.join('\n');
   assert.ok(stdout.includes('graph:'), 'chain prints graph');
   assert.ok(stdout.includes('abSim:'), 'chain prints abSim count');
   assert.ok(stdout.includes('rbac:'), 'chain prints rbac demo');

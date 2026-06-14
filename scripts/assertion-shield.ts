@@ -24,16 +24,24 @@ function getGitDiff(): string {
   // never pass through a shell (security-guidance plugin finding).
   const diffs: string[] = [];
   if (refExists(BASE_BRANCH)) {
-    // Committed work on this branch vs base
+    // Committed work on this branch vs base.
+    // -M (--find-renames) enables git rename detection: a pure .test.js→.test.ts
+    // rename emits only a "rename from/to" header with no "-expect(...)" content
+    // lines, so the shield sees no deleted assertions and correctly passes.
+    // A rename that ALSO removes/weakens an assertion still emits the "-expect(...)"
+    // deletion line in the diff hunk, so the parser flags it as usual (BLOCK).
+    // Laundering is not enabled: removing an assertion always surfaces a "-" line
+    // (whether in a rename hunk or a plain deletion). A deletion too dissimilar to
+    // pair as a rename is shown as a full file delete (all assertions flagged).
     try {
-      diffs.push(execFileSync('git', ['diff', `${BASE_BRANCH}...HEAD`], { encoding: 'utf8' }));
+      diffs.push(execFileSync('git', ['diff', '-M', `${BASE_BRANCH}...HEAD`], { encoding: 'utf8' }));
     } catch {
       // base resolved but the range diff failed — fall through to staged check
     }
   } else if (refExists('HEAD~1')) {
     // base not fetched/available but prior history exists — diff the last commit
     try {
-      diffs.push(execFileSync('git', ['diff', 'HEAD~1'], { encoding: 'utf8' }));
+      diffs.push(execFileSync('git', ['diff', '-M', 'HEAD~1'], { encoding: 'utf8' }));
     } catch {
       // no usable history — staged check below may still apply
     }
@@ -45,7 +53,7 @@ function getGitDiff(): string {
   try {
     // Staged-but-uncommitted changes — what a pre-commit hook is actually
     // gating. Without --cached the hook only ever saw prior commits.
-    diffs.push(execFileSync('git', ['diff', '--cached'], { encoding: 'utf8' }));
+    diffs.push(execFileSync('git', ['diff', '-M', '--cached'], { encoding: 'utf8' }));
   } catch {
     console.log('Not in a git repository. Skipping assertion check.');
   }
@@ -143,6 +151,21 @@ function scanDiffForWeakening(diffText: string): Violation[] {
         
         // Skip comment-only lines
         if (cleanedLine.startsWith('//') || cleanedLine.startsWith('#') || cleanedLine.startsWith('/*')) {
+          continue;
+        }
+
+        // Skip CJS module import/require declarations (CJS→ESM migration boilerplate, not assertions):
+        // 'const|let|var X = require(...);' or a destructuring 'const { a, b } = require(...);',
+        // plus a bare 'use strict' pragma. These carry no test coverage.
+        // SECURITY (security-review): the pattern is anchored at BOTH ends — require(...) must be
+        // the ENTIRE right-hand side and the line must END there (optional ';'). Without the end
+        // anchor, a line like `const _ = require('x'); expect(role).toBe('admin');` would match the
+        // prefix and let a real deleted assertion slip past. A single LHS binding only (a bare
+        // identifier or one {...} destructure) — no ','-chained second binding, no trailing code.
+        const isModuleDecl =
+          /^(?:const|let|var)\s+(?:[A-Za-z_$][\w$]*|\{[^}]*\})\s*=\s*require\([^)]*\)\s*;?\s*$/.test(cleanedLine)
+          || cleanedLine === "'use strict';";
+        if (isModuleDecl) {
           continue;
         }
 

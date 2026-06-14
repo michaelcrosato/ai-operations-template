@@ -4,6 +4,10 @@
 set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT" || exit 1
+# Invoke ts-node via its direct bin, never `npx ts-node`: under concurrent/sandboxed load
+# npx intermittently fails to resolve the binary and returns exit 127, flaking the gate
+# (recurring kaizen candidate, DECISIONS 2026-06-14). The direct bin is deterministic.
+TSNODE="$ROOT/node_modules/ts-node/dist/bin.js"
 mkdir -p tmp
 HOOKS=".claude/hooks"
 FIX="$(mktemp -d "tmp/hook-tests-XXXXXX")"
@@ -303,9 +307,9 @@ printf '%s' "$OUT" | grep -q "SESSION BRIEF" ; check "emits brief content" 0 "$?
 echo "── update-state.ts (fixture: $FIX)"
 rm -rf "$FIX"; mkdir -p "$FIX"
 export STATE_FILE="$FIX/features.json"
-US_WITH_STATE() { local state_file="$1"; shift; STATE_FILE="$state_file" npx ts-node scripts/update-state.ts "$@" >/dev/null 2>&1; echo $?; }
+US_WITH_STATE() { local state_file="$1"; shift; STATE_FILE="$state_file" node "$TSNODE" scripts/update-state.ts "$@" >/dev/null 2>&1; echo $?; }
 US() { US_WITH_STATE "$FIX/features.json" "$@"; }
-US_REAL() { STATE_FILE='' npx ts-node scripts/update-state.ts "$@" >/dev/null 2>&1; echo $?; }
+US_REAL() { STATE_FILE='' node "$TSNODE" scripts/update-state.ts "$@" >/dev/null 2>&1; echo $?; }
 cat > "$STATE_FILE" <<'EOF'
 { "features": [ { "id": "F-9101", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
   "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [],
@@ -315,17 +319,17 @@ check "validate accepts valid fixture"          0 "$(US --validate)"
 cat > "$FIX/stale-policy.json" <<'EOF'
 { "tiers": { "reasoning": { "model": "x", "last_verified": "2020-01-01" } } }
 EOF
-OUT="$(MODEL_POLICY_FILE="$FIX/stale-policy.json" npx ts-node scripts/update-state.ts --validate 2>&1)"; RC=$?
+OUT="$(MODEL_POLICY_FILE="$FIX/stale-policy.json" node "$TSNODE" scripts/update-state.ts --validate 2>&1)"; RC=$?
 check "validate exits 0 despite stale policy"   0 "$RC"
 printf '%s' "$OUT" | grep -q "stale" ; check "validate warns on stale model-policy" 0 "$?"
 printf '%s\n' '{"date":"2026-06-10","feature":"F-9101"}' > "$FIX/metrics-good.jsonl"
-check "validate accepts well-formed metrics"    0 "$(METRICS_FILE="$FIX/metrics-good.jsonl" npx ts-node scripts/update-state.ts --validate >/dev/null 2>&1; echo $?)"
+check "validate accepts well-formed metrics"    0 "$(METRICS_FILE="$FIX/metrics-good.jsonl" node "$TSNODE" scripts/update-state.ts --validate >/dev/null 2>&1; echo $?)"
 printf '%s\n' 'not json at all' > "$FIX/metrics-bad.jsonl"
-check "validate rejects malformed metrics line" 1 "$(METRICS_FILE="$FIX/metrics-bad.jsonl" npx ts-node scripts/update-state.ts --validate >/dev/null 2>&1; echo $?)"
+check "validate rejects malformed metrics line" 1 "$(METRICS_FILE="$FIX/metrics-bad.jsonl" node "$TSNODE" scripts/update-state.ts --validate >/dev/null 2>&1; echo $?)"
 printf '%s\n' '{"feature":"F-9101"}' > "$FIX/metrics-nodate.jsonl"
-check "validate rejects metrics missing date"   1 "$(METRICS_FILE="$FIX/metrics-nodate.jsonl" npx ts-node scripts/update-state.ts --validate >/dev/null 2>&1; echo $?)"
+check "validate rejects metrics missing date"   1 "$(METRICS_FILE="$FIX/metrics-nodate.jsonl" node "$TSNODE" scripts/update-state.ts --validate >/dev/null 2>&1; echo $?)"
 printf '{"date":"2026-06-10","feature":"F-9101","notes":"%s"}\n' "$(printf 'x%.0s' $(seq 1 600))" > "$FIX/metrics-long.jsonl"
-check "validate rejects oversized metrics record" 1 "$(METRICS_FILE="$FIX/metrics-long.jsonl" npx ts-node scripts/update-state.ts --validate >/dev/null 2>&1; echo $?)"
+check "validate rejects oversized metrics record" 1 "$(METRICS_FILE="$FIX/metrics-long.jsonl" node "$TSNODE" scripts/update-state.ts --validate >/dev/null 2>&1; echo $?)"
 check "add rejects malformed JSON"              1 "$(US --add 'not-json')"
 check "add rejects passes:true at birth"        1 "$(US --add '{"id":"F-9102","epic":"t","title":"t","spec_ref":"t","description":"t","acceptance":["a"],"authorized_paths":[],"priority":1,"status":"pending","passes":true,"evidence":["x"],"attempts":0,"blocked_reason":null}')"
 check "add rejects dangling dependency"         1 "$(US --add '{"id":"F-9103","epic":"t","title":"t","spec_ref":"t","description":"t","acceptance":["a"],"authorized_paths":[],"dependencies":["F-9999"],"priority":1,"status":"pending","passes":false,"evidence":[],"attempts":0,"blocked_reason":null}')"
@@ -381,7 +385,6 @@ unset STATE_FILE
 rm -rf "$FIX"
 
 echo "── assertion-shield.ts (fixture repo)"
-TSNODE="$ROOT/node_modules/ts-node/dist/bin.js"
 AS="$(mktemp -d)"
 (
   cd "$AS" && git init -q && git config user.email t@t && git config user.name t
@@ -420,6 +423,112 @@ check "F-0027: shield allows removing an in-branch-added test file" 0 "$(cd "$AS
 ( cd "$AS" && printf 'test("a", () => {\n  expect(true).toBe(true);\n});\n' > tests/a.test.js && git add -A )
 check "F-0027: shield still blocks gutting an existing assertion to a tautology" 1 "$(cd "$AS" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
 ( cd "$AS" && git reset -q --hard base )
+
+# ── shield rename-detection (F-0027b) ──────────────────────────────────────
+# AC1: pure rename (.test.js → .test.ts, identical assertions) must PASS.
+# With -M git emits only a "rename from/to" header and no "-expect(...)" lines,
+# so the shield sees no deleted assertions.
+( cd "$AS" && git mv tests/a.test.js tests/a.test.ts && git add -A )
+check "shield rename-detection: pure rename passes (exit 0)" 0 "$(cd "$AS" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+( cd "$AS" && git reset -q --hard base )
+
+# AC2: rename that ALSO removes an assertion must still be BLOCKED.
+# git diff -M emits the "-expect(...)" deletion line in the rename hunk,
+# so the parser still flags it (existedOnBase(old path) = true → BLOCK).
+(
+  cd "$AS" || exit
+  cp tests/a.test.js tests/a.test.ts
+  printf 'test("a", () => {\n});\n' > tests/a.test.ts  # assertion removed
+  git rm -q tests/a.test.js
+  git add -A
+)
+check "shield rename-detection: rename+deleted assertion blocked (exit 1)" 1 "$(cd "$AS" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+( cd "$AS" && git reset -q --hard base )
+
+# AC3: plain in-place assertion deletion (no rename) — regression guard.
+# Confirms -M does not suppress ordinary assertion deletions in existing files.
+( cd "$AS" && printf 'test("a", () => {\n});\n' > tests/a.test.js && git add -A )
+check "shield rename-detection: in-place deletion still blocked (exit 1)" 1 "$(cd "$AS" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+( cd "$AS" && git reset -q --hard base )
+
+# ── shield module-decl FP (fix/shield-module-decl-fp) ─────────────────────────
+# Proves that CJS→ESM migration boilerplate is NOT flagged as assertion deletion.
+#
+# The fixture repo "AS" has base branch with tests/a.test.js containing:
+#   const assert = require('node:assert');
+#   test("a", () => { expect(1).toBe(1); });
+# We reset AS base to include a require() decl line for these tests.
+MD_BASE="$(mktemp -d)"
+(
+  cd "$MD_BASE" && git init -q && git config user.email t@t && git config user.name t
+  mkdir tests
+  # Base file contains a CJS require() import AND a real assertion
+  printf "const assert = require('node:assert');\ntest(\"a\", () => {\n  expect(1).toBe(1);\n});\n" > tests/a.test.js
+  git add -A && git commit -qm base && git branch base
+)
+
+# AC1 (FP fixed): deleting only the require() declaration line (CJS→ESM migration)
+# while keeping the real assertion → shield must PASS (exit 0).
+(
+  cd "$MD_BASE" || exit
+  printf "test(\"a\", () => {\n  expect(1).toBe(1);\n});\n" > tests/a.test.js
+  git add -A
+)
+check "shield module-decl FP: deleting require() decl passes (exit 0)" 0 "$(cd "$MD_BASE" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+( cd "$MD_BASE" && git reset -q --hard base )
+
+# AC2 (real assertion deletion STILL blocked): deleting an expect() line → BLOCK.
+(
+  cd "$MD_BASE" || exit
+  printf "const assert = require('node:assert');\ntest(\"a\", () => {\n});\n" > tests/a.test.js
+  git add -A
+)
+check "shield module-decl FP: deleting real assertion still blocked (exit 1)" 1 "$(cd "$MD_BASE" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+( cd "$MD_BASE" && git reset -q --hard base )
+
+# AC3 (require-shaped assertion not abused): 'assert.equal(require(...).y, 1);'
+# is a real assertion that contains 'require(' but is NOT a const/let/var declaration,
+# so isModuleDecl is false → still BLOCK.
+(
+  cd "$MD_BASE" || exit
+  # Replace the expect() line with an assertion-that-contains-require, then delete it
+  printf "const assert = require('node:assert');\ntest(\"a\", () => {\n  assert.equal(require('./x').y, 1);\n});\n" > tests/a.test.js
+  git add -A && git commit -qm "add require-in-assertion" 2>/dev/null || true
+  # Now delete the assert.equal line (leave the require decl and test shell)
+  printf "const assert = require('node:assert');\ntest(\"a\", () => {\n});\n" > tests/a.test.js
+  git add -A
+)
+check "shield module-decl FP: require-in-assertion line still blocked (exit 1)" 1 "$(cd "$MD_BASE" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+( cd "$MD_BASE" && git reset -q --hard )
+
+# AC4 (prefix-bypass BLOCKED — security-review finding): a single line that begins like a
+# module decl but carries a real assertion after it ('const _ = require(...); expect(...);')
+# must NOT be skipped. The end-anchored regex rejects it (trailing code after require()), so
+# deleting it is flagged. This is the weaponized-bypass class the unanchored regex let through.
+(
+  cd "$MD_BASE" || exit
+  printf "const assert = require('node:assert');\ntest(\"a\", () => {\n  const _ = require('a'); expect(user.role).toBe('admin');\n});\n" > tests/a.test.js
+  git add -A && git commit -qm "add prefix-bypass line" 2>/dev/null || true
+  printf "const assert = require('node:assert');\ntest(\"a\", () => {\n});\n" > tests/a.test.js
+  git add -A
+)
+check "shield module-decl FP: prefix-bypass (require;+assertion) still blocked (exit 1)" 1 "$(cd "$MD_BASE" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+( cd "$MD_BASE" && git reset -q --hard )
+
+# AC5 (destructuring module decl skipped): 'const { check } = require(...);' is a pure module
+# decl (whole line is the require RHS) → deleting it while keeping a real assertion → PASS.
+(
+  cd "$MD_BASE" || exit
+  printf "const { check } = require('./rbac.js');\ntest(\"a\", () => {\n  expect(1).toBe(1);\n});\n" > tests/a.test.js
+  git add -A && git commit -qm "add destructuring require" 2>/dev/null || true
+  printf "test(\"a\", () => {\n  expect(1).toBe(1);\n});\n" > tests/a.test.js
+  git add -A
+)
+check "shield module-decl FP: destructuring require decl passes (exit 0)" 0 "$(cd "$MD_BASE" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+( cd "$MD_BASE" && git reset -q --hard )
+
+rm -rf "$MD_BASE"
+
 rm -rf "$AS"
 
 # F-0016: a first commit before the upstream base exists must NOT leak git's
@@ -596,7 +705,7 @@ NO_WARN_FOUND="$(printf '%s' "$NO_SRC_OUT" | grep -c 'PRODUCT MODE\|product mode
 check "product-mode warning: absent when no src/" 0 "$(if [ "$NO_WARN_FOUND" -eq 0 ]; then echo 0; else echo 1; fi)"
 
 # ── 7. Seeded state validity ──────────────────────────────────────────────────
-VALIDATE_RC="$(STATE_FILE="$IT/roadmap/features.json" npx ts-node scripts/update-state.ts --validate >/dev/null 2>&1; echo $?)"
+VALIDATE_RC="$(STATE_FILE="$IT/roadmap/features.json" node "$TSNODE" scripts/update-state.ts --validate >/dev/null 2>&1; echo $?)"
 check "seeded features.json validates against schema" 0 "$VALIDATE_RC"
 
 # ── 7b. Seeded ROADMAP.md shape (F-0016) ─────────────────────────────────────
@@ -992,7 +1101,7 @@ cat > "$KB_US/features.json" << 'EOF'
 EOF
 # 3a: status:done without passes:true must be rejected.
 check "F-0026 corpus: status:done without passes REJECTED by update-state" 1 \
-  "$(STATE_FILE="$KB_US/features.json" npx ts-node scripts/update-state.ts --status F-9601 'done' >/dev/null 2>&1; echo $?)"
+  "$(STATE_FILE="$KB_US/features.json" node "$TSNODE" scripts/update-state.ts --status F-9601 'done' >/dev/null 2>&1; echo $?)"
 # 3b: a 2nd concurrent in_progress must be rejected by update-state.
 KB_US2="$(mktemp -d)"
 cat > "$KB_US2/features.json" << 'EOF'
@@ -1006,7 +1115,7 @@ cat > "$KB_US2/features.json" << 'EOF'
 ] }
 EOF
 check "F-0026 corpus: 2nd concurrent in_progress REJECTED by update-state" 1 \
-  "$(STATE_FILE="$KB_US2/features.json" npx ts-node scripts/update-state.ts --status F-9602 in_progress >/dev/null 2>&1; echo $?)"
+  "$(STATE_FILE="$KB_US2/features.json" node "$TSNODE" scripts/update-state.ts --status F-9602 in_progress >/dev/null 2>&1; echo $?)"
 rm -rf "$KB_US" "$KB_US2"
 
 # --- Case 4: guard-evasion command → guard-bash BLOCKS ---

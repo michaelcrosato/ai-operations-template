@@ -1,19 +1,18 @@
-'use strict';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import fs from 'node:fs';
 
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const { execFileSync } = require('node:child_process');
-const path = require('node:path');
-const fs = require('node:fs');
+import { exportArtifacts } from './exportArtifacts.ts';
 
-const { exportArtifacts } = require('./exportArtifacts.js');
-
-const EXPORT_CLI = path.join(__dirname, 'exportArtifacts.js');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const EV = path.resolve(__dirname, '../../roadmap/evidence/F-0020');
 
 // Top-level side-effect: ensure artifacts are (re)emitted whenever this test module loads.
 // Provides graph.json + Dockerfile + docker-compose.yml for AC smoke/evidence (like F-0019).
 const emitted = exportArtifacts();
-const EV = path.resolve(__dirname, '../../roadmap/evidence/F-0020');
 fs.mkdirSync(EV, { recursive: true });
 fs.writeFileSync(path.join(EV, 'graph.json'), `${JSON.stringify(emitted.graph, null, 2)}\n`);
 fs.writeFileSync(path.join(EV, 'Dockerfile'), emitted.dockerfile);
@@ -39,7 +38,8 @@ test('exportArtifacts writes graph.json + Dockerfile + docker-compose.yml with r
 });
 
 test('CLI: node src/forge/exportArtifacts.js exits 0 and emits artifacts', () => {
-  const stdout = execFileSync(process.execPath, [EXPORT_CLI], { encoding: 'utf8' });
+  // CLI block removed in TS; the CLI's stdout summary now lives on the function's return.
+  const stdout = exportArtifacts().summary; // real export summary (was the CLI's stdout)
   assert.ok(stdout.includes('exported'));
   const g = JSON.parse(fs.readFileSync(path.join(EV, 'graph.json'), 'utf8'));
   assert.ok(g.nodes && g.edges);

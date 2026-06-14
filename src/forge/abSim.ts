@@ -1,30 +1,38 @@
-'use strict';
-
 /**
  * A/B simulator (F-0017 AC2): executes two graph variants over synthetic inputs
  * and emits array of real-time structured logs {ts, nodeId, message, level, costDelta, tokens, latencyMs}.
- * Deterministic (no randomness), zero-dependency CJS.
- * Matches src/health.js + forge/* style: module.exports + CLI-if-main + runtime side-effect emit.
+ * Deterministic (no randomness), zero-dependency TypeScript.
  * Unified chain in CLI: promptToGraph -> abSim logs -> rbac (2 principals) -> exportArtifacts.
  * Side-emits sample-ab-logs.txt (and unifies current samples) to roadmap/evidence/F-0017/
  */
 
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { promptToGraph, type ForgeGraph } from './promptToGraph.ts';
+import { DEFAULT_MODEL } from './models.ts';
 
-const { promptToGraph } = require('./promptToGraph');
-const { check } = require('./rbac');
-const { DEFAULT_MODEL } = require('./models');
-const { exportArtifacts } = require('./exportArtifacts');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const EVIDENCE_DIR = path.resolve(__dirname, '..', '..', 'roadmap', 'evidence', 'F-0017');
 
-function ensureDir(d) { fs.mkdirSync(d, { recursive: true }); }
+function ensureDir(d: string): void { fs.mkdirSync(d, { recursive: true }); }
 
-function makeVariants(base) {
+export interface AbLog {
+  ts: string;
+  nodeId: string;
+  message: string;
+  level: string;
+  costDelta: number;
+  tokens: number;
+  latencyMs: number;
+}
+
+export function makeVariants(base: ForgeGraph): { A: ForgeGraph; B: ForgeGraph } {
   // deterministic A/B: A=base from prompt, B=base with one added opt node + cost tweak
-  const A = JSON.parse(JSON.stringify(base));
-  const B = JSON.parse(JSON.stringify(base));
+  const A: ForgeGraph = JSON.parse(JSON.stringify(base));
+  const B: ForgeGraph = JSON.parse(JSON.stringify(base));
   const last = B.nodes[B.nodes.length - 1];
   B.nodes.push({
     id: 'n-optimize',
@@ -40,11 +48,11 @@ function makeVariants(base) {
   return { A, B };
 }
 
-function simulate(graph, variant) {
+function simulate(graph: ForgeGraph, variant: string): AbLog[] {
   // produce structured logs for the variant; fixed base ts + det increments => fully deterministic
-  const logs = [];
+  const logs: AbLog[] = [];
   let t = Date.parse('2026-06-13T18:00:00.000Z');
-  const step = (nodeId, message, level, costDelta, tokens, latencyMs) => {
+  const step = (nodeId: string, message: string, level: string, costDelta: number, tokens: number, latencyMs: number): void => {
     logs.push({
       ts: new Date(t).toISOString(),
       nodeId,
@@ -69,7 +77,7 @@ function simulate(graph, variant) {
 /**
  * abSim(): run A/B over synthetic, return combined structured log array.
  */
-function abSim() {
+export function abSim(): AbLog[] {
   const base = promptToGraph('Research and summarize for A/B demo');
   const { A, B } = makeVariants(base);
   const logsA = simulate(A, 'A');
@@ -78,23 +86,4 @@ function abSim() {
   ensureDir(EVIDENCE_DIR);
   fs.writeFileSync(path.join(EVIDENCE_DIR, 'sample-ab-logs.txt'), `${JSON.stringify(allLogs, null, 2)}\n`);
   return allLogs;
-}
-
-module.exports = { abSim, makeVariants, simulate };
-
-if (require.main === module) {
-  // unified CLI smoke: promptToGraph -> abSim logs -> rbac 2-prin (per security.md) -> export
-  const g = promptToGraph('chain demo promptToGraph to abSim to rbac to export');
-  process.stdout.write(`graph: ${g.nodes.length} nodes, ${g.edges.length} edges\n`);
-  const logs = abSim();
-  process.stdout.write(`abSim: ${logs.length} structured logs (A/B variants)\n`);
-  if (logs[0]) process.stdout.write(`sample[0]: ${JSON.stringify(logs[0])}\n`);
-  const owner = check('owner', 'graph', 'edit');
-  const viewerMut = check('viewer', 'graph', 'edit');
-  process.stdout.write(`rbac: owner=${owner} viewerMut=${viewerMut}\n`);
-  exportArtifacts();
-  process.stdout.write('exportArtifacts: ok (graph+Dockerfile+compose)\n');
-  const summary = { logs: logs.length, rbac: { owner, viewerMut: viewerMut } };
-  process.stdout.write(`${JSON.stringify(summary)}\n`);
-  process.exitCode = 0;
 }

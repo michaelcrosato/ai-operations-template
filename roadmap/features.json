@@ -568,14 +568,14 @@
         "roadmap/evidence/F-0017/graph.json",
         "roadmap/evidence/F-0017/Dockerfile",
         "roadmap/evidence/F-0017/docker-compose.yml",
-        "src/forge/promptToGraph.js",
-        "src/forge/rbac.js",
-        "src/forge/exportArtifacts.js",
-        "src/forge/abSim.js",
-        "src/forge/promptToGraph.test.js",
-        "src/forge/rbac.test.js",
-        "src/forge/exportArtifacts.test.js",
-        "src/forge/abSim.test.js"
+        "src/forge/promptToGraph.ts",
+        "src/forge/rbac.ts",
+        "src/forge/exportArtifacts.ts",
+        "src/forge/abSim.ts",
+        "src/forge/promptToGraph.test.ts",
+        "src/forge/rbac.test.ts",
+        "src/forge/exportArtifacts.test.ts",
+        "src/forge/abSim.test.ts"
       ],
       "attempts": 1,
       "blocked_reason": null,
@@ -969,11 +969,13 @@
       "dependencies": [
         "F-0023"
       ],
-      "status": "blocked",
-      "passes": false,
-      "evidence": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0028/verify.log"
+      ],
       "attempts": 0,
-      "blocked_reason": "Clean .js->.ts migration must rename src/forge/*.test.js to .test.ts, which the assertion-shield blocks (deletion of BASE-existing test assertions; F-0027 suppression only covers branch-new files). Needs shield rename-detection (F-0027 follow-up) or a human-authorized migration bypass; source-only migration is blocked by CJS/ESM test-runner interop. Builder attempt produced .js+.ts duplication, rejected.",
+      "blocked_reason": null,
       "forbidden_paths": [
         "roadmap/features.json",
         ".claude/**"

@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * promptToGraph core (F-0019: ForgeOps prompt-to-graph slice 1 of F-0017).
  * Deterministic, zero-dependency, pure function: natural language prompt ->
@@ -7,24 +5,40 @@
  * Rule/keyword based (no LLM, no net, no rand): base chain + optional research/summarize nodes
  * for common prompt patterns. Always produces >=1 node and >=1 edge; nodes include id/type/label
  * (plus position/model/prompt/estimatedCost for downstream canvas/sim/export). Edges: source/target.
- * Matches src/health.js style (module.exports + CLI-if-main, stdout JSON, exit 0).
- * When run as CLI (or test loads), also writes sample-graph.json to roadmap/evidence/F-0019/
- * (runtime side-effect for smoke evidence; not an agent edit action).
+ * Browser-safe: no fs/process at top level.
  */
 
-const fs = require('node:fs');
-const path = require('node:path');
-const { DEFAULT_MODEL } = require('./models');
+import { DEFAULT_MODEL } from './models.ts';
+
+export interface ForgeNode {
+  id: string;
+  type: string;
+  label: string;
+  position?: { x: number; y: number };
+  model?: string;
+  prompt?: string;
+  estimatedCost?: number;
+}
+
+export interface ForgeEdge {
+  source: string;
+  target: string;
+}
+
+export interface ForgeGraph {
+  nodes: ForgeNode[];
+  edges: ForgeEdge[];
+}
 
 /**
- * @param {string} [prompt]
- * @returns {{nodes: Array<{id:string,type:string,label:string,position?:object,model?:string,prompt?:string,estimatedCost?:number}>, edges: Array<{source:string,target:string}>}}
+ * @param prompt - natural language description of the task
+ * @returns graph with nodes and edges
  */
-function promptToGraph(prompt = 'default task') {
+export function promptToGraph(prompt = 'default task'): ForgeGraph {
   const input = String(prompt || 'default task').trim();
   const lower = input.toLowerCase();
 
-  const nodes = [
+  const nodes: ForgeNode[] = [
     {
       id: 'n-start',
       type: 'start',
@@ -44,7 +58,7 @@ function promptToGraph(prompt = 'default task') {
       estimatedCost: 0.02
     }
   ];
-  const edges = [
+  const edges: ForgeEdge[] = [
     { source: 'n-start', target: 'n-process' }
   ];
 
@@ -76,19 +90,4 @@ function promptToGraph(prompt = 'default task') {
   }
 
   return { nodes, edges };
-}
-
-module.exports = { promptToGraph };
-
-if (require.main === module) {
-  const userPrompt = process.argv.slice(2).join(' ') || 'Research AI agents and summarize findings';
-  const graph = promptToGraph(userPrompt);
-  const json = JSON.stringify(graph, null, 2);
-  process.stdout.write(`${json}\n`);
-
-  // CLI smoke: emit sample-graph.json (per AC3 + brief)
-  const evidenceDir = path.join(__dirname, '..', '..', 'roadmap', 'evidence', 'F-0019');
-  fs.mkdirSync(evidenceDir, { recursive: true });
-  fs.writeFileSync(path.join(evidenceDir, 'sample-graph.json'), `${json}\n`);
-  process.exitCode = 0;
 }

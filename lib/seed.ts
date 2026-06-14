@@ -1,4 +1,5 @@
 import { DEFAULT_MODEL } from '@/lib/models';
+import { promptToGraph as forgePromptToGraph, type ForgeNode } from '@/src/forge/promptToGraph.ts';
 
 /**
  * ForgeOps Demo Seed
@@ -635,49 +636,43 @@ export function getSeedGraphs(): Array<{ id: string; name: string; graph: Workfl
 }
 
 export function promptToGraph(prompt: string, baseX = 120, baseY = 180): { nodes: GraphNode[]; edges: GraphEdge[] } {
-  const p = (prompt || '').toLowerCase().trim();
+  // Delegate to forge implementation (single source of truth) then adapt shapes.
+  const forgeResult = forgePromptToGraph(prompt);
   const ts = Date.now().toString(36).slice(-6);
-  const n = (s: string) => `${s}_${ts}`;
-  const nodes: GraphNode[] = [];
-  const edges: GraphEdge[] = [];
 
-  // High-quality heuristics drawing from real seed examples (no external calls)
-  if (p.includes('gate') || p.includes('review') || p.includes('approve') || p.includes('human') || p.includes('sign-off') || p.includes('signoff')) {
-    nodes.push(createGraphNode(n('gate'), 'human-gate', 'Human Review Gate', { x: baseX + 180, y: baseY }, { timeoutSec: 3600 }));
-  } else if (p.includes('parallel') || p.includes('swarm') || p.includes('multiple') || p.includes('branches') || p.includes('concurrent')) {
-    const par = n('par');
-    nodes.push(createGraphNode(par, 'parallel', 'Parallel Branch', { x: baseX + 140, y: baseY }));
-    nodes.push(createGraphNode(n('a1'), 'agent', 'Branch A (Grok-4.3)', { x: baseX + 320, y: baseY - 70 }, { model: DEFAULT_MODEL, prompt: 'Deep subtask A from prompt', estimatedCost: 0.81 }));
-    nodes.push(createGraphNode(n('a2'), 'agent', 'Branch B (Grok-4.3)', { x: baseX + 320, y: baseY + 70 }, { model: DEFAULT_MODEL, prompt: 'Fast subtask B from prompt', estimatedCost: 0.29 }));
-    nodes.push(createGraphNode(n('m'), 'merge', 'Merge Results', { x: baseX + 480, y: baseY }));
-    edges.push(createGraphEdge(n('e1'), par, n('a1')));
-    edges.push(createGraphEdge(n('e2'), par, n('a2')));
-    edges.push(createGraphEdge(n('e3'), n('a1'), n('m')));
-    edges.push(createGraphEdge(n('e4'), n('a2'), n('m')));
-  } else if (p.includes('tool') || p.includes('search') || p.includes('scrape') || p.includes('export') || p.includes('lookup') || p.includes('send') || p.includes('kb') || p.includes('vector')) {
-    const tool = p.includes('search') ? 'web.search + vector' : p.includes('scrape') ? 'firecrawl.batch' : p.includes('export') ? 'notion.export + pdf' : p.includes('kb') || p.includes('vector') ? 'kb.search + pinecone' : 'external.api';
-    nodes.push(createGraphNode(n('tool'), 'tool', 'Tool: ' + tool.split(' ')[0], { x: baseX + 160, y: baseY }, { tool, estimatedCost: 0.14 }));
-  } else {
-    // default: high-quality agent node, realistic prompt + cost + model choice
-    const isDeep = p.includes('deep') || p.includes('research') || p.includes('analyze') || p.includes('synthes') || p.includes('report') || prompt.length > 55;
-    const model = DEFAULT_MODEL;
-    const cost = isDeep ? 1.42 : 0.47;
-    const refined = prompt.length > 8 ? prompt : 'Process input with high accuracy and cite sources';
-    nodes.push(createGraphNode(n('agent'), 'agent', prompt.slice(0, 28) || 'New Agent', { x: baseX + 160, y: baseY }, {
-      model,
-      prompt: refined,
-      estimatedCost: cost,
-    }));
+  // Map ForgeNode types to seed NodeType (forge uses 'process'/'research'/'summarize' → 'agent')
+  function toNodeType(ft: string): NodeType {
+    if (ft === 'start') return 'start';
+    if (ft === 'end') return 'end';
+    if (ft === 'tool') return 'tool';
+    return 'agent'; // process, research, summarize, optimize → agent
   }
 
-  // Prepend a start for new flows when it makes sense (demo friendliness)
-  if ((p.includes('start') || p.includes('from') || p.includes('begin') || nodes.length <= 2) && nodes.length > 0) {
-    const startId = n('start');
-    nodes.unshift(createGraphNode(startId, 'start', 'Start', { x: baseX, y: baseY }));
-    if (nodes.length > 1) {
-      edges.unshift(createGraphEdge(n('e0'), startId, nodes[1].id));
-    }
-  }
+  const nodes: GraphNode[] = forgeResult.nodes.map((fn: ForgeNode, i: number) => ({
+    id: `${fn.id}_${ts}`,
+    type: toNodeType(fn.type),
+    label: fn.label,
+    position: {
+      x: (fn.position?.x ?? (i * 180)) + baseX,
+      y: (fn.position?.y ?? 0) + baseY,
+    },
+    model: fn.model !== 'none' ? fn.model : undefined,
+    prompt: fn.prompt || undefined,
+    estimatedCost: fn.estimatedCost,
+  }));
+
+  // Build a nodeId remap from forge ids to stamped ids
+  const idMap = new Map<string, string>();
+  forgeResult.nodes.forEach((fn: ForgeNode, i: number) => {
+    idMap.set(fn.id, nodes[i].id);
+  });
+
+  const edges: GraphEdge[] = forgeResult.edges.map((fe, i) => ({
+    id: `e_${ts}_${i}`,
+    source: idMap.get(fe.source) ?? fe.source,
+    target: idMap.get(fe.target) ?? fe.target,
+  }));
 
   return { nodes, edges };
 }
+
