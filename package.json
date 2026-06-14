@@ -14,7 +14,9 @@
     "verify": "bash scripts/verify.sh",
     "shield": "ts-node scripts/assertion-shield.ts",
     "state": "ts-node scripts/update-state.ts",
-    "state:validate": "ts-node scripts/update-state.ts --validate"
+    "state:validate": "ts-node scripts/update-state.ts --validate",
+    "seed": "node -e \"console.log('[seed] in-memory demo data via lib/seed.ts — no database to seed')\"",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@xyflow/react": "^12.11.0",
@@ -33,6 +35,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4.1.6",
     "@types/node": "^25.9.2",
     "@types/react": "^19.1.4",
