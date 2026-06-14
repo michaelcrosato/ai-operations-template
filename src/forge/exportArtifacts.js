@@ -9,6 +9,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { DEFAULT_MODEL } = require('./models');
 
 const EVIDENCE_DIR = path.resolve(__dirname, '..', '..', 'roadmap', 'evidence', 'F-0020');
 
@@ -36,7 +37,7 @@ function minimalGraph() {
         type: 'process',
         label: 'Execute core task',
         position: { x: 300, y: 0 },
-        model: 'grok-4',
+        model: DEFAULT_MODEL,
         prompt: 'demo export',
         estimatedCost: 0.01
       }

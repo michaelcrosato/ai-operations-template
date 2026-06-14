@@ -264,7 +264,7 @@ export default function ForgeOpsLanding() {
               </div>
               <div className="flex-1 overflow-auto font-mono text-[11px] bg-black/60 rounded-xl p-4 space-y-1 scrollbar-thin">
                 {[
-                  "[14:32:01] node-3 (Grok-4) • \"Summarizing 47 papers...\"",
+                  "[14:32:01] node-3 (Grok-4.3) • \"Summarizing 47 papers...\"",
                   "[14:32:04] parallel-1 • 3 branches spawned",
                   "[14:32:11] human-gate • Waiting for approval on external action",
                   "[14:32:14] cost • +$0.41 (current run: $3.12)",
