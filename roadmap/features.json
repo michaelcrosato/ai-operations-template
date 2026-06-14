@@ -203,6 +203,7 @@
       "status": "done",
       "passes": true,
       "evidence": [
+        "roadmap/evidence/F-0007/contract-tests.log",
         "roadmap/evidence/F-0007/verify.log"
       ],
       "attempts": 0,
@@ -556,15 +557,27 @@
       "dependencies": [
         "F-0007"
       ],
-      "status": "in_progress",
-      "passes": false,
+      "status": "done",
+      "passes": true,
       "evidence": [
         "roadmap/evidence/F-0017/verify.log",
         "roadmap/evidence/F-0017/sample-graph.json",
         "roadmap/evidence/F-0017/sample-ab-logs.txt",
-        "roadmap/evidence/F-0017/sample-exports.txt"
+        "roadmap/evidence/F-0017/sample-exports.txt",
+        "roadmap/evidence/F-0017/forge-units.log",
+        "roadmap/evidence/F-0017/graph.json",
+        "roadmap/evidence/F-0017/Dockerfile",
+        "roadmap/evidence/F-0017/docker-compose.yml",
+        "src/forge/promptToGraph.js",
+        "src/forge/rbac.js",
+        "src/forge/exportArtifacts.js",
+        "src/forge/abSim.js",
+        "src/forge/promptToGraph.test.js",
+        "src/forge/rbac.test.js",
+        "src/forge/exportArtifacts.test.js",
+        "src/forge/abSim.test.js"
       ],
-      "attempts": 0,
+      "attempts": 1,
       "blocked_reason": null,
       "forbidden_paths": [
         ".claude/**",
@@ -573,10 +586,10 @@
         "roadmap/**"
       ],
       "id": "F-0017",
-      "epic": "product",
+      "epic": "forgeops",
       "title": "ForgeOps MVP Core: prompt-to-graph, A-B simulation foundation, RBAC, real-time logs, exports/Docker",
-      "spec_ref": "roadmap/PROGRESS.md (ForgeOps plan gap + F-0017/18 mentions) + README.md (product architecture placeholder) + original vision (ForgeOps: drag-drop @xyflow canvas, marketplace, sim/A-B, RBAC, billing/Stripe, exports/Docker, real-time logs, prompt-to-graph, premium UI)",
-      "description": "Implement the core non-UI foundations of the ForgeOps agent platform (prompt-to-graph translation to executable graphs, basic A-B simulation with real-time structured logs, owner/viewer RBAC, JSON + Docker scaffold exports). Enables sellable product and canvas UI. Strict product-only paths; depends on stable F-0007 engine guard. No engine/hook/script/roadmap touches.",
+      "spec_ref": "roadmap/briefs/F-0017.md",
+      "description": "Core non-UI foundations for the ForgeOps agent operations platform: promptToGraph (natural language to executable graph JSON), basic A/B simulation with real-time structured logs, owner/viewer RBAC sim, exports (portable JSON + minimal Dockerfile + docker-compose with DEMO_MODE). Enables visual canvas and sellable product experience. Depends on F-0007 guard.",
       "acceptance": [
         "promptToGraph(prompt: string) or equivalent core produces valid executable agent graph JSON (nodes + edges) consumable by the engine",
         "A/B simulator executes two graph variants over synthetic inputs and emits real-time structured logs viewable via CLI/UI hook",
@@ -594,13 +607,16 @@
     },
     {
       "dependencies": [
-        "F-0007"
+        "F-0007",
+        "F-0017"
       ],
-      "status": "pending",
+      "status": "blocked",
       "passes": false,
-      "evidence": [],
-      "attempts": 0,
-      "blocked_reason": null,
+      "evidence": [
+        "roadmap/evidence/F-0018/verify.log"
+      ],
+      "attempts": 1,
+      "blocked_reason": "second strike JUDGE NEEDS_WORK: missing green verify.log containing \"VERIFY: PASS (exit 0)\" from scripts/verify.sh + E2E artifacts/screenshots per frontend.md rule for UI features (stub only; host env + F-0007 residual blocks full gate despite 22 units + build 0 + chart fix + ACs covered in code/tests). PR template body + git diff procedure steps not executed by judge. Core + canvas delivery solid (BUILD COMPLETE, guard honored, kaizen followed) but gate not satisfied in this tree per contract. Move on per protocol.",
       "forbidden_paths": [
         ".claude/**",
         ".github/**",
@@ -608,16 +624,16 @@
         "roadmap/**"
       ],
       "id": "F-0018",
-      "epic": "product",
-      "title": "Full interactive visual canvas with @xyflow/react",
-      "spec_ref": "roadmap/PROGRESS.md (ForgeOps plan gap + F-0017/18 mentions) + README.md (product architecture placeholder) + original vision (ForgeOps: drag-drop @xyflow canvas, marketplace, sim/A-B, RBAC, billing/Stripe, exports/Docker, real-time logs, prompt-to-graph, premium UI) + open PR on feat/F-0018",
-      "description": "Full interactive drag-and-drop visual canvas using @xyflow/react for ForgeOps agent graphs/workflows. Supports prompt-to-graph seeding of canvas, node/edge editing, marketplace browse/publish stubs, A-B sim launch + results viz, premium UI polish (theming/toolbar), exports. Builds directly on F-0017 core. Product-only paths; no engine surfaces.",
+      "epic": "forgeops",
+      "title": "ForgeOps Visual Canvas — ReactFlow graph editor, live A/B sim, RBAC modes, exports",
+      "spec_ref": "roadmap/briefs/F-0018.md",
+      "description": "Interactive visual canvas for ForgeOps: ReactFlow (@xyflow/react) graph authoring from prompt or direct manipulation, A/B sim execution with live structured log ticker/charts (Recharts), RBAC owner/viewer persona toggle, one-click exports (JSON + Docker scaffold from core). Pure consumer of F-0017 engine. All UI states handled. Matches existing demo/theme patterns per frontend.md.",
       "acceptance": [
-        "Interactive @xyflow/react canvas mounts and supports full drag, drop, pan, zoom, connect of agent/prompt nodes and workflow edges",
-        "Prompt-to-graph input seeds and renders initial editable graph on the canvas; local/session edits are reflected immediately",
-        "Marketplace panel (stub) allows browse/publish of graph templates; A-B sim panel triggers runs (via core) and visualizes results + real-time logs",
-        "Premium UI elements (theming, toolbar, export buttons) are present, styled, and functional; basic export from canvas works",
-        "UI/product feature passes bash scripts/verify.sh (lint + units + --e2e where configured); evidence includes live run artifacts or equivalent visual confirmation"
+        "Canvas renders and allows interactive editing of graphs produced by F-0017 promptToGraph using ReactFlow (@xyflow/react)",
+        "A/B simulation runs from canvas, streams real-time structured logs (from abSim/generateGraphAwareLog) to UI ticker/chart",
+        "RBAC persona toggle enforces owner (full edit/run/export) vs viewer (read-only, mutations rejected visibly)",
+        "Export actions produce valid JSON + Dockerfile/docker-compose from F-0017 export; downloadable and match spec",
+        "UI handles all states (loading/empty/error/success) with plain messages, follows frontend.md and existing demo patterns, verify green"
       ],
       "authorized_paths": [
         "src/**",
@@ -626,6 +642,80 @@
         "package.json"
       ],
       "priority": 1
+    },
+    {
+      "dependencies": [
+        "F-0007"
+      ],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0019/verify.log",
+        "roadmap/evidence/F-0019/sample-graph.json"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "scripts/**",
+        "roadmap/**"
+      ],
+      "spec_ref": "roadmap/briefs/F-0017.md",
+      "title": "ForgeOps promptToGraph core — natural language to executable agent graph JSON (F-0017 ghost remediation slice 1)",
+      "priority": 1,
+      "acceptance": [
+        "promptToGraph(prompt) or equiv in src/forge|src/lib produces valid JSON (>=1 node + edges); keys include nodes[].id/type/label + edges[].source/target; no touches outside authorized",
+        "Unit test asserts output JSON parseable, has required keys, deterministic (same input same shape)",
+        "CLI smoke or integration (product src/ present) runs without error and can emit sample-graph.json",
+        "bash scripts/verify.sh exits 0 (units + product-mode); evidence/F-0019/ includes sample-graph.json + unit exercising the fn",
+        "Edits confined to authorized (src/**, package.json if dep); F-0007 guard not violated"
+      ],
+      "authorized_paths": [
+        "src/**",
+        "package.json"
+      ],
+      "id": "F-0019",
+      "epic": "forgeops",
+      "description": "Minimal product-mode core: promptToGraph(prompt) or equivalent produces valid executable agent graph JSON (nodes with id/type/label/position/model/prompt/estimatedCost + edges source/target). Deterministic foundation for canvas/sim/export; 1 builder session; delivers first F-0017 AC under real src/ to un-ghost."
+    },
+    {
+      "dependencies": [
+        "F-0007"
+      ],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0020/verify.log",
+        "roadmap/evidence/F-0020/graph.json",
+        "roadmap/evidence/F-0020/Dockerfile",
+        "roadmap/evidence/F-0020/docker-compose.yml"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "scripts/**",
+        "roadmap/**"
+      ],
+      "spec_ref": "roadmap/briefs/F-0017.md; PROGRESS (groom for ForgeOps auth/RBAC/deploy post F-0007)",
+      "title": "ForgeOps RBAC simulation + deploy/export scaffold foundations (owner/viewer 403/404, portable JSON + minimal Dockerfile/docker-compose)",
+      "priority": 1,
+      "acceptance": [
+        "RBAC module exports check(principal, res, act): allow/deny; owner allows all, viewer denies mutations (403/404); unit tests use two principals (owner allowed, non-owner 403/404) per security.md",
+        "Export helper writes graph.json + minimal Dockerfile (node base, COPY graph, healthcheck) + docker-compose.yml (DEMO_MODE, health); artifacts valid, no engine src changes",
+        "Units cover RBAC deny for viewer + export file contents contain DEMO_MODE/healthcheck strings; evidence includes sample artifacts",
+        "bash scripts/verify.sh exits 0 (units + product); evidence/F-0020/ has RBAC logs + Dockerfile/compose snippets + graph.json",
+        "Only src/** + package.json; forbidden .claude/** .github/workflows/** scripts/** roadmap/**; F-0007 guard honored"
+      ],
+      "authorized_paths": [
+        "src/**",
+        "package.json"
+      ],
+      "id": "F-0020",
+      "epic": "forgeops",
+      "description": "RBAC sim (synthetic owner full edit/run/export, non-owner read-only 403/404 on resources; no client-supplied ID trust per security.md) + export (portable graph JSON + minimal Dockerfile + docker-compose with DEMO_MODE/healthcheck). Small testable slice of F-0017 vision; auth/RBAC/deploy foundation now engine guard stable."
     }
   ]
 }

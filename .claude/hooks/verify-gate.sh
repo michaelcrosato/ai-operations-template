@@ -43,4 +43,121 @@ if [ "$BASE" = "features.json" ]; then
   esac
 fi
 
+# F-0007: PreToolUse per-feature authz guard.
+# When CLAUDE_ACTIVE_FEATURE set (builder product sessions set it via brief/spawn contract),
+# load that feature's authorized_paths + forbidden_paths from STATE_FILE (test seam) or
+# default ${CLAUDE_PROJECT_DIR:-.}/roadmap/features.json.
+# Glob-match FILE (normed for \ / ./ // abs/rel/win) against authz: must match >=1 (allow), else block.
+# Also block on any forbidden match.
+# Fail-closed on any ambiguity/missing/no-authorized/unknown-feature/parse-err (plain msg + path + feat).
+# If no CLAUDE_ACTIVE_FEATURE (orchestrator/maintenance/downtime): allow — does not break non-product sessions.
+# Supports ** (as "dir/**" prefix incl segment match for abs paths), exact files, simple *.
+# Only acts on Edit/Write; reads and other tools unaffected.
+if [ -n "${CLAUDE_ACTIVE_FEATURE:-}" ]; then
+  STATE="${STATE_FILE:-${CLAUDE_PROJECT_DIR:-.}/roadmap/features.json}"
+  if [ ! -f "$STATE" ]; then
+    echo "BLOCKED: CLAUDE_ACTIVE_FEATURE=$CLAUDE_ACTIVE_FEATURE but state file missing at $STATE (fail-closed)." >&2
+    exit 2
+  fi
+
+  AUTHZ="[]"
+  FORB="[]"
+  if command -v node >/dev/null 2>&1; then
+    AUTHZ="$(cat "$STATE" | node -e '
+let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{ try{
+  const j=JSON.parse(d||"{}"); const id=process.env.CLAUDE_ACTIVE_FEATURE||"";
+  const f=(j.features||[]).find(x=>x&&x.id===id);
+  if(!f){console.log("NOTFOUND");return;}
+  console.log(JSON.stringify(f.authorized_paths||[]));
+}catch{console.log("PARSEERR");}
+})' 2>/dev/null || echo "PARSEERR")"
+    FORB="$(cat "$STATE" | node -e '
+let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{ try{
+  const j=JSON.parse(d||"{}"); const id=process.env.CLAUDE_ACTIVE_FEATURE||"";
+  const f=(j.features||[]).find(x=>x&&x.id===id);
+  if(!f){console.log("NOTFOUND");return;}
+  console.log(JSON.stringify(f.forbidden_paths||[]));
+}catch{console.log("PARSEERR");}
+})' 2>/dev/null || echo "PARSEERR")"
+    if [ "$AUTHZ" = "NOTFOUND" ] || [ "$FORB" = "NOTFOUND" ]; then
+      echo "BLOCKED: CLAUDE_ACTIVE_FEATURE=$CLAUDE_ACTIVE_FEATURE not found in state (fail-closed)." >&2
+      exit 2
+    fi
+    if [ "$AUTHZ" = "PARSEERR" ] || [ "$FORB" = "PARSEERR" ]; then
+      echo "BLOCKED: failed to parse state for $CLAUDE_ACTIVE_FEATURE authz/forbidden (fail-closed)." >&2
+      exit 2
+    fi
+  elif command -v jq >/dev/null 2>&1; then
+    AUTHZ="$(jq -c -r --arg id "$CLAUDE_ACTIVE_FEATURE" '(.features//[])|map(select(.id==$id))|if length>0 then (.[0].authorized_paths//[])|@json else "NOTFOUND" end' "$STATE" 2>/dev/null || echo "NOTFOUND")"
+    FORB="$(jq -c -r --arg id "$CLAUDE_ACTIVE_FEATURE" '(.features//[])|map(select(.id==$id))|if length>0 then (.[0].forbidden_paths//[])|@json else "NOTFOUND" end' "$STATE" 2>/dev/null || echo "NOTFOUND")"
+    if [ "$AUTHZ" = "NOTFOUND" ] || [ "$FORB" = "NOTFOUND" ]; then
+      echo "BLOCKED: CLAUDE_ACTIVE_FEATURE=$CLAUDE_ACTIVE_FEATURE not found or jq failed (fail-closed)." >&2
+      exit 2
+    fi
+  else
+    echo "BLOCKED: CLAUDE_ACTIVE_FEATURE=$CLAUDE_ACTIVE_FEATURE but no node/jq available to enforce per-feature authz (fail-closed)." >&2
+    exit 2
+  fi
+
+  # matches_any <json-array> <file> — echoes 0 (match) or 1 (no). node primary; bash fallback for jq-only envs.
+  matches_any() {
+    local arr="$1" fp="$2"
+    if command -v node >/dev/null 2>&1; then
+      node -e '
+let pats=[];try{pats=JSON.parse(process.argv[1]||"[]")}catch{process.exit(2)}
+let fp=(process.argv[2]||"").replace(/\\/g,"/").replace(/\/+/g,"/").replace(/^[A-Za-z]:/,"").replace(/^\/+/,"").replace(/^\.\//,"");
+for(let p0 of pats){
+  let p=p0.replace(/\\/g,"/").replace(/\/+/g,"/").replace(/^[A-Za-z]:/,"").replace(/^\/+/,"").replace(/^\.\//,"");
+  if(p===fp||fp===p||fp.endsWith("/"+p)||p.endsWith("/"+fp)){process.exit(0);}
+  if(p==="**"){process.exit(0);}
+  if(p.endsWith("/**")){
+    let pre=p.slice(0,-3);if(pre.endsWith("/"))pre=pre.slice(0,-1);
+    if(!pre||fp===pre||fp.startsWith(pre+"/")){process.exit(0);}
+    if(("/"+fp+"/").indexOf("/"+pre+"/")>=0){process.exit(0);}
+    if(fp.endsWith("/"+pre)){process.exit(0);}
+  }
+}
+process.exit(1);
+' "$arr" "$fp" 2>/dev/null ; echo $?
+    else
+      # degraded (jq no node): bash covers **-prefix + exact + suffix (patterns actually used)
+      local clean="${arr#[}"; clean="${clean%]}"; clean="${clean//\"/}"; clean="${clean// /}"
+      local IFS=, p f="$fp"
+      for p in $clean; do
+        [ -z "$p" ] && continue
+        [ "$p" = "$f" ] && { echo 0; return; }
+        [ "$f" = "$p" ] && { echo 0; return; }
+        case "$f" in "$p") echo 0; return ;; esac
+        case "$f" in *"/$p") echo 0; return ;; esac
+        if [ "${p#*\*\*}" != "$p" ]; then
+          pre="${p%\*\*}"; pre="${pre%/}"
+          case "$f" in "$pre"*|"$pre/"*) echo 0; return ;; esac
+          case "/$f/" in *"/$pre/"*) echo 0; return ;; esac
+          case "$f" in *"/$pre") echo 0; return ;; esac
+        fi
+      done
+      echo 1; return
+    fi
+  }
+
+  # forbidden wins (block even if would be in authz)
+  if [ "$FORB" != "[]" ]; then
+    if [ "$(matches_any "$FORB" "$FILE")" -eq 0 ]; then
+      echo "BLOCKED: $FILE matches a forbidden_paths entry for active feature $CLAUDE_ACTIVE_FEATURE." >&2
+      exit 2
+    fi
+  fi
+
+  # must be covered by at least one authorized_paths glob
+  if [ "$AUTHZ" = "[]" ]; then
+    echo "BLOCKED: active feature $CLAUDE_ACTIVE_FEATURE has empty authorized_paths (fail-closed)." >&2
+    exit 2
+  fi
+  if [ "$(matches_any "$AUTHZ" "$FILE")" -ne 0 ]; then
+    echo "BLOCKED: $FILE is outside authorized_paths for active feature $CLAUDE_ACTIVE_FEATURE." >&2
+    exit 2
+  fi
+  # here: allowed
+fi
+
 exit 0
