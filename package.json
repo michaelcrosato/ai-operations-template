@@ -10,7 +10,7 @@
     "start": "next start",
     "lint": "biome lint scripts src",
     "typecheck": "tsc --noEmit",
-    "test": "node --test src/health.test.js src/forge/promptToGraph.test.js src/forge/rbac.test.js src/forge/exportArtifacts.test.js src/forge/abSim.test.js",
+    "test": "node --test --test-concurrency=1 src/health.test.js src/forge/promptToGraph.test.js src/forge/rbac.test.js src/forge/exportArtifacts.test.js src/forge/abSim.test.js",
     "verify": "bash scripts/verify.sh",
     "shield": "ts-node scripts/assertion-shield.ts",
     "state": "ts-node scripts/update-state.ts",

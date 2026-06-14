@@ -55,7 +55,10 @@ make_fake_bin "$PFIX/linux" "Linux" "6.8.0-generic" yes yes no
 check "preflight: Linux/cloud passes" 0 "$(PATH="$PFIX/linux" "$BASH" "$PREFLIGHT" >/dev/null 2>&1; echo $?)"
 
 make_fake_bin "$PFIX/wsl" "Linux" "5.15.153.1-microsoft-standard-WSL2" yes yes no
-WSL_OUT="$(PATH="$PFIX/wsl" WSL_INTEROP=1 "$BASH" "$PREFLIGHT" 2>&1 >/dev/null)"; WSL_RC=$?
+# CI/GITHUB_ACTIONS must be cleared: the preflight intentionally suppresses the
+# WSL warning under CI (is_ci guard), so leaving them set — as they are when this
+# suite runs inside CI — would make the WSL-detection path we're testing pass 0.
+WSL_OUT="$(PATH="$PFIX/wsl" WSL_INTEROP=1 CI='' GITHUB_ACTIONS='' "$BASH" "$PREFLIGHT" 2>&1 >/dev/null)"; WSL_RC=$?
 check "preflight: WSL bash without cygpath fails" 1 "$WSL_RC"
 printf '%s' "$WSL_OUT" | grep -qF "C:\\Program Files\\Git\\bin" ; check "preflight: WSL failure prints Git Bash fix" 0 "$?"
 
