@@ -1,0 +1,21 @@
+✔ userCanEdit: owner can edit (true) (1.1195ms)
+✔ userCanEdit: admin can edit (true) (0.2251ms)
+✔ userCanEdit: editor can edit (true) (0.1339ms)
+✔ userCanEdit: viewer cannot edit (false) — read-only persona (0.1026ms)
+✔ userCanEdit: unknown role defaults to deny (false) (0.0971ms)
+✔ check: owner allows all actions (read/edit/export/run) (0.6077ms)
+✔ check: viewer allows reads, denies mutations (403/404 per security.md) (0.1039ms)
+✔ CLI: node src/forge/rbac.js exits 0 and prints JSON with owner/viewer results (42.1596ms)
+✔ check: graph-mutation two-principal — owner and editor allowed, viewer denied (0.1039ms)
+✔ check: res argument changes decision — admin denied on billing resource, allowed on graph (0.1056ms)
+✔ check: admin allows graph/logs/run, denies org/billing (0.076ms)
+✔ check: editor allows read+mutate-graph, denies run-control/manage (0.0727ms)
+✔ check: viewer read-only across multiple resources (0.0691ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 113.086
