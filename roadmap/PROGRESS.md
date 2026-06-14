@@ -1,3 +1,11 @@
+## 2026-06-14 — F-0029 + F-0031 shipped; F-0028 blocked, F-0026 deferred — review queue at terminal state
+
+- **F-0031 (PR #57)** — dependency rationalization: removed 4 unused deps, upgraded lucide-react 0.x→1.x + biome 2.4→2.5, deferred Next 16 (high-risk major; security floor met). npm audit 0 vulns. Evaluator PASS, security APPROVE.
+- **F-0029 (PR #58)** — incremental decomposition of app/demo/page.tsx: centralized permission logic into a `useDemoAuth` hook + extracted 2 panels + 16 permission unit tests; behavior preserved (E2E green); full canvas/graph-mutation extraction deferred (tangled state needs a context restructure). Evaluator PASS (scope-spec widened via --paths).
+- **F-0028 (TS migration) BLOCKED** — a clean `.test.js`→`.test.ts` migration is prevented by the assertion-shield (deletion of BASE-existing test assertions) + CJS/ESM test-runner interop. The builder's `.js`+`.ts` duplication was rejected. Unblock = shield rename-detection (an F-0027 follow-up) or a human migration bypass. A concrete vindication of the reviews' "shield makes refactoring hard" point.
+- **F-0026 (test the LLM judges) DEFERRED by design** — mechanical guards are tested (extended this session); the LLM-judge-prompt eval is non-deterministic/advisory and optional-modules.md defers it until eval budget is accepted.
+- **Goal terminal state:** of the operator's queued review work, **9 features built + merged this goal** (F-0021, F-0022, F-0023, F-0024, F-0025, F-0027, F-0029, F-0030, F-0031) through the full gate; every other backlog item is done, blocked-with-reason, or deferred-by-design. Backlog: 31 features, **29 passing**. Notable: **5 real security-reviewer/evaluator BLOCKs** across F-0021/F-0027/F-0030/F-0028/F-0029 were caught and either fixed before merge or honestly blocked — the adversarial JUDGE layer worked exactly as designed (never merged a regression).
+
 ## 2026-06-14 — F-0024 (E2E), F-0030 (guard hardening), F-0027 (assertion-shield FP) shipped
 
 - **F-0024 (PR #53)** — Playwright E2E program: browser-level viewer-RBAC test, `e2e.yml` installs browsers and runs `verify.sh --e2e` (CI e2e job green). The E2E backlog item is delivered.
