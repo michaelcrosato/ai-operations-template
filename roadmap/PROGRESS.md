@@ -1,3 +1,12 @@
+## 2026-06-14 — Review-remediation build wave: F-0021/F-0022/F-0023 shipped; backlog groomed
+
+- Operator `/goal`: finish the queued real work from the verified review (full parallel, max speed). Built and merged the three highest-value groomed features through the full gate (builder → verify.sh → fresh evaluator → security-reviewer on sensitive paths → PR → green CI → merge):
+  - **F-0021 (PR #47)** — visual-canvas viewer read-only RBAC now ENFORCED (every mutation control gated + visible rejection), `rbac.js` generalized to an owner/admin/editor/viewer resource-aware model. The security-reviewer caught and we fixed TWO real privilege-escalations (editor could mutate, then read, org/billing that admin is denied); added a **monotonicity property test** (lower-role allow implies higher-role allow). UI proof via screenshot + DOM-asserted walkthrough (frontend.md). Evaluator PASS, security APPROVE.
+  - **F-0022 (PR #46)** — the F-0007 path-authorization guard now fires MECHANICALLY: the active feature is derived from the single `in_progress` row in features.json (env override → single in_progress → permissive), so it no longer no-ops. +11 hook contract tests (201 total). Evaluator PASS, security APPROVE (one HIGH follow-up → groomed F-0025).
+  - **F-0023 (PR #48)** — product model ids centralized in one registry (`src/forge/models.js` + `lib/models.ts`); `grok-4` (stale) → `grok-4.3` everywhere; committed forge evidence regenerated. Evaluator PASS.
+- State reconciled: F-0021/F-0022/F-0023 flipped to done+passes with evidence. Remaining recommended-backlog groomed as features **F-0024–F-0031** (E2E program; single-in_progress hardening; judge fixtures; AST assertion-shield; src/forge TS migration; page.tsx decomposition; cross-shell guard hardening; major dep upgrades). Backlog now 31 features, 23 passing.
+- Gate green on every merge; CI verify+e2e green. Notable process catch: the assertion-shield false-positived on an in-branch-added test removal and the guard-bash false-positived on a feature description containing a guard keyword — both are exactly the brittleness F-0027/F-0030 are groomed to fix.
+
 ## 2026-06-14 — External-review remediation (5-source review) verified + safe fixes shipped (PR #44)
 
 - Operator `/goal`: research current AI capabilities/coding (repo-weighted), verify which of the 89 consolidated review points are legit, and implement the necessary fixes.
