@@ -969,11 +969,13 @@
       "dependencies": [
         "F-0023"
       ],
-      "status": "blocked",
-      "passes": false,
-      "evidence": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0028/verify.log"
+      ],
       "attempts": 0,
-      "blocked_reason": "Clean .js->.ts migration must rename src/forge/*.test.js to .test.ts, which the assertion-shield blocks (deletion of BASE-existing test assertions; F-0027 suppression only covers branch-new files). Needs shield rename-detection (F-0027 follow-up) or a human-authorized migration bypass; source-only migration is blocked by CJS/ESM test-runner interop. Builder attempt produced .js+.ts duplication, rejected.",
+      "blocked_reason": null,
       "forbidden_paths": [
         "roadmap/features.json",
         ".claude/**"
