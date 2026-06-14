@@ -92,13 +92,22 @@ export interface ExportResult {
   graph: ExportGraph;
   dockerfile: string;
   dockerCompose: string;
+  /** Human-readable summary of what was exported (relocated from the removed CLI's stdout). */
+  summary: string;
 }
 
 export function exportArtifacts(): ExportResult {
   ensureDir(EVIDENCE_DIR);
   const g = minimalGraph();
-  fs.writeFileSync(path.join(EVIDENCE_DIR, 'graph.json'), `${JSON.stringify(g, null, 2)}\n`);
-  fs.writeFileSync(path.join(EVIDENCE_DIR, 'Dockerfile'), dockerfileContent());
-  fs.writeFileSync(path.join(EVIDENCE_DIR, 'docker-compose.yml'), dockerComposeContent());
-  return { graph: g, dockerfile: dockerfileContent(), dockerCompose: dockerComposeContent() };
+  // Names drive both the writes and the summary, so the summary always reflects reality.
+  const artifacts = ['graph.json', 'Dockerfile', 'docker-compose.yml'] as const;
+  fs.writeFileSync(path.join(EVIDENCE_DIR, artifacts[0]), `${JSON.stringify(g, null, 2)}\n`);
+  fs.writeFileSync(path.join(EVIDENCE_DIR, artifacts[1]), dockerfileContent());
+  fs.writeFileSync(path.join(EVIDENCE_DIR, artifacts[2]), dockerComposeContent());
+  return {
+    graph: g,
+    dockerfile: dockerfileContent(),
+    dockerCompose: dockerComposeContent(),
+    summary: `exported ${artifacts.join(', ')}`,
+  };
 }

@@ -38,9 +38,8 @@ test('exportArtifacts writes graph.json + Dockerfile + docker-compose.yml with r
 });
 
 test('CLI: node src/forge/exportArtifacts.js exits 0 and emits artifacts', () => {
-  // CLI block removed in TS; test the function's side-effect + return value
-  exportArtifacts(); // ensure side-effects (graph.json written)
-  const stdout = 'exported graph.json, Dockerfile, docker-compose.yml'; // simulated CLI stdout
+  // CLI block removed in TS; the CLI's stdout summary now lives on the function's return.
+  const stdout = exportArtifacts().summary; // real export summary (was the CLI's stdout)
   assert.ok(stdout.includes('exported'));
   const g = JSON.parse(fs.readFileSync(path.join(EV, 'graph.json'), 'utf8'));
   assert.ok(g.nodes && g.edges);
