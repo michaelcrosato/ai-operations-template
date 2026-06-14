@@ -1,3 +1,12 @@
+## 2026-06-14 — External-review remediation (5-source review) verified + safe fixes shipped (PR #44)
+
+- Operator `/goal`: research current AI capabilities/coding (repo-weighted), verify which of the 89 consolidated review points are legit, and implement the necessary fixes.
+- **Verified** all 89 points against the live tree (multi-agent fleet + direct inspection), cross-checked with `feedback-2-verification.md` + fresh web research: ~52 confirmed, 0 false, ~14 already-fixed, rest by-design/deferred. Full write-up: `docs/feedback-3-verification.md`; research: `docs/ai-capabilities-research-2026-06.md`.
+- **Shipped (PR #44, merged on green CI):** `.gitattributes` LF pinning (kills the Windows evidence CRLF churn); path-scoped rules repointed to real dirs; public-repo governance pack (SECURITY/CONTRIBUTING/CODE_OF_CONDUCT/CODEOWNERS/ISSUE_TEMPLATE); postcss advisory patched (`npm audit --omit=dev` → 0 vulns); landing-page honesty (removed fake logos/metrics/"verified live", de-Grok'd copy) + honest `package.json` description; `scripts/verify.ps1` Windows launcher; `verify-rules.ts` false-positive fix; `OPERATOR_GUIDE.md` placeholder filled.
+- **Enabled out-of-tree:** GitHub vulnerability alerts, Dependabot security updates, secret scanning + push protection, private vulnerability reporting (all were off). The postcss Dependabot alert cleared on merge.
+- **Groomed** the larger/risky fixes as features (not done casually, per the verified plan): F-0021 (F-0018 canvas RBAC enforcement + E2E + rbac unification, P1), F-0022 (arm the F-0007 path guard mechanically, P1), F-0023 (product model-currency grok-4→grok-4.3 central registry, P2). Backlog now 23 features, 20 passing — correcting the "all done" overstatement. STATUS.md regenerated honestly; Q-0003 opened (non-blocking).
+- **Gate:** `bash scripts/verify.sh` → VERIFY: PASS (exit 0), 190 hook contract tests, 0 fail; PR #44 CI verify+e2e green; merged to develop (e286caf).
+
 ## 2026-06-14 — Forge evidence tests made self-contained (kills the PR #42 CI flake at the root)
 
 - Root-caused the PR #42 flake: `src/forge/abSim.test.js` copied sibling tests' evidence files into `roadmap/evidence/F-0017/` at module load; under parallel `node --test` it could read a source file mid-truncate-write and write an empty `F-0017/graph.json`, which fails `update-state.ts --validate`.
