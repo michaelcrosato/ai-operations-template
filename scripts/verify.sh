@@ -5,6 +5,8 @@
 set -u
 cd "$(dirname "$0")/.." || exit 1
 
+bash scripts/local-cli-preflight.sh || exit 1
+
 E2E=false
 [ "${1:-}" = "--e2e" ] && E2E=true
 

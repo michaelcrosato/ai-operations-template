@@ -18,6 +18,54 @@ check() { # check <name> <expected-exit> <actual-exit>
 hook_bash() { printf '{"tool_input":{"command":"%s"}}' "$1" | bash "$HOOKS/guard-bash.sh" >/dev/null 2>&1; echo $?; }
 hook_file() { printf '{"tool_input":{"file_path":"%s"}}' "$1" | bash "$HOOKS/verify-gate.sh" >/dev/null 2>&1; echo $?; }
 
+echo "── local-cli-preflight.sh"
+PREFLIGHT="$ROOT/scripts/local-cli-preflight.sh"
+PFIX="$(mktemp -d "tmp/preflight-tests-XXXXXX")"
+
+make_fake_bin() {
+  local dir="$1" uname_s="$2" uname_r="$3" with_node="$4" with_git="$5" with_cygpath="$6"
+  mkdir -p "$dir"
+  cat > "$dir/uname" <<EOF
+#!/bin/sh
+case "\${1:-}" in
+  -s) echo "$uname_s" ;;
+  -r) echo "$uname_r" ;;
+  *) echo "$uname_s" ;;
+esac
+EOF
+  chmod +x "$dir/uname"
+  if [ "$with_node" = "yes" ]; then
+    printf '#!/bin/sh\nexit 0\n' > "$dir/node"
+    chmod +x "$dir/node"
+  fi
+  if [ "$with_git" = "yes" ]; then
+    printf '#!/bin/sh\nexit 0\n' > "$dir/git"
+    chmod +x "$dir/git"
+  fi
+  if [ "$with_cygpath" = "yes" ]; then
+    printf '#!/bin/sh\nexit 0\n' > "$dir/cygpath"
+    chmod +x "$dir/cygpath"
+  fi
+}
+
+make_fake_bin "$PFIX/gitbash" "MINGW64_NT-10.0" "3.5.4" yes yes yes
+check "preflight: Git Bash/MSYS passes" 0 "$(PATH="$PFIX/gitbash" "$BASH" "$PREFLIGHT" >/dev/null 2>&1; echo $?)"
+
+make_fake_bin "$PFIX/linux" "Linux" "6.8.0-generic" yes yes no
+check "preflight: Linux/cloud passes" 0 "$(PATH="$PFIX/linux" "$BASH" "$PREFLIGHT" >/dev/null 2>&1; echo $?)"
+
+make_fake_bin "$PFIX/wsl" "Linux" "5.15.153.1-microsoft-standard-WSL2" yes yes no
+WSL_OUT="$(PATH="$PFIX/wsl" WSL_INTEROP=1 "$BASH" "$PREFLIGHT" 2>&1 >/dev/null)"; WSL_RC=$?
+check "preflight: WSL bash without cygpath fails" 1 "$WSL_RC"
+printf '%s' "$WSL_OUT" | grep -qF "C:\\Program Files\\Git\\bin" ; check "preflight: WSL failure prints Git Bash fix" 0 "$?"
+
+make_fake_bin "$PFIX/missing-node" "MINGW64_NT-10.0" "3.5.4" no yes yes
+NODE_OUT="$(PATH="$PFIX/missing-node" "$BASH" "$PREFLIGHT" 2>&1 >/dev/null)"; NODE_RC=$?
+check "preflight: missing node fails" 1 "$NODE_RC"
+printf '%s' "$NODE_OUT" | grep -qi "node" ; check "preflight: missing node message names node" 0 "$?"
+
+rm -rf "$PFIX"
+
 echo "── guard-bash.sh"
 check "blocks push to main"          2 "$(hook_bash 'git push origin main')"
 check "blocks push to master"        2 "$(hook_bash 'git push -u origin master')"
