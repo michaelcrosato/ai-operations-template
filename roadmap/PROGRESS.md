@@ -1,3 +1,9 @@
+## 2026-06-14 — F-0025 shipped (path-guard self-bypass closed); backlog status
+
+- **F-0025 (PR #50)** merged + recorded: single-in_progress invariant in update-state.ts (writer rejects a 2nd concurrent in_progress; validate flags >1) + both hooks fail-closed on multiple-in_progress. Closes the self-bypass the F-0022 security review flagged. Evaluator PASS, security-reviewer APPROVE (no findings). 205 hook contract tests.
+- **Session tally:** F-0021, F-0022, F-0023, F-0025 built and merged through the full gate this session (each: builder → verify.sh → fresh evaluator → security-reviewer on sensitive paths → green CI → merge), on top of the earlier review-remediation batch (#44) + GitHub security hardening. Backlog: 31 features, 24 passing.
+- **Remaining (groomed, not built):** F-0024 (E2E program), F-0026 (judge fixtures), F-0027 (AST assertion-shield), F-0028 (src/forge TS migration), F-0029 (page.tsx decomposition), F-0030 (cross-shell guard hardening), F-0031 (major dep upgrades). These are each a focused build cycle of substantial/risky work (a critical-guard rewrite, breaking major upgrades, a 1700-line refactor, a CI Playwright program, security-architecture sandboxing) — left groomed with specs rather than rushed, per the constitution's one-feature-per-cycle discipline and the reviews' own warning against ramming risky changes for a green checkmark.
+
 ## 2026-06-14 — Review-remediation build wave: F-0021/F-0022/F-0023 shipped; backlog groomed
 
 - Operator `/goal`: finish the queued real work from the verified review (full parallel, max speed). Built and merged the three highest-value groomed features through the full gate (builder → verify.sh → fresh evaluator → security-reviewer on sensitive paths → PR → green CI → merge):
