@@ -3,14 +3,14 @@
 ──── typecheck: OK
 
 ──── verify: lint ────
-Checked 6 files in 23ms. No fixes applied.
+Checked 6 files in 20ms. No fixes applied.
 ──── lint: OK
 
 ──── verify: unit tests ────
-✔ getHealth() reports status ok and the correct service name (0.9212ms)
-✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.1441ms)
-✔ getHealth() uptime_s is a non-negative number (0.0712ms)
-✔ CLI: node src/health.js exits 0 and prints JSON with status ok (40.3936ms)
+✔ getHealth() reports status ok and the correct service name (2.1178ms)
+✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.2991ms)
+✔ getHealth() uptime_s is a non-negative number (0.1631ms)
+✔ CLI: node src/health.js exits 0 and prints JSON with status ok (82.8592ms)
 ℹ tests 4
 ℹ suites 0
 ℹ pass 4
@@ -18,7 +18,7 @@ Checked 6 files in 23ms. No fixes applied.
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 97.6967
+ℹ duration_ms 208.5631
 ──── unit tests: OK
 (no build script — skipping)
 ──── test coverage guard: OK (every src test file is wired into npm test)
@@ -33,7 +33,7 @@ Checked 6 files in 23ms. No fixes applied.
 ──── assertion shield: OK
 
 ──── verify: engine lint (biome) ────
-Checked 4 files in 7ms. No fixes applied.
+Checked 4 files in 21ms. No fixes applied.
 ──── engine lint (biome): OK
 
 ──── verify: shellcheck (hooks + gate scripts) ────
@@ -99,7 +99,7 @@ Checked 4 files in 7ms. No fixes applied.
 ── session-brief.sh
   [PASS] exits 0
   [PASS] emits brief content
-── update-state.ts (fixture: tmp/hook-tests-EgPePU)
+── update-state.ts (fixture: tmp/hook-tests-qlXNz4)
   [PASS] validate accepts valid fixture
   [PASS] validate exits 0 despite stale policy
   [PASS] validate warns on stale model-policy
@@ -147,7 +147,7 @@ Checked 4 files in 7ms. No fixes applied.
   [PASS] delegates to seed script (success)
   [PASS] propagates seed script failure
   [PASS] circular delegation fails fast
-── update-state.ts invariants (fixture: tmp/hook-tests-EgPePU)
+── update-state.ts invariants (fixture: tmp/hook-tests-qlXNz4)
   [PASS] status:done without passes is rejected
   [PASS] dependency cycle is rejected
   [PASS] validate audits evidence of passing features (missing file rejected)
@@ -233,5 +233,5 @@ Checked 4 files in 7ms. No fixes applied.
 hook contract tests: 174 passed, 0 failed
 ──── hook contract tests: OK
 
-VERIFY-COMMIT: 52fb753ec9bcfadae91d0a4d3276eda1eaabb6e6 @ 2026-06-14T00:26:14Z
+VERIFY-COMMIT: 32f4835be3fb7de89006a0123b61c8931e2709dd @ 2026-06-14T00:31:12Z
 VERIFY: PASS (exit 0)

@@ -4,6 +4,7 @@
 set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT" || exit 1
+mkdir -p tmp
 HOOKS=".claude/hooks"
 FIX="$(mktemp -d "tmp/hook-tests-XXXXXX")"
 trap 'rm -rf "$FIX"' EXIT
