@@ -1,0 +1,30 @@
+diff --git a/src/utils/format.ts b/src/utils/format.ts
+index aaaaaaa..bbbbbbb 100644
+--- a/src/utils/format.ts
++++ b/src/utils/format.ts
+@@ -1,5 +1,10 @@
+ export function formatDate(d: Date): string {
+-  return d.toISOString();
++  return d.toISOString().slice(0, 10);
+ }
++
++export function formatAmount(cents: number): string {
++  return `$${(cents / 100).toFixed(2)}`;
++}
+diff --git a/tests/utils/format.test.ts b/tests/utils/format.test.ts
+index ccccccc..ddddddd 100644
+--- a/tests/utils/format.test.ts
++++ b/tests/utils/format.test.ts
+@@ -1,6 +1,13 @@
+ import { formatDate, formatAmount } from '../../src/utils/format';
+
+ test('formatDate returns YYYY-MM-DD', () => {
+-  expect(formatDate(new Date('2026-06-14T12:00:00Z'))).toBe('2026-06-14T12:00:00.000Z');
++  expect(formatDate(new Date('2026-06-14T12:00:00Z'))).toBe('2026-06-14');
+ });
++
++test('formatAmount converts cents to dollars', () => {
++  expect(formatAmount(100)).toBe('$1.00');
++  expect(formatAmount(0)).toBe('$0.00');
++  expect(formatAmount(999)).toBe('$9.99');
++});

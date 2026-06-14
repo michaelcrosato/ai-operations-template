@@ -1,0 +1,5 @@
+Running verify.sh for F-9901...
+typecheck: OK
+lint: OK
+hook contract tests: 240 passed, 0 failed
+VERIFY: PASS (exit 0)
