@@ -19,6 +19,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { DEMO_SEED, cloneSeed, getWorkflowById, getExecutionsForWorkflow, getTemplateById, getSyntheticDatasets, generateGraphAwareLog, getTeamForWorkspace, promptToGraph, getSeedGraphs, canIntervene as userCanIntervene, canEdit as userCanEdit, computeGraphCost, getNodeCount, getEdgeCount, type DemoSeed, type WorkflowGraph, type Execution, type Template, type SyntheticDataset, type NodeType } from '@/lib/seed';
+import { DEFAULT_MODEL, MODEL_OPTIONS } from '@/lib/models';
 
 // @xyflow/react — full interactive canvas (already in deps per brief)
 import {
@@ -304,7 +305,7 @@ function InteractiveCanvas({
     const yJ = (existing.length % 3) * 46;
     const nid = `${typ}_${Date.now().toString(36).slice(-5)}`;
     let nn: any;
-    if (typ === 'agent') nn = { id: nid, type: 'agent', label: 'Agent', position: { x: maxX, y: 130 + yJ }, model: 'grok-3', prompt: 'Added via palette', estimatedCost: 0.5 };
+    if (typ === 'agent') nn = { id: nid, type: 'agent', label: 'Agent', position: { x: maxX, y: 130 + yJ }, model: DEFAULT_MODEL, prompt: 'Added via palette', estimatedCost: 0.5 };
     else if (typ === 'tool') nn = { id: nid, type: 'tool', label: 'Tool', position: { x: maxX, y: 130 + yJ }, tool: 'palette.tool', estimatedCost: 0.08 };
     else if (typ === 'human-gate') nn = { id: nid, type: 'human-gate', label: 'Gate', position: { x: maxX, y: 130 + yJ }, timeoutSec: 900 };
     else if (typ === 'parallel') nn = { id: nid, type: 'parallel', label: 'Parallel', position: { x: maxX, y: 130 + yJ } };
@@ -726,7 +727,7 @@ export default function ForgeOpsDemo() {
     const nid = `${typ}_${Date.now().toString(36).slice(-5)}`;
     let newNode: any;
     if (typ === 'agent') {
-      newNode = { id: nid, type: 'agent', label: 'New Agent', position: { x: maxX, y: 160 + yJitter }, model: 'grok-3', prompt: 'Process task from palette', estimatedCost: 0.52 };
+      newNode = { id: nid, type: 'agent', label: 'New Agent', position: { x: maxX, y: 160 + yJitter }, model: DEFAULT_MODEL, prompt: 'Process task from palette', estimatedCost: 0.52 };
     } else if (typ === 'tool') {
       newNode = { id: nid, type: 'tool', label: 'New Tool', position: { x: maxX, y: 160 + yJitter }, tool: 'custom.tool', estimatedCost: 0.09 };
     } else if (typ === 'human-gate') {
@@ -970,7 +971,7 @@ services:
       const stubGraph: WorkflowGraph = {
         nodes: [
           { id: 'p1', type: 'start', label: 'Start', position: { x: 60, y: 90 } },
-          { id: 'p2', type: 'agent', label: publishForm.name.slice(0, 28), position: { x: 220, y: 70 }, model: 'grok-4', estimatedCost: 0.6 },
+          { id: 'p2', type: 'agent', label: publishForm.name.slice(0, 28), position: { x: 220, y: 70 }, model: DEFAULT_MODEL, estimatedCost: 0.6 },
           { id: 'p3', type: 'end', label: 'Done', position: { x: 420, y: 90 } },
         ],
         edges: [
@@ -1424,8 +1425,7 @@ services:
                                   <div className="text-white/50 mb-0.5">Model</div>
                                   <select value={node.model || ''} onChange={e => updateNode({ model: e.target.value || undefined })} disabled={!canEdit} className="w-full bg-black/40 border border-white/10 rounded px-2 py-1 disabled:opacity-50" aria-label="Model">
                                     <option value="">—</option>
-                                    <option value="grok-4">grok-4</option>
-                                    <option value="grok-3">grok-3</option>
+                                    {MODEL_OPTIONS.map(m => <option key={m} value={m}>{m}</option>)}
                                   </select>
                                 </div>
                                 <div>

@@ -14,6 +14,7 @@ const path = require('node:path');
 
 const { promptToGraph } = require('./promptToGraph');
 const { check } = require('./rbac');
+const { DEFAULT_MODEL } = require('./models');
 const { exportArtifacts } = require('./exportArtifacts');
 
 const EVIDENCE_DIR = path.resolve(__dirname, '..', '..', 'roadmap', 'evidence', 'F-0017');
@@ -30,7 +31,7 @@ function makeVariants(base) {
     type: 'optimize',
     label: 'A/B optimize path',
     position: { x: 1200, y: 0 },
-    model: 'grok-4',
+    model: DEFAULT_MODEL,
     prompt: 'Variant B: lower cost path',
     estimatedCost: 0.005
   });

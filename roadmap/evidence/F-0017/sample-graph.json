@@ -20,7 +20,7 @@
         "x": 300,
         "y": 0
       },
-      "model": "grok-4",
+      "model": "grok-4.3",
       "prompt": "Research X and summarize",
       "estimatedCost": 0.02
     },
@@ -32,7 +32,7 @@
         "x": 600,
         "y": -50
       },
-      "model": "grok-4",
+      "model": "grok-4.3",
       "prompt": "Perform targeted research on: Research X and summarize",
       "estimatedCost": 0.05
     },
@@ -44,7 +44,7 @@
         "x": 900,
         "y": 0
       },
-      "model": "grok-4",
+      "model": "grok-4.3",
       "prompt": "Summarize findings for operator",
       "estimatedCost": 0.01
     }

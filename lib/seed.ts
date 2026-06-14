@@ -1,3 +1,5 @@
+import { DEFAULT_MODEL } from '@/lib/models';
+
 /**
  * ForgeOps Demo Seed
  * Rich, deterministic, self-contained client-side data showcasing:
@@ -9,7 +11,7 @@
  * - A/B experiments
  * - Usage snapshots + billing awareness
  *
- * All values realistic: costs $0.01-$17.82, durations, success mix ~94%, Grok-4 / grok-3 references.
+ * All values realistic: costs $0.01-$17.82, durations, success mix ~94%, Grok-4.3 references.
  * No randomness at runtime — fully deterministic for reproducible demos.
  * Keep client-only (no DB, no secrets). Swap to Supabase later by replacing this module.
  */
@@ -176,14 +178,14 @@ const workspaces: Workspace[] = [
 const researchGraph: WorkflowGraph = {
   nodes: [
     mkNode('n_start', 'start', 'Research Brief', pos(40, 140)),
-    mkNode('n_plan', 'agent', 'Query Planner', pos(180, 110), { model: 'grok-4', prompt: 'Decompose into 4-7 sub-questions + source strategy', estimatedCost: 0.09 }),
+    mkNode('n_plan', 'agent', 'Query Planner', pos(180, 110), { model: DEFAULT_MODEL, prompt: 'Decompose into 4-7 sub-questions + source strategy', estimatedCost: 0.09 }),
     mkNode('n_par', 'parallel', 'Parallel Research', pos(360, 140)),
-    mkNode('n_r1', 'agent', 'Academic Researcher', pos(520, 60), { model: 'grok-4', prompt: 'Deep-dive academic + arXiv + papers', estimatedCost: 1.82 }),
-    mkNode('n_r2', 'agent', 'Web + News Scout', pos(520, 140), { model: 'grok-4', prompt: 'Recent news, company filings, analyst notes', estimatedCost: 0.94 }),
-    mkNode('n_r3', 'agent', 'Competitor Analyst', pos(520, 220), { model: 'grok-3', prompt: 'Compare 3 closest competitors on pricing/features', estimatedCost: 0.71 }),
+    mkNode('n_r1', 'agent', 'Academic Researcher', pos(520, 60), { model: DEFAULT_MODEL, prompt: 'Deep-dive academic + arXiv + papers', estimatedCost: 1.82 }),
+    mkNode('n_r2', 'agent', 'Web + News Scout', pos(520, 140), { model: DEFAULT_MODEL, prompt: 'Recent news, company filings, analyst notes', estimatedCost: 0.94 }),
+    mkNode('n_r3', 'agent', 'Competitor Analyst', pos(520, 220), { model: DEFAULT_MODEL, prompt: 'Compare 3 closest competitors on pricing/features', estimatedCost: 0.71 }),
     mkNode('n_merge', 'merge', 'Merge & Dedup', pos(680, 140)),
     mkNode('n_gate', 'human-gate', 'Human Review Gate', pos(820, 140), { timeoutSec: 3600 }),
-    mkNode('n_synth', 'agent', 'Synthesizer + Report', pos(960, 110), { model: 'grok-4', prompt: 'Produce structured 8-section report + citations + confidence scores', estimatedCost: 2.14 }),
+    mkNode('n_synth', 'agent', 'Synthesizer + Report', pos(960, 110), { model: DEFAULT_MODEL, prompt: 'Produce structured 8-section report + citations + confidence scores', estimatedCost: 2.14 }),
     mkNode('n_export', 'tool', 'Export PDF + Notion', pos(1100, 140), { tool: 'notion.export + pdf.render' }),
     mkNode('n_end', 'end', 'Complete', pos(1220, 140)),
   ],
@@ -206,10 +208,10 @@ const researchGraph: WorkflowGraph = {
 const supportGraph: WorkflowGraph = {
   nodes: [
     mkNode('s_start', 'start', 'Incoming Ticket', pos(60, 120)),
-    mkNode('s_class', 'agent', 'Triage Classifier', pos(200, 90), { model: 'grok-3', prompt: 'Urgency + topic + sentiment + account tier', estimatedCost: 0.03 }),
+    mkNode('s_class', 'agent', 'Triage Classifier', pos(200, 90), { model: DEFAULT_MODEL, prompt: 'Urgency + topic + sentiment + account tier', estimatedCost: 0.03 }),
     mkNode('s_kb', 'tool', 'Knowledge Base Lookup', pos(360, 70), { tool: 'kb.search + vector' }),
     mkNode('s_gate', 'human-gate', 'Escalation Approval', pos(520, 120), { timeoutSec: 900 }),
-    mkNode('s_reply', 'agent', 'Draft Empathetic Reply', pos(680, 80), { model: 'grok-4', prompt: 'Write reply + suggested actions + internal note', estimatedCost: 0.11 }),
+    mkNode('s_reply', 'agent', 'Draft Empathetic Reply', pos(680, 80), { model: DEFAULT_MODEL, prompt: 'Write reply + suggested actions + internal note', estimatedCost: 0.11 }),
     mkNode('s_par', 'parallel', 'Parallel Actions', pos(840, 120)),
     mkNode('s_email', 'tool', 'Send Email + Log', pos(980, 60), { tool: 'email.send' }),
     mkNode('s_crm', 'tool', 'Update CRM + SLA', pos(980, 160), { tool: 'hubspot.patch' }),
@@ -231,14 +233,14 @@ const supportGraph: WorkflowGraph = {
 const contentGraph: WorkflowGraph = {
   nodes: [
     mkNode('c_start', 'start', 'Brief + Keywords', pos(50, 130)),
-    mkNode('c_research', 'agent', 'Angle Researcher', pos(190, 90), { model: 'grok-4', prompt: 'Find 3-5 fresh angles + data points', estimatedCost: 0.67 }),
+    mkNode('c_research', 'agent', 'Angle Researcher', pos(190, 90), { model: DEFAULT_MODEL, prompt: 'Find 3-5 fresh angles + data points', estimatedCost: 0.67 }),
     mkNode('c_par', 'parallel', 'Parallel Writers', pos(370, 130)),
-    mkNode('c_w1', 'agent', 'Long-form Writer', pos(530, 50), { model: 'grok-4', prompt: '2,200 word draft', estimatedCost: 1.41 }),
-    mkNode('c_w2', 'agent', 'Social Thread Writer', pos(530, 130), { model: 'grok-3', prompt: 'LinkedIn + X thread variants', estimatedCost: 0.28 }),
-    mkNode('c_w3', 'agent', 'SEO Optimizer', pos(530, 210), { model: 'grok-4', prompt: 'Meta, headings, internal links', estimatedCost: 0.19 }),
+    mkNode('c_w1', 'agent', 'Long-form Writer', pos(530, 50), { model: DEFAULT_MODEL, prompt: '2,200 word draft', estimatedCost: 1.41 }),
+    mkNode('c_w2', 'agent', 'Social Thread Writer', pos(530, 130), { model: DEFAULT_MODEL, prompt: 'LinkedIn + X thread variants', estimatedCost: 0.28 }),
+    mkNode('c_w3', 'agent', 'SEO Optimizer', pos(530, 210), { model: DEFAULT_MODEL, prompt: 'Meta, headings, internal links', estimatedCost: 0.19 }),
     mkNode('c_merge', 'merge', 'Consolidate', pos(700, 130)),
     mkNode('c_gate', 'human-gate', 'Brand Voice Gate', pos(840, 130)),
-    mkNode('c_final', 'agent', 'Final Polish + Assets', pos(990, 100), { model: 'grok-4', prompt: 'Apply voice + generate hero image prompt + checklist', estimatedCost: 0.44 }),
+    mkNode('c_final', 'agent', 'Final Polish + Assets', pos(990, 100), { model: DEFAULT_MODEL, prompt: 'Apply voice + generate hero image prompt + checklist', estimatedCost: 0.44 }),
     mkNode('c_export', 'tool', 'Publish to CMS', pos(1140, 130), { tool: 'webflow.publish + notion' }),
     mkNode('c_end', 'end', 'Published', pos(1260, 130)),
   ],
@@ -258,10 +260,10 @@ const intelGraph: WorkflowGraph = {
   nodes: [
     mkNode('i_start', 'start', 'Daily Trigger', pos(60, 120)),
     mkNode('i_fetch', 'tool', 'Scrape 8 Sources', pos(200, 90), { tool: 'firecrawl.batch' }),
-    mkNode('i_anal', 'agent', 'Signal Detector (Grok-4)', pos(370, 90), { model: 'grok-4', prompt: 'Extract pricing moves, hiring, funding, product launches', estimatedCost: 0.83 }),
+    mkNode('i_anal', 'agent', 'Signal Detector (Grok-4.3)', pos(370, 90), { model: DEFAULT_MODEL, prompt: 'Extract pricing moves, hiring, funding, product launches', estimatedCost: 0.83 }),
     mkNode('i_ab', 'parallel', 'A/B Variant Runners', pos(540, 120)), // used by experiments too
-    mkNode('i_a', 'agent', 'Variant A: Grok-4 Heavy', pos(700, 60), { model: 'grok-4', prompt: 'Deep narrative + risk assessment', estimatedCost: 1.12 }),
-    mkNode('i_b', 'agent', 'Variant B: Fast Grok-3', pos(700, 170), { model: 'grok-3', prompt: 'Bullet summary + links', estimatedCost: 0.31 }),
+    mkNode('i_a', 'agent', 'Variant A: Grok-4.3 Heavy', pos(700, 60), { model: DEFAULT_MODEL, prompt: 'Deep narrative + risk assessment', estimatedCost: 1.12 }),
+    mkNode('i_b', 'agent', 'Variant B: Fast Grok-4.3', pos(700, 170), { model: DEFAULT_MODEL, prompt: 'Bullet summary + links', estimatedCost: 0.31 }),
     mkNode('i_merge', 'merge', 'Compare Outputs', pos(860, 120)),
     mkNode('i_end', 'end', 'Alert + Digest', pos(1000, 120)),
   ],
@@ -278,10 +280,10 @@ const intelGraph: WorkflowGraph = {
 const triageGraph: WorkflowGraph = {
   nodes: [
     mkNode('t_start', 'start', 'Bug / Incident', pos(50, 110)),
-    mkNode('t_class', 'agent', 'Severity + Repro Agent', pos(190, 80), { model: 'grok-4', prompt: 'Classify + extract repro steps from logs', estimatedCost: 0.07 }),
+    mkNode('t_class', 'agent', 'Severity + Repro Agent', pos(190, 80), { model: DEFAULT_MODEL, prompt: 'Classify + extract repro steps from logs', estimatedCost: 0.07 }),
     mkNode('t_search', 'tool', 'Similar Issues Search', pos(340, 110), { tool: 'github.search + linear' }),
     mkNode('t_par', 'parallel', 'Fix Paths', pos(500, 110)),
-    mkNode('t_code', 'agent', 'Code Suggestion', pos(650, 50), { model: 'grok-4', prompt: 'Propose minimal patch + tests', estimatedCost: 0.92 }),
+    mkNode('t_code', 'agent', 'Code Suggestion', pos(650, 50), { model: DEFAULT_MODEL, prompt: 'Propose minimal patch + tests', estimatedCost: 0.92 }),
     mkNode('t_owner', 'human-gate', 'Assign Owner + ETA', pos(650, 160)),
     mkNode('t_merge', 'merge', 'Decision Merge', pos(810, 110)),
     mkNode('t_notify', 'tool', 'Slack + Linear Update', pos(950, 80), { tool: 'slack.post + linear.create' }),
@@ -326,18 +328,18 @@ const workflows: Workflow[] = [
 // ─────────────────────────────────────────────────────────────────────────────
 // 12 MARKETPLACE TEMPLATES (with full sample graphs for "start from template")
 const templates: Template[] = [
-  { id: 'tpl_research', name: 'Deep Research Swarm', category: 'Research', description: 'Production-grade multi-agent research with source diversity, human approval, and polished exports.', rating: 4.9, usageCount: 1243, sampleGraph: researchGraph, tags: ['grok-4', 'parallel', 'human-gate', 'export'], estimatedAvgCost: 6.82, author: 'Acme Labs' },
-  { id: 'tpl_support', name: 'Tier-1 Customer Support', category: 'Support', description: 'Fast triage + empathetic draft. Human gate only on high-severity or VIP accounts.', rating: 4.8, usageCount: 872, sampleGraph: supportGraph, tags: ['grok-3', 'tool', 'human-gate'], estimatedAvgCost: 0.47, author: 'ForgeOps' },
-  { id: 'tpl_content', name: 'Content Pipeline (Long + Social)', category: 'Content', description: 'Parallel writing for blog + threads + SEO in one flow. Brand voice gate included.', rating: 4.7, usageCount: 619, sampleGraph: contentGraph, tags: ['parallel', 'grok-4', 'publish'], estimatedAvgCost: 3.19, author: 'Stellar' },
-  { id: 'tpl_intel', name: 'Competitive Intel Monitor', category: 'Analytics', description: 'Daily signal extraction using A/B model variants. Great for pricing and GTM teams.', rating: 4.9, usageCount: 341, sampleGraph: intelGraph, tags: ['scheduled', 'ab-test', 'grok-4'], estimatedAvgCost: 2.94, author: 'ForgeOps' },
-  { id: 'tpl_devops', name: 'Incident Response Triage', category: 'DevOps', description: 'Classify severity, find duplicates, auto-suggest fixes or route to humans.', rating: 4.6, usageCount: 288, sampleGraph: triageGraph, tags: ['grok-4', 'tool', 'human-gate'], estimatedAvgCost: 1.61, author: 'Linear Labs' },
-  { id: 'tpl_legal', name: 'Contract Risk Analyzer', category: 'Legal', description: 'Clause extraction, risk scoring, redline suggestions, and summary for legal review.', rating: 4.8, usageCount: 197, sampleGraph: { nodes: [mkNode('l1','start','Upload Contract',pos(80,90)), mkNode('l2','agent','Clause Extractor',pos(260,70),{model:'grok-4'}), mkNode('l3','agent','Risk Scorer',pos(420,110),{model:'grok-4'}), mkNode('l4','human-gate','Legal Review',pos(580,90)), mkNode('l5','end','Redline Report',pos(720,90))], edges: [mkEdge('le1','l1','l2'),mkEdge('le2','l2','l3'),mkEdge('le3','l3','l4'),mkEdge('le4','l4','l5')] }, tags: ['grok-4', 'human-gate'], estimatedAvgCost: 1.08, author: 'Notion AI' },
-  { id: 'tpl_sales', name: 'Lead Qualification & Routing', category: 'Sales', description: 'Enrich inbound leads, score, draft personalized first email, route to correct AE.', rating: 4.5, usageCount: 504, sampleGraph: { nodes: [mkNode('sa1','start','New Lead',pos(60,100)), mkNode('sa2','tool','Enrich (Clearbit+)',pos(200,70),{tool:'enrich'}), mkNode('sa3','agent','ICP + Intent Scorer',pos(350,100),{model:'grok-3'}), mkNode('sa4','human-gate','AE Handoff Approval',pos(510,100)), mkNode('sa5','tool','Notify AE + CRM',pos(670,70),{tool:'slack+hubspot'}), mkNode('sa6','end','Qualified',pos(820,100))], edges: [mkEdge('sae1','sa1','sa2'),mkEdge('sae2','sa2','sa3'),mkEdge('sae3','sa3','sa4'),mkEdge('sae4','sa4','sa5'),mkEdge('sae5','sa5','sa6')] }, tags: ['tool', 'grok-3'], estimatedAvgCost: 0.29, author: 'Vercel' },
-  { id: 'tpl_knowledge', name: 'Internal Knowledge Base Bot', category: 'Operations', description: 'Answers employee questions from Notion + Slack history. Citations always included.', rating: 4.4, usageCount: 163, sampleGraph: { nodes: [mkNode('k1','start','Employee Question',pos(70,100)), mkNode('k2','tool','Vector Search',pos(210,80),{tool:'pinecone'}), mkNode('k3','agent','Answer + Citations',pos(370,100),{model:'grok-4'}), mkNode('k4','end','Reply with Sources',pos(530,100))], edges: [mkEdge('ke1','k1','k2'),mkEdge('ke2','k2','k3'),mkEdge('ke3','k3','k4')] }, tags: ['grok-4', 'rag'], estimatedAvgCost: 0.18, author: 'Replicate' },
-  { id: 'tpl_marketing', name: 'Campaign Brief to Assets', category: 'Marketing', description: 'Turns a one-liner into positioning, 5 creative concepts, copy variants, and image prompts.', rating: 4.7, usageCount: 412, sampleGraph: { nodes: [mkNode('m1','start','Campaign Idea',pos(60,110)), mkNode('m2','agent','Positioning + Angles',pos(200,80),{model:'grok-4'}), mkNode('m3','parallel','Asset Factory',pos(380,110)), mkNode('m4','agent','Copy Variants',pos(530,50),{model:'grok-3'}), mkNode('m5','agent','Visual Prompts',pos(530,160),{model:'grok-4'}), mkNode('m6','end','Ready for Review',pos(680,110))], edges: [mkEdge('me1','m1','m2'),mkEdge('me2','m2','m3'),mkEdge('me3','m3','m4'),mkEdge('me4','m3','m5'),mkEdge('me5','m4','m6'),mkEdge('me6','m5','m6')] }, tags: ['parallel', 'creative'], estimatedAvgCost: 1.77, author: 'Acme Labs' },
-  { id: 'tpl_security', name: 'Security Posture Scanner', category: 'Security', description: 'Scans repos + infra for misconfigs, suggests fixes with prioritized backlog.', rating: 4.9, usageCount: 89, sampleGraph: { nodes: [mkNode('se1','start','Repo + Cloud Target',pos(50,100)), mkNode('se2','tool','Scan (Semgrep + Trivy)',pos(190,70),{tool:'scanner'}), mkNode('se3','agent','Prioritize & Explain',pos(360,100),{model:'grok-4'}), mkNode('se4','human-gate','Security Owner Sign-off',pos(510,100)), mkNode('se5','tool','Create Tickets',pos(660,70),{tool:'jira'}), mkNode('se6','end','Backlog Updated',pos(800,100))], edges: [mkEdge('see1','se1','se2'),mkEdge('see2','se2','se3'),mkEdge('see3','se3','se4'),mkEdge('see4','se4','se5'),mkEdge('see5','se5','se6')] }, tags: ['grok-4', 'tool', 'human-gate'], estimatedAvgCost: 2.35, author: 'ForgeOps' },
-  { id: 'tpl_hr', name: 'Candidate Screening Assistant', category: 'HR', description: 'Resume screen + LinkedIn research + question generator + bias check before recruiter review.', rating: 4.3, usageCount: 156, sampleGraph: { nodes: [mkNode('h1','start','New Application',pos(70,100)), mkNode('h2','tool','Resume + Profile Parse',pos(210,70),{tool:'parse'}), mkNode('h3','agent','Fit Score + Questions',pos(370,100),{model:'grok-3'}), mkNode('h4','human-gate','Recruiter Review',pos(530,100)), mkNode('h5','end','Interview Kit Ready',pos(690,100))], edges: [mkEdge('he1','h1','h2'),mkEdge('he2','h2','h3'),mkEdge('he3','h3','h4'),mkEdge('he4','h4','h5')] }, tags: ['grok-3', 'human-gate'], estimatedAvgCost: 0.34, author: 'Notion AI' },
-  { id: 'tpl_analytics', name: 'Weekly Metrics Storyteller', category: 'Analytics', description: 'Pulls product + revenue metrics, finds anomalies, writes exec narrative + charts.', rating: 4.6, usageCount: 227, sampleGraph: { nodes: [mkNode('a1','start','Weekly Trigger',pos(60,100)), mkNode('a2','tool','Metrics Pull (Stripe + Mixpanel)',pos(200,70),{tool:'metrics'}), mkNode('a3','agent','Anomaly + Narrative',pos(360,100),{model:'grok-4'}), mkNode('a4','end','Email + Slack Digest',pos(520,100))], edges: [mkEdge('ae1','a1','a2'),mkEdge('ae2','a2','a3'),mkEdge('ae3','a3','a4')] }, tags: ['grok-4', 'tool'], estimatedAvgCost: 0.81, author: 'Replicate' },
+  { id: 'tpl_research', name: 'Deep Research Swarm', category: 'Research', description: 'Production-grade multi-agent research with source diversity, human approval, and polished exports.', rating: 4.9, usageCount: 1243, sampleGraph: researchGraph, tags: ['grok-4.3', 'parallel', 'human-gate', 'export'], estimatedAvgCost: 6.82, author: 'Acme Labs' },
+  { id: 'tpl_support', name: 'Tier-1 Customer Support', category: 'Support', description: 'Fast triage + empathetic draft. Human gate only on high-severity or VIP accounts.', rating: 4.8, usageCount: 872, sampleGraph: supportGraph, tags: ['grok-4.3', 'tool', 'human-gate'], estimatedAvgCost: 0.47, author: 'ForgeOps' },
+  { id: 'tpl_content', name: 'Content Pipeline (Long + Social)', category: 'Content', description: 'Parallel writing for blog + threads + SEO in one flow. Brand voice gate included.', rating: 4.7, usageCount: 619, sampleGraph: contentGraph, tags: ['parallel', 'grok-4.3', 'publish'], estimatedAvgCost: 3.19, author: 'Stellar' },
+  { id: 'tpl_intel', name: 'Competitive Intel Monitor', category: 'Analytics', description: 'Daily signal extraction using A/B model variants. Great for pricing and GTM teams.', rating: 4.9, usageCount: 341, sampleGraph: intelGraph, tags: ['scheduled', 'ab-test', 'grok-4.3'], estimatedAvgCost: 2.94, author: 'ForgeOps' },
+  { id: 'tpl_devops', name: 'Incident Response Triage', category: 'DevOps', description: 'Classify severity, find duplicates, auto-suggest fixes or route to humans.', rating: 4.6, usageCount: 288, sampleGraph: triageGraph, tags: ['grok-4.3', 'tool', 'human-gate'], estimatedAvgCost: 1.61, author: 'Linear Labs' },
+  { id: 'tpl_legal', name: 'Contract Risk Analyzer', category: 'Legal', description: 'Clause extraction, risk scoring, redline suggestions, and summary for legal review.', rating: 4.8, usageCount: 197, sampleGraph: { nodes: [mkNode('l1','start','Upload Contract',pos(80,90)), mkNode('l2','agent','Clause Extractor',pos(260,70),{model:DEFAULT_MODEL}), mkNode('l3','agent','Risk Scorer',pos(420,110),{model:DEFAULT_MODEL}), mkNode('l4','human-gate','Legal Review',pos(580,90)), mkNode('l5','end','Redline Report',pos(720,90))], edges: [mkEdge('le1','l1','l2'),mkEdge('le2','l2','l3'),mkEdge('le3','l3','l4'),mkEdge('le4','l4','l5')] }, tags: ['grok-4.3', 'human-gate'], estimatedAvgCost: 1.08, author: 'Notion AI' },
+  { id: 'tpl_sales', name: 'Lead Qualification & Routing', category: 'Sales', description: 'Enrich inbound leads, score, draft personalized first email, route to correct AE.', rating: 4.5, usageCount: 504, sampleGraph: { nodes: [mkNode('sa1','start','New Lead',pos(60,100)), mkNode('sa2','tool','Enrich (Clearbit+)',pos(200,70),{tool:'enrich'}), mkNode('sa3','agent','ICP + Intent Scorer',pos(350,100),{model:DEFAULT_MODEL}), mkNode('sa4','human-gate','AE Handoff Approval',pos(510,100)), mkNode('sa5','tool','Notify AE + CRM',pos(670,70),{tool:'slack+hubspot'}), mkNode('sa6','end','Qualified',pos(820,100))], edges: [mkEdge('sae1','sa1','sa2'),mkEdge('sae2','sa2','sa3'),mkEdge('sae3','sa3','sa4'),mkEdge('sae4','sa4','sa5'),mkEdge('sae5','sa5','sa6')] }, tags: ['tool', 'grok-4.3'], estimatedAvgCost: 0.29, author: 'Vercel' },
+  { id: 'tpl_knowledge', name: 'Internal Knowledge Base Bot', category: 'Operations', description: 'Answers employee questions from Notion + Slack history. Citations always included.', rating: 4.4, usageCount: 163, sampleGraph: { nodes: [mkNode('k1','start','Employee Question',pos(70,100)), mkNode('k2','tool','Vector Search',pos(210,80),{tool:'pinecone'}), mkNode('k3','agent','Answer + Citations',pos(370,100),{model:DEFAULT_MODEL}), mkNode('k4','end','Reply with Sources',pos(530,100))], edges: [mkEdge('ke1','k1','k2'),mkEdge('ke2','k2','k3'),mkEdge('ke3','k3','k4')] }, tags: ['grok-4.3', 'rag'], estimatedAvgCost: 0.18, author: 'Replicate' },
+  { id: 'tpl_marketing', name: 'Campaign Brief to Assets', category: 'Marketing', description: 'Turns a one-liner into positioning, 5 creative concepts, copy variants, and image prompts.', rating: 4.7, usageCount: 412, sampleGraph: { nodes: [mkNode('m1','start','Campaign Idea',pos(60,110)), mkNode('m2','agent','Positioning + Angles',pos(200,80),{model:DEFAULT_MODEL}), mkNode('m3','parallel','Asset Factory',pos(380,110)), mkNode('m4','agent','Copy Variants',pos(530,50),{model:DEFAULT_MODEL}), mkNode('m5','agent','Visual Prompts',pos(530,160),{model:DEFAULT_MODEL}), mkNode('m6','end','Ready for Review',pos(680,110))], edges: [mkEdge('me1','m1','m2'),mkEdge('me2','m2','m3'),mkEdge('me3','m3','m4'),mkEdge('me4','m3','m5'),mkEdge('me5','m4','m6'),mkEdge('me6','m5','m6')] }, tags: ['parallel', 'creative'], estimatedAvgCost: 1.77, author: 'Acme Labs' },
+  { id: 'tpl_security', name: 'Security Posture Scanner', category: 'Security', description: 'Scans repos + infra for misconfigs, suggests fixes with prioritized backlog.', rating: 4.9, usageCount: 89, sampleGraph: { nodes: [mkNode('se1','start','Repo + Cloud Target',pos(50,100)), mkNode('se2','tool','Scan (Semgrep + Trivy)',pos(190,70),{tool:'scanner'}), mkNode('se3','agent','Prioritize & Explain',pos(360,100),{model:DEFAULT_MODEL}), mkNode('se4','human-gate','Security Owner Sign-off',pos(510,100)), mkNode('se5','tool','Create Tickets',pos(660,70),{tool:'jira'}), mkNode('se6','end','Backlog Updated',pos(800,100))], edges: [mkEdge('see1','se1','se2'),mkEdge('see2','se2','se3'),mkEdge('see3','se3','se4'),mkEdge('see4','se4','se5'),mkEdge('see5','se5','se6')] }, tags: ['grok-4.3', 'tool', 'human-gate'], estimatedAvgCost: 2.35, author: 'ForgeOps' },
+  { id: 'tpl_hr', name: 'Candidate Screening Assistant', category: 'HR', description: 'Resume screen + LinkedIn research + question generator + bias check before recruiter review.', rating: 4.3, usageCount: 156, sampleGraph: { nodes: [mkNode('h1','start','New Application',pos(70,100)), mkNode('h2','tool','Resume + Profile Parse',pos(210,70),{tool:'parse'}), mkNode('h3','agent','Fit Score + Questions',pos(370,100),{model:DEFAULT_MODEL}), mkNode('h4','human-gate','Recruiter Review',pos(530,100)), mkNode('h5','end','Interview Kit Ready',pos(690,100))], edges: [mkEdge('he1','h1','h2'),mkEdge('he2','h2','h3'),mkEdge('he3','h3','h4'),mkEdge('he4','h4','h5')] }, tags: ['grok-4.3', 'human-gate'], estimatedAvgCost: 0.34, author: 'Notion AI' },
+  { id: 'tpl_analytics', name: 'Weekly Metrics Storyteller', category: 'Analytics', description: 'Pulls product + revenue metrics, finds anomalies, writes exec narrative + charts.', rating: 4.6, usageCount: 227, sampleGraph: { nodes: [mkNode('a1','start','Weekly Trigger',pos(60,100)), mkNode('a2','tool','Metrics Pull (Stripe + Mixpanel)',pos(200,70),{tool:'metrics'}), mkNode('a3','agent','Anomaly + Narrative',pos(360,100),{model:DEFAULT_MODEL}), mkNode('a4','end','Email + Slack Digest',pos(520,100))], edges: [mkEdge('ae1','a1','a2'),mkEdge('ae2','a2','a3'),mkEdge('ae3','a3','a4')] }, tags: ['grok-4.3', 'tool'], estimatedAvgCost: 0.81, author: 'Replicate' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -345,7 +347,7 @@ const templates: Template[] = [
 const baseLogs = (wfId: string, prefix: string): ExecutionLog[] => {
   // Deterministic log sequences per workflow archetype (trimmed for brevity in some)
   if (wfId === 'wf_research') return [
-    { ts: `${prefix} 14:19:02`, nodeId: 'n_plan', message: 'grok-4 • Decomposed into 6 sub-questions + 3 source strategies', level: 'info', tokens: 1840, latencyMs: 920 },
+    { ts: `${prefix} 14:19:02`, nodeId: 'n_plan', message: 'grok-4.3 • Decomposed into 6 sub-questions + 3 source strategies', level: 'info', tokens: 1840, latencyMs: 920 },
     { ts: `${prefix} 14:19:04`, nodeId: 'n_par', message: 'Parallel branch spawned (3 researchers)', level: 'info' },
     { ts: `${prefix} 14:19:11`, nodeId: 'n_r2', message: 'Web scout: 47 pages fetched. Key signal on Series B pricing change.', level: 'info', costDelta: 0.31, tokens: 3120 },
     { ts: `${prefix} 14:19:19`, nodeId: 'n_r1', message: 'Academic: 4 arXiv + 2 Nature papers summarized.', level: 'info', costDelta: 0.94, tokens: 4810 },
@@ -354,13 +356,13 @@ const baseLogs = (wfId: string, prefix: string): ExecutionLog[] => {
     { ts: `${prefix} 14:19:31`, nodeId: 'n_gate', message: 'Human gate: waiting for owner review (max 1h)', level: 'gate' },
   ];
   if (wfId === 'wf_support') return [
-    { ts: `${prefix} 22:01:11`, nodeId: 's_class', message: 'grok-3 • VIP account + high urgency (billing dispute)', level: 'info', tokens: 420 },
+    { ts: `${prefix} 22:01:11`, nodeId: 's_class', message: 'grok-4.3 • VIP account + high urgency (billing dispute)', level: 'info', tokens: 420 },
     { ts: `${prefix} 22:01:13`, nodeId: 's_kb', message: 'Retrieved 3 relevant articles + last 2 tickets for this org.', level: 'info', latencyMs: 180 },
     { ts: `${prefix} 22:01:15`, nodeId: 's_gate', message: 'Auto-approved (standard policy). Escalated only if >$5k or churn risk.', level: 'gate' },
     { ts: `${prefix} 22:01:16`, nodeId: 's_reply', message: 'Draft ready. Tone: empathetic + firm. Suggested credit + follow-up call.', level: 'info', costDelta: 0.08, tokens: 910 },
   ];
   return [
-    { ts: `${prefix} 09:14:03`, nodeId: 'c_research', message: 'grok-4 • 5 fresh angles surfaced from earnings calls + Reddit', level: 'info', costDelta: 0.41, tokens: 2740 },
+    { ts: `${prefix} 09:14:03`, nodeId: 'c_research', message: 'grok-4.3 • 5 fresh angles surfaced from earnings calls + Reddit', level: 'info', costDelta: 0.41, tokens: 2740 },
     { ts: `${prefix} 09:14:09`, nodeId: 'c_par', message: '3 parallel writers started', level: 'info' },
     { ts: `${prefix} 09:14:41`, nodeId: 'c_w1', message: 'Long-form draft 2184 words. Readability 82.', level: 'info', costDelta: 0.93 },
     { ts: `${prefix} 09:14:44`, nodeId: 'c_merge', message: 'Merged. Minor duplication resolved.', level: 'info' },
@@ -376,12 +378,12 @@ const executions: Execution[] = [
   { id: 'exec_4815', workflowId: 'wf_content', workspaceId: 'ws_stellar', status: 'succeeded', startedAt: '2026-06-11T16:12:00Z', endedAt: '2026-06-11T16:19:03Z', durationMs: 423000, totalCost: 3.41, tokens: 18900, logs: baseLogs('wf_content', '2026-06-11'), trace: ['Brief→Research→Writers(3)→Gate→Polish→Publish'], triggeredBy: 'sara@stellar.io' },
   { id: 'exec_4813', workflowId: 'wf_intel', workspaceId: 'ws_stellar', status: 'succeeded', startedAt: '2026-06-11T08:00:00Z', endedAt: '2026-06-11T08:02:14Z', durationMs: 134000, totalCost: 2.71, tokens: 14400, logs: [
     { ts: '2026-06-11 08:00:02', nodeId: 'i_fetch', message: '8 sources scraped successfully (latency 812ms avg)', level: 'info' },
-    { ts: '2026-06-11 08:00:09', nodeId: 'i_anal', message: 'grok-4 detected 2 high-signal events: competitor price drop + new VP Eng hire', level: 'info', costDelta: 0.67 },
+    { ts: '2026-06-11 08:00:09', nodeId: 'i_anal', message: 'grok-4.3 detected 2 high-signal events: competitor price drop + new VP Eng hire', level: 'info', costDelta: 0.67 },
     { ts: '2026-06-11 08:00:44', nodeId: 'i_a', message: 'Variant A (heavy): full narrative + 4 risk scenarios', level: 'info', costDelta: 1.12 },
     { ts: '2026-06-11 08:01:51', nodeId: 'i_b', message: 'Variant B (fast): 9 bullets + links', level: 'info', costDelta: 0.31 },
   ], trace: ['Fetch→Detect→A/B(dual)→Digest'], triggeredBy: 'ops@stellar.io' },
   { id: 'exec_4811', workflowId: 'wf_devops', workspaceId: 'ws_personal', status: 'failed', startedAt: '2026-06-10T11:48:00Z', endedAt: '2026-06-10T11:49:12Z', durationMs: 72000, totalCost: 0.84, tokens: 6100, logs: [
-    { ts: '2026-06-10 11:48:03', nodeId: 't_class', message: 'grok-4 classified as P1 production outage (auth regression)', level: 'warn' },
+    { ts: '2026-06-10 11:48:03', nodeId: 't_class', message: 'grok-4.3 classified as P1 production outage (auth regression)', level: 'warn' },
     { ts: '2026-06-10 11:48:11', nodeId: 't_search', message: 'Found 2 similar open incidents', level: 'info' },
     { ts: '2026-06-10 11:48:19', nodeId: 't_code', message: 'Patch proposal generated. 3 files touched.', level: 'info', costDelta: 0.61 },
     { ts: '2026-06-10 11:49:04', nodeId: 't_owner', message: 'Gate timeout after 45s — auto-assigned to oncall@', level: 'error' },
@@ -392,7 +394,7 @@ const executions: Execution[] = [
   { id: 'exec_4805', workflowId: 'wf_support', workspaceId: 'ws_acme', status: 'succeeded', startedAt: '2026-06-10T09:33:00Z', endedAt: '2026-06-10T09:33:51Z', durationMs: 51000, totalCost: 0.22, tokens: 1870, logs: baseLogs('wf_support', '2026-06-10'), trace: ['Triage→Resolved'], triggeredBy: 'support-bot@acme.ai' },
   { id: 'exec_4803', workflowId: 'wf_content', workspaceId: 'ws_stellar', status: 'succeeded', startedAt: '2026-06-08T13:40:00Z', endedAt: '2026-06-08T13:47:19Z', durationMs: 439000, totalCost: 2.98, tokens: 16700, logs: baseLogs('wf_content', '2026-06-08'), trace: ['Full pipeline'], triggeredBy: 'sara@stellar.io' },
   { id: 'exec_4801', workflowId: 'wf_intel', workspaceId: 'ws_stellar', status: 'succeeded', startedAt: '2026-06-10T08:00:00Z', endedAt: '2026-06-10T08:02:31Z', durationMs: 151000, totalCost: 3.12, tokens: 15900, logs: [
-    { ts: '2026-06-10 08:00:04', nodeId: 'i_anal', message: 'grok-4: 1 pricing signal + 1 funding rumor', level: 'info', costDelta: 0.79 },
+    { ts: '2026-06-10 08:00:04', nodeId: 'i_anal', message: 'grok-4.3: 1 pricing signal + 1 funding rumor', level: 'info', costDelta: 0.79 },
     { ts: '2026-06-10 08:01:12', nodeId: 'i_a', message: 'Variant A delivered full 5-paragraph brief', level: 'info', costDelta: 1.08 },
   ], trace: ['A/B Intel'], triggeredBy: 'ops@stellar.io' },
   { id: 'exec_4799', workflowId: 'wf_devops', workspaceId: 'ws_personal', status: 'succeeded', startedAt: '2026-06-07T22:14:00Z', endedAt: '2026-06-07T22:15:33Z', durationMs: 93000, totalCost: 1.29, tokens: 8200, logs: [
@@ -408,7 +410,7 @@ const executions: Execution[] = [
   { id: 'exec_4786', workflowId: 'wf_research', workspaceId: 'ws_acme', status: 'succeeded', startedAt: '2026-06-03T08:40:00Z', endedAt: '2026-06-03T08:46:12Z', durationMs: 372000, totalCost: 6.14, tokens: 41100, logs: [...baseLogs('wf_research', '2026-06-03'), { ts: '2026-06-03 08:43:55', nodeId: 'n_gate', message: 'Approved', level: 'gate' }], trace: ['Research run'], triggeredBy: 'maya@acme.ai' },
   { id: 'exec_4784', workflowId: 'wf_support', workspaceId: 'ws_acme', status: 'succeeded', startedAt: '2026-06-02T17:05:00Z', endedAt: '2026-06-02T17:05:39Z', durationMs: 39000, totalCost: 0.31, tokens: 2100, logs: baseLogs('wf_support', '2026-06-02'), trace: ['Support'], triggeredBy: 'liam@acme.ai' },
   { id: 'exec_4782', workflowId: 'wf_content', workspaceId: 'ws_stellar', status: 'failed', startedAt: '2026-06-01T14:18:00Z', endedAt: '2026-06-01T14:19:55Z', durationMs: 117000, totalCost: 1.82, tokens: 9900, logs: [{ ts: '2026-06-01 14:18:21', nodeId: 'c_w1', message: 'Writer hit context limit. Retry strategy exhausted.', level: 'error' }], trace: ['Failed at writer'], triggeredBy: 'sara@stellar.io' },
-  { id: 'exec_4780', workflowId: 'wf_intel', workspaceId: 'ws_stellar', status: 'succeeded', startedAt: '2026-06-07T08:00:00Z', endedAt: '2026-06-07T08:02:19Z', durationMs: 139000, totalCost: 2.88, tokens: 15100, logs: [{ ts: '2026-06-07 08:01:03', nodeId: 'i_a', message: 'grok-4 variant surfaced 3 actionable moves', level: 'info', costDelta: 1.03 }], trace: ['Intel'], triggeredBy: 'ops@stellar.io' },
+  { id: 'exec_4780', workflowId: 'wf_intel', workspaceId: 'ws_stellar', status: 'succeeded', startedAt: '2026-06-07T08:00:00Z', endedAt: '2026-06-07T08:02:19Z', durationMs: 139000, totalCost: 2.88, tokens: 15100, logs: [{ ts: '2026-06-07 08:01:03', nodeId: 'i_a', message: 'grok-4.3 variant surfaced 3 actionable moves', level: 'info', costDelta: 1.03 }], trace: ['Intel'], triggeredBy: 'ops@stellar.io' },
   { id: 'exec_4778', workflowId: 'wf_devops', workspaceId: 'ws_personal', status: 'succeeded', startedAt: '2026-06-06T07:12:00Z', endedAt: '2026-06-06T07:13:27Z', durationMs: 87000, totalCost: 1.55, tokens: 7400, logs: [{ ts: '2026-06-06 07:12:41', nodeId: 't_owner', message: 'Human assigned. Patch already applied in staging.', level: 'gate' }], trace: ['DevOps'], triggeredBy: 'you@personal.dev' },
   { id: 'exec_4776', workflowId: 'wf_research', workspaceId: 'ws_acme', status: 'succeeded', startedAt: '2026-06-02T13:11:00Z', endedAt: '2026-06-02T13:18:04Z', durationMs: 423000, totalCost: 8.12, tokens: 54900, logs: [...baseLogs('wf_research', '2026-06-02'), { ts: '2026-06-02 13:15:33', nodeId: 'n_synth', message: 'Report ready. High confidence.', level: 'info', costDelta: 2.03 }], trace: ['Long research'], triggeredBy: 'maya@acme.ai' },
   { id: 'exec_4774', workflowId: 'wf_support', workspaceId: 'ws_acme', status: 'succeeded', startedAt: '2026-06-11T11:44:00Z', endedAt: '2026-06-11T11:44:58Z', durationMs: 58000, totalCost: 0.51, tokens: 2900, logs: baseLogs('wf_support', '2026-06-11'), trace: ['Support'], triggeredBy: 'liam@acme.ai' },
@@ -418,7 +420,7 @@ const executions: Execution[] = [
   // One more running for live multi-run feel
   { id: 'exec_4766', workflowId: 'wf_intel', workspaceId: 'ws_stellar', status: 'running', startedAt: '2026-06-11T23:55:00Z', durationMs: 67000, totalCost: 1.29, tokens: 7800, logs: [
     { ts: '2026-06-11 23:55:03', nodeId: 'i_fetch', message: 'Daily scrape started (8 targets)', level: 'info' },
-    { ts: '2026-06-11 23:55:19', nodeId: 'i_anal', message: 'grok-4: 1 pricing move detected on competitor X', level: 'info', costDelta: 0.61 },
+    { ts: '2026-06-11 23:55:19', nodeId: 'i_anal', message: 'grok-4.3: 1 pricing move detected on competitor X', level: 'info', costDelta: 0.61 },
   ], trace: ['Running intel'], triggeredBy: 'ops@stellar.io' },
 ];
 
@@ -439,23 +441,23 @@ const team: TeamMember[] = [
 // A/B EXPERIMENTS (simulation + monitoring feature)
 const experiments: ABExperiment[] = [
   {
-    id: 'ab_intel_01', name: 'Intel Daily: Grok-4 Heavy vs Fast Grok-3', workflowId: 'wf_intel',
-    variantA: { name: 'Heavy (Grok-4)', model: 'grok-4', config: { depth: 'full-narrative', maxTokens: 3800 } },
-    variantB: { name: 'Fast (Grok-3)', model: 'grok-3', config: { depth: 'bullets', maxTokens: 1200 } },
+    id: 'ab_intel_01', name: 'Intel Daily: Grok-4.3 Heavy vs Fast Grok-4.3', workflowId: 'wf_intel',
+    variantA: { name: 'Heavy (Grok-4.3)', model: DEFAULT_MODEL, config: { depth: 'full-narrative', maxTokens: 3800 } },
+    variantB: { name: 'Fast (Grok-4.3)', model: DEFAULT_MODEL, config: { depth: 'bullets', maxTokens: 1200 } },
     runsA: 41, runsB: 39, successA: 97.6, successB: 92.3, costA: 2.81, costB: 0.94,
     winner: 'A', status: 'completed',
   },
   {
-    id: 'ab_content_02', name: 'Content Factory: Grok-4 vs Grok-3 for Long-form', workflowId: 'wf_content',
-    variantA: { name: 'Grok-4 Writer', model: 'grok-4', config: { style: 'premium' } },
-    variantB: { name: 'Grok-3 Writer', model: 'grok-3', config: { style: 'standard' } },
+    id: 'ab_content_02', name: 'Content Factory: Grok-4.3 Premium vs Standard for Long-form', workflowId: 'wf_content',
+    variantA: { name: 'Grok-4.3 Writer', model: DEFAULT_MODEL, config: { style: 'premium' } },
+    variantB: { name: 'Grok-4.3 Standard', model: DEFAULT_MODEL, config: { style: 'standard' } },
     runsA: 28, runsB: 31, successA: 94.1, successB: 87.1, costA: 3.84, costB: 1.61,
     winner: 'A', status: 'completed',
   },
   {
     id: 'ab_research_live', name: 'Research Swarm: Parallel Breadth vs Depth', workflowId: 'wf_research',
-    variantA: { name: 'Breadth (more agents)', model: 'grok-4', config: { branches: 5 } },
-    variantB: { name: 'Depth (fewer, deeper)', model: 'grok-4', config: { branches: 2 } },
+    variantA: { name: 'Breadth (more agents)', model: DEFAULT_MODEL, config: { branches: 5 } },
+    variantB: { name: 'Depth (fewer, deeper)', model: DEFAULT_MODEL, config: { branches: 2 } },
     runsA: 9, runsB: 7, successA: 88.9, successB: 100, costA: 8.14, costB: 4.71,
     status: 'running',
   },
@@ -645,8 +647,8 @@ export function promptToGraph(prompt: string, baseX = 120, baseY = 180): { nodes
   } else if (p.includes('parallel') || p.includes('swarm') || p.includes('multiple') || p.includes('branches') || p.includes('concurrent')) {
     const par = n('par');
     nodes.push(createGraphNode(par, 'parallel', 'Parallel Branch', { x: baseX + 140, y: baseY }));
-    nodes.push(createGraphNode(n('a1'), 'agent', 'Branch A (Grok-4)', { x: baseX + 320, y: baseY - 70 }, { model: 'grok-4', prompt: 'Deep subtask A from prompt', estimatedCost: 0.81 }));
-    nodes.push(createGraphNode(n('a2'), 'agent', 'Branch B (Grok-3)', { x: baseX + 320, y: baseY + 70 }, { model: 'grok-3', prompt: 'Fast subtask B from prompt', estimatedCost: 0.29 }));
+    nodes.push(createGraphNode(n('a1'), 'agent', 'Branch A (Grok-4.3)', { x: baseX + 320, y: baseY - 70 }, { model: DEFAULT_MODEL, prompt: 'Deep subtask A from prompt', estimatedCost: 0.81 }));
+    nodes.push(createGraphNode(n('a2'), 'agent', 'Branch B (Grok-4.3)', { x: baseX + 320, y: baseY + 70 }, { model: DEFAULT_MODEL, prompt: 'Fast subtask B from prompt', estimatedCost: 0.29 }));
     nodes.push(createGraphNode(n('m'), 'merge', 'Merge Results', { x: baseX + 480, y: baseY }));
     edges.push(createGraphEdge(n('e1'), par, n('a1')));
     edges.push(createGraphEdge(n('e2'), par, n('a2')));
@@ -658,7 +660,7 @@ export function promptToGraph(prompt: string, baseX = 120, baseY = 180): { nodes
   } else {
     // default: high-quality agent node, realistic prompt + cost + model choice
     const isDeep = p.includes('deep') || p.includes('research') || p.includes('analyze') || p.includes('synthes') || p.includes('report') || prompt.length > 55;
-    const model = isDeep ? 'grok-4' : 'grok-3';
+    const model = DEFAULT_MODEL;
     const cost = isDeep ? 1.42 : 0.47;
     const refined = prompt.length > 8 ? prompt : 'Process input with high accuracy and cite sources';
     nodes.push(createGraphNode(n('agent'), 'agent', prompt.slice(0, 28) || 'New Agent', { x: baseX + 160, y: baseY }, {

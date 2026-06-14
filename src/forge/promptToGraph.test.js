@@ -42,6 +42,28 @@ test('promptToGraph is deterministic (same prompt => exact same shape and values
   assert.deepStrictEqual(a, b, 'identical output for identical input');
 });
 
+test('F-0023: every emitted node model is either "none" (start) or equals DEFAULT_MODEL — no stale grok-3/grok-4 literals', () => {
+  const { DEFAULT_MODEL } = require('./models');
+  const prompts = [
+    'default task',
+    'Research AI agents and summarize findings',
+    'Research the topic then summarize the report',
+    'Execute a search and output a summary report',
+    'do research on X and output a summary report',
+  ];
+  for (const p of prompts) {
+    const g = promptToGraph(p);
+    assert.ok(Array.isArray(g.nodes) && g.nodes.length >= 1, `${p}: has nodes`);
+    for (const node of g.nodes) {
+      const allowed = node.model === 'none' || node.model === DEFAULT_MODEL;
+      assert.ok(
+        allowed,
+        `prompt "${p}": node "${node.id}" has stale model "${node.model}" — expected "none" or "${DEFAULT_MODEL}"`
+      );
+    }
+  }
+});
+
 test('CLI: node src/forge/promptToGraph.js exits 0 and prints valid graph JSON (with sample emit side-effect)', () => {
   // exec throws on nonzero; reaching here => exit 0
   const stdout = execFileSync(process.execPath, [FORGE_CLI, 'Research X and summarize'], { encoding: 'utf8' });

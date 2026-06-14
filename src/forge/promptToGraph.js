@@ -14,6 +14,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { DEFAULT_MODEL } = require('./models');
 
 /**
  * @param {string} [prompt]
@@ -38,7 +39,7 @@ function promptToGraph(prompt = 'default task') {
       type: 'process',
       label: 'Execute core task',
       position: { x: 300, y: 0 },
-      model: 'grok-4',
+      model: DEFAULT_MODEL,
       prompt: input,
       estimatedCost: 0.02
     }
@@ -54,7 +55,7 @@ function promptToGraph(prompt = 'default task') {
       type: 'research',
       label: 'Research / gather info',
       position: { x: 600, y: -50 },
-      model: 'grok-4',
+      model: DEFAULT_MODEL,
       prompt: `Perform targeted research on: ${input}`,
       estimatedCost: 0.05
     });
@@ -67,7 +68,7 @@ function promptToGraph(prompt = 'default task') {
       type: 'summarize',
       label: 'Summarize and format output',
       position: { x: 900, y: 0 },
-      model: 'grok-4',
+      model: DEFAULT_MODEL,
       prompt: 'Summarize findings for operator',
       estimatedCost: 0.01
     });
