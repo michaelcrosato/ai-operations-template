@@ -420,6 +420,34 @@ check "F-0027: shield allows removing an in-branch-added test file" 0 "$(cd "$AS
 ( cd "$AS" && printf 'test("a", () => {\n  expect(true).toBe(true);\n});\n' > tests/a.test.js && git add -A )
 check "F-0027: shield still blocks gutting an existing assertion to a tautology" 1 "$(cd "$AS" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
 ( cd "$AS" && git reset -q --hard base )
+
+# ── shield rename-detection (F-0027b) ──────────────────────────────────────
+# AC1: pure rename (.test.js → .test.ts, identical assertions) must PASS.
+# With -M git emits only a "rename from/to" header and no "-expect(...)" lines,
+# so the shield sees no deleted assertions.
+( cd "$AS" && git mv tests/a.test.js tests/a.test.ts && git add -A )
+check "shield rename-detection: pure rename passes (exit 0)" 0 "$(cd "$AS" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+( cd "$AS" && git reset -q --hard base )
+
+# AC2: rename that ALSO removes an assertion must still be BLOCKED.
+# git diff -M emits the "-expect(...)" deletion line in the rename hunk,
+# so the parser still flags it (existedOnBase(old path) = true → BLOCK).
+(
+  cd "$AS" || exit
+  cp tests/a.test.js tests/a.test.ts
+  printf 'test("a", () => {\n});\n' > tests/a.test.ts  # assertion removed
+  git rm -q tests/a.test.js
+  git add -A
+)
+check "shield rename-detection: rename+deleted assertion blocked (exit 1)" 1 "$(cd "$AS" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+( cd "$AS" && git reset -q --hard base )
+
+# AC3: plain in-place assertion deletion (no rename) — regression guard.
+# Confirms -M does not suppress ordinary assertion deletions in existing files.
+( cd "$AS" && printf 'test("a", () => {\n});\n' > tests/a.test.js && git add -A )
+check "shield rename-detection: in-place deletion still blocked (exit 1)" 1 "$(cd "$AS" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+( cd "$AS" && git reset -q --hard base )
+
 rm -rf "$AS"
 
 # F-0016: a first commit before the upstream base exists must NOT leak git's
