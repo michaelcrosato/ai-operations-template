@@ -1102,6 +1102,37 @@
         "bash scripts/verify.sh returns VERIFY PASS exit 0 after each; build and tests green",
         "no security regression; lockfile updated"
       ]
+    },
+    {
+      "dependencies": [
+        "F-0029"
+      ],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0032/verify.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**"
+      ],
+      "id": "F-0032",
+      "epic": "maintainability",
+      "title": "Complete app/demo/page.tsx decomposition: extract workflow-canvas + graph-mutation logic into a hook/components (no behavior change)",
+      "spec_ref": "reviews: page.tsx too large; F-0029 follow-up",
+      "description": "F-0029 extracted auth + 2 panels but left the InteractiveCanvas + graph-mutation handlers inline in the 1742-line app/demo/page.tsx. Extract into a useWorkflowCanvas hook + component(s) under app/demo/_hooks/_components; preserve behavior + all data-testids. Pure refactor.",
+      "acceptance": [
+        "The workflow-canvas + graph-mutation logic is extracted from app/demo/page.tsx into dedicated hook/component(s) under app/demo/_hooks or _components, and page.tsx is materially smaller",
+        "No behavior change: the F-0024 viewer-RBAC Playwright E2E and all unit tests pass unchanged; every data-testid the E2E relies on is preserved",
+        "bash scripts/verify.sh --e2e returns VERIFY: PASS exit 0; evidence saved to roadmap/evidence/F-0032/"
+      ],
+      "authorized_paths": [
+        "app/**",
+        "roadmap/evidence/F-0032/**"
+      ],
+      "priority": 3
     }
   ]
 }
