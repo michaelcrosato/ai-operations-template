@@ -53,23 +53,29 @@ fi
 # Only acts on Edit/Write; reads and other tools unaffected.
 
 # Determine active feature: env var first, then mechanical derivation.
+# F-0025: 2+ in_progress is anomalous (the single-in_progress invariant blocks it at the
+# writer); if it occurs anyway the gate FAILS CLOSED rather than going permissive.
 ACTIVE_FEATURE="${CLAUDE_ACTIVE_FEATURE:-}"
 if [ -z "$ACTIVE_FEATURE" ]; then
   STATE="${STATE_FILE:-${CLAUDE_PROJECT_DIR:-.}/roadmap/features.json}"
   if [ -f "$STATE" ]; then
+    DERIVED=""
     if command -v node >/dev/null 2>&1; then
       DERIVED="$(cat "$STATE" | node -e '
 let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{ try{
   const j=JSON.parse(d||"{}");
   const ip=(j.features||[]).filter(x=>x&&x.status==="in_progress");
-  if(ip.length===1){console.log(ip[0].id);}
+  if(ip.length===1){console.log(ip[0].id);} else if(ip.length>1){console.log("__MULTIPLE__");}
 }catch{}
 })' 2>/dev/null || true)"
-      ACTIVE_FEATURE="${DERIVED:-}"
     elif command -v jq >/dev/null 2>&1; then
-      DERIVED="$(jq -r '[.features//[]|.[]|select(.status=="in_progress")]|if length==1 then .[0].id else "" end' "$STATE" 2>/dev/null || true)"
-      ACTIVE_FEATURE="${DERIVED:-}"
+      DERIVED="$(jq -r '[.features//[]|.[]|select(.status=="in_progress")]|if length==1 then .[0].id elif length>1 then "__MULTIPLE__" else "" end' "$STATE" 2>/dev/null || true)"
     fi
+    if [ "$DERIVED" = "__MULTIPLE__" ]; then
+      echo "BLOCKED: multiple features in_progress — path authorization is ambiguous; refusing the edit (F-0025 fail-closed). Resolve to a single in_progress feature." >&2
+      exit 2
+    fi
+    ACTIVE_FEATURE="${DERIVED:-}"
   fi
 fi
 
