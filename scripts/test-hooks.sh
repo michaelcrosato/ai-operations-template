@@ -182,6 +182,18 @@ cat > "$AST" <<'AEOF'
 ] }
 AEOF
 check "F-0022: zero in_progress → permissive fallback (no env) allows any file" 0 "$(hook_file_s "$AST" 'src/some-ui.tsx')"
+# F-0025: TWO in_progress → fail-closed (verify-gate refuses the edit, no env)
+cat > "$AST" <<'AEOF'
+{ "features": [
+  { "id": "F-9998", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+    "acceptance": ["a"], "authorized_paths": ["scripts/**"], "forbidden_paths": [],
+    "dependencies": [], "priority": 1, "status": "in_progress", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null },
+  { "id": "F-9999", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+    "acceptance": ["a"], "authorized_paths": ["scripts/**"], "forbidden_paths": [],
+    "dependencies": [], "priority": 1, "status": "in_progress", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null }
+] }
+AEOF
+check "F-0025: multiple in_progress → fail-closed (verify-gate blocks any edit, no env)" 2 "$(hook_file_s "$AST" 'scripts/verify.sh')"
 # env var still overrides derivation (even when state has in_progress)
 cat > "$AST" <<'AEOF'
 { "features": [
@@ -251,6 +263,24 @@ check "reserved-range refusal wrote nothing to real backlog" "$PRE_COUNT" "$(nod
 check "status rejects unknown id"               1 "$(US --status F-9999 'done')"
 check "status rejects invalid enum"             1 "$(US --status F-9101 finished)"
 check "status blocked requires+stores reason"   0 "$(US --status F-9104 blocked waiting on operator)"
+# F-0025: single-in_progress invariant (self-contained temp fixtures, no shared-state ordering)
+F25="$(mktemp -d)"
+cat > "$F25/two-pending.json" <<'EOF'
+{ "features": [
+  { "id": "F-9201", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [], "priority": 1, "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null },
+  { "id": "F-9202", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [], "priority": 1, "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null }
+] }
+EOF
+check "F-0025: status sets in_progress when none active"            0 "$(US_WITH_STATE "$F25/two-pending.json" --status F-9201 in_progress)"
+check "F-0025: status rejects a 2nd concurrent in_progress"        1 "$(US_WITH_STATE "$F25/two-pending.json" --status F-9202 in_progress)"
+cat > "$F25/two-inprogress.json" <<'EOF'
+{ "features": [
+  { "id": "F-9201", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [], "priority": 1, "status": "in_progress", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null },
+  { "id": "F-9202", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [], "priority": 1, "status": "in_progress", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null }
+] }
+EOF
+check "F-0025: validate rejects 2+ in_progress (hand-edit defense)" 1 "$(US_WITH_STATE "$F25/two-inprogress.json" --validate)"
+rm -rf "$F25"
 check "paths rejects non-array"                 1 "$(US --paths F-9101 '"not-an-array"')"
 check "paths rejects empty array"               1 "$(US --paths F-9101 '[]')"
 check "paths rejects guardrail surface .claude" 1 "$(US --paths F-9101 '[".claude/**"]')"
@@ -804,8 +834,8 @@ check "pg F-0022: derived feature allows in-scope edit (no env)"     0 "$(run_pg
 check "pg F-0022: derived feature blocks forbidden path (no env)"    2 "$(run_pg_s 'src/api/auth/login.ts' "$PG_STATE")"
 # env var overrides derived feature — explicit env takes precedence
 check "pg F-0022: env var overrides derivation (F-9999 allows everything)" 0 "$(run_pg 'scripts/verify.sh' 'F-9999')"
-# multiple in_progress → permissive fallback (no env)
-check "pg F-0022: multiple in_progress (no env) → permissive (allows any file)" 0 "$(run_pg_s 'roadmap/ROADMAP.md' "$PG_STATE_MULTI")"
+# F-0025: multiple in_progress → FAIL CLOSED (was permissive under F-0022; now blocks)
+check "pg F-0025: multiple in_progress (no env) → fail-closed (blocks any file)" 2 "$(run_pg_s 'roadmap/ROADMAP.md' "$PG_STATE_MULTI")"
 
 rm -rf "$PG_FIX"
 

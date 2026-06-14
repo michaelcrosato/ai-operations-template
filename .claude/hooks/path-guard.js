@@ -77,17 +77,22 @@ function run() {
   }
 
   // F-0022: Derive active feature mechanically if CLAUDE_ACTIVE_FEATURE not set.
-  // Precedence: env var > exactly-one-in_progress > permissive fallback (0 or multiple).
+  // Precedence: env var > exactly-one-in_progress > (0 in_progress = permissive).
+  // F-0025: 2+ in_progress is anomalous (the single-in_progress invariant blocks it at
+  // the writer); if it occurs anyway (e.g. a hand-edit bypassing update-state) the guard
+  // FAILS CLOSED instead of going permissive, closing the self-bypass vector.
   let activeFeature = process.env.CLAUDE_ACTIVE_FEATURE || '';
   if (!activeFeature) {
     const inProgress = (featuresData.features || []).filter(f => f && f.status === 'in_progress');
     if (inProgress.length === 1) {
       activeFeature = inProgress[0].id;
+    } else if (inProgress.length > 1) {
+      fail(`Multiple features are in_progress (${inProgress.map(f => f.id).join(', ')}) — path authorization is ambiguous; refusing the edit (F-0025 fail-closed). Resolve to a single in_progress feature.`);
     }
   }
 
   if (!activeFeature) {
-    // Zero or multiple in_progress and no env override → permissive fallback
+    // Zero in_progress and no env override → permissive (no active feature is legitimate)
     process.exit(0);
   }
 
