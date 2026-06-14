@@ -934,7 +934,7 @@
       "status": "pending",
       "passes": false,
       "evidence": [],
-      "attempts": 0,
+      "attempts": 1,
       "blocked_reason": null,
       "forbidden_paths": [
         "roadmap/features.json"
