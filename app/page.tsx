@@ -204,11 +204,11 @@ export default function ForgeOpsLanding() {
             <tbody className="text-white/80">
               {[
                 ["Visual canvas & prompt-to-swarm", "Yes — drag or describe, instant graph", "No — code graphs by hand", "Tracing only", "No (model focus)"],
-                ["Real-time cost & token visibility", "Live per-step + burn rate + intervene", "Custom logging you build", "Traces (retention upsell)", "Basic logs"],
+                ["Real-time cost & token visibility", "Live per-step + burn rate + intervene", "Custom logging you build", "Tracing-focused", "Basic logs"],
                 ["Simulation, A/B, human gates", "Built-in + one-click variants", "Glue code + manual", "Evals + review add-on", "Limited"],
                 ["Marketplace + templates", "12+ curated, publish yours", "Roll your own", "Community (limited)", "Model versions only"],
-                ["Export / self-host (no lock-in)", "JSON, TS, Docker — always free", "You are the infra", "Typical vendor lock", "Models only"],
-                ["Pricing", "Simple usage, free tier workspaces", "Your infra + LLM spend", "$0 dev / $39/seat + ~$2.50/1k traces", "Per-second predictions"],
+                ["Export / self-host (no lock-in)", "JSON, TS, Docker — always free", "You are the infra", "Hosted SaaS", "Models only"],
+                ["Pricing", "Simple usage, free tier workspaces", "Your infra + LLM spend", "Per-seat + usage tiers", "Usage-based"],
                 ["Built & maintained by its own AI engine", "Yes — this site + repo are living proof", "You maintain everything", "Vendor team", "Vendor team"],
               ].map((row, i) => (
                 <tr key={i} className="border-b border-white/10 hover:bg-white/5">
