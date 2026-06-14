@@ -448,6 +448,58 @@ check "shield rename-detection: rename+deleted assertion blocked (exit 1)" 1 "$(
 check "shield rename-detection: in-place deletion still blocked (exit 1)" 1 "$(cd "$AS" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
 ( cd "$AS" && git reset -q --hard base )
 
+# ── shield module-decl FP (fix/shield-module-decl-fp) ─────────────────────────
+# Proves that CJS→ESM migration boilerplate is NOT flagged as assertion deletion.
+#
+# The fixture repo "AS" has base branch with tests/a.test.js containing:
+#   const assert = require('node:assert');
+#   test("a", () => { expect(1).toBe(1); });
+# We reset AS base to include a require() decl line for these tests.
+MD_BASE="$(mktemp -d)"
+(
+  cd "$MD_BASE" && git init -q && git config user.email t@t && git config user.name t
+  mkdir tests
+  # Base file contains a CJS require() import AND a real assertion
+  printf "const assert = require('node:assert');\ntest(\"a\", () => {\n  expect(1).toBe(1);\n});\n" > tests/a.test.js
+  git add -A && git commit -qm base && git branch base
+)
+
+# AC1 (FP fixed): deleting only the require() declaration line (CJS→ESM migration)
+# while keeping the real assertion → shield must PASS (exit 0).
+(
+  cd "$MD_BASE" || exit
+  printf "test(\"a\", () => {\n  expect(1).toBe(1);\n});\n" > tests/a.test.js
+  git add -A
+)
+check "shield module-decl FP: deleting require() decl passes (exit 0)" 0 "$(cd "$MD_BASE" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+( cd "$MD_BASE" && git reset -q --hard base )
+
+# AC2 (real assertion deletion STILL blocked): deleting an expect() line → BLOCK.
+(
+  cd "$MD_BASE" || exit
+  printf "const assert = require('node:assert');\ntest(\"a\", () => {\n});\n" > tests/a.test.js
+  git add -A
+)
+check "shield module-decl FP: deleting real assertion still blocked (exit 1)" 1 "$(cd "$MD_BASE" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+( cd "$MD_BASE" && git reset -q --hard base )
+
+# AC3 (require-shaped assertion not abused): 'assert.equal(require(...).y, 1);'
+# is a real assertion that contains 'require(' but is NOT a const/let/var declaration,
+# so isModuleDecl is false → still BLOCK.
+(
+  cd "$MD_BASE" || exit
+  # Replace the expect() line with an assertion-that-contains-require, then delete it
+  printf "const assert = require('node:assert');\ntest(\"a\", () => {\n  assert.equal(require('./x').y, 1);\n});\n" > tests/a.test.js
+  git add -A && git commit -qm "add require-in-assertion" 2>/dev/null || true
+  # Now delete the assert.equal line (leave the require decl and test shell)
+  printf "const assert = require('node:assert');\ntest(\"a\", () => {\n});\n" > tests/a.test.js
+  git add -A
+)
+check "shield module-decl FP: require-in-assertion line still blocked (exit 1)" 1 "$(cd "$MD_BASE" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+( cd "$MD_BASE" && git reset -q --hard )
+
+rm -rf "$MD_BASE"
+
 rm -rf "$AS"
 
 # F-0016: a first commit before the upstream base exists must NOT leak git's

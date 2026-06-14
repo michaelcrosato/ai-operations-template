@@ -154,6 +154,14 @@ function scanDiffForWeakening(diffText: string): Violation[] {
           continue;
         }
 
+        // Skip CJS module import/require declarations (CJS→ESM migration boilerplate, not assertions):
+        // 'const|let|var X = require(...)' and a bare 'use strict' pragma carry no test coverage.
+        const isModuleDecl = /^(?:const|let|var)\s+\S.*=\s*require\(/.test(cleanedLine)
+          || cleanedLine === "'use strict';";
+        if (isModuleDecl) {
+          continue;
+        }
+
         const containsAssertion = assertionKeywords.some(keyword => cleanedLine.includes(keyword));
         // F-0027: only a deletion from a file that EXISTED on BASE is a weakening
         // (when base is unavailable, stay strict and flag). A branch-new test file
