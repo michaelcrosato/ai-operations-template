@@ -3,55 +3,55 @@
 ──── typecheck: OK
 
 ──── verify: lint ────
-Checked 18 files in 10ms. No fixes applied.
+Checked 18 files in 9ms. No fixes applied.
 ──── lint: OK
 
 ──── verify: unit tests ────
-✔ abSim executes two graph variants over synthetic inputs and emits real-time structured logs (AC2) (1.5581ms)
-✔ abSim logs are JSON serializable (for CLI/UI hook consumption) (0.4366ms)
-✔ abSim.test covers RBAC 2 principals (owner allowed, non-owner 403/404 deny on mut) per security.md (0.131ms)
-✔ CLI: node src/forge/abSim.js exits 0 and prints chain + structured logs (33.5909ms)
-✔ userCanEdit: owner can edit (true) (0.4162ms)
-✔ userCanEdit: admin can edit (true) (0.0713ms)
-✔ userCanEdit: editor can edit (true) (0.0513ms)
-✔ userCanEdit: viewer cannot edit (false) — read-only persona (0.0493ms)
-✔ userCanEdit: unknown role defaults to deny (false) (0.0695ms)
-✔ demoAuth canEdit: owner -> true (0.5095ms)
-✔ demoAuth canEdit: admin -> true (0.0643ms)
-✔ demoAuth canEdit: editor -> true (0.4009ms)
-✔ demoAuth canEdit: viewer -> false (read-only) (0.0729ms)
-✔ demoAuth canEdit: unknown role -> false (deny-by-default) (0.0717ms)
-✔ demoAuth canIntervene: owner -> true (0.0691ms)
-✔ demoAuth canIntervene: admin -> true (0.0657ms)
-✔ demoAuth canIntervene: editor -> true (0.0718ms)
-✔ demoAuth canIntervene: viewer -> false (0.0821ms)
-✔ demoAuth canIntervene: unknown role -> false (0.1054ms)
-✔ demoAuth rejectViewerEdit: returns true (abort) for viewer (0.062ms)
-✔ demoAuth rejectViewerEdit: returns false (proceed) for owner (0.0468ms)
-✔ demoAuth rejectViewerEdit: returns false (proceed) for admin (0.0542ms)
-✔ demoAuth rejectViewerEdit: returns false (proceed) for editor (0.0452ms)
-✔ demoAuth mutation handler early-return: viewer causes no-op (0.0568ms)
-✔ demoAuth mutation handler early-return: editor proceeds, viewer is blocked (0.084ms)
-✔ exportArtifacts writes graph.json + Dockerfile + docker-compose.yml with required strings (0.7473ms)
-✔ CLI: node src/forge/exportArtifacts.js exits 0 and emits artifacts (32.1883ms)
-✔ promptToGraph(prompt) produces valid JSON (>=1 node + >=1 edge) with required keys id/type/label + source/target (0.962ms)
-✔ promptToGraph is deterministic (same prompt => exact same shape and values) (0.158ms)
-✔ F-0023: every emitted node model is either "none" (start) or equals DEFAULT_MODEL — no stale grok-3/grok-4 literals (0.1633ms)
-✔ CLI: node src/forge/promptToGraph.js exits 0 and prints valid graph JSON (with sample emit side-effect) (34.5424ms)
-✔ check: owner allows all actions (read/edit/export/run) (0.5018ms)
-✔ check: viewer allows reads, denies mutations (403/404 per security.md) (0.1022ms)
-✔ CLI: node src/forge/rbac.js exits 0 and prints JSON with owner/viewer results (31.3882ms)
-✔ check: graph-mutation two-principal — owner and editor allowed, viewer denied (0.0826ms)
-✔ check: res argument changes decision — admin denied on billing resource, allowed on graph (0.088ms)
-✔ check: admin allows graph/logs/run, denies org/billing (0.0609ms)
-✔ check: editor allows read+mutate-graph, denies run-control/manage (0.0603ms)
-✔ check: editor cannot mutate org/billing resources (no privilege escalation past admin) (0.0656ms)
-✔ check: role hierarchy is monotonic (lower allow ⟹ higher allow) (0.185ms)
-✔ check: viewer read-only across multiple resources (0.1248ms)
-✔ getHealth() reports status ok and the correct service name (0.9035ms)
-✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.1219ms)
-✔ getHealth() uptime_s is a non-negative number (0.0618ms)
-✔ CLI: node src/health.js exits 0 and prints JSON with status ok (32.6552ms)
+✔ abSim executes two graph variants over synthetic inputs and emits real-time structured logs (AC2) (1.897ms)
+✔ abSim logs are JSON serializable (for CLI/UI hook consumption) (0.4561ms)
+✔ abSim.test covers RBAC 2 principals (owner allowed, non-owner 403/404 deny on mut) per security.md (0.1291ms)
+✔ CLI: node src/forge/abSim.js exits 0 and prints chain + structured logs (35.6379ms)
+✔ userCanEdit: owner can edit (true) (0.4071ms)
+✔ userCanEdit: admin can edit (true) (0.0699ms)
+✔ userCanEdit: editor can edit (true) (0.0531ms)
+✔ userCanEdit: viewer cannot edit (false) — read-only persona (0.0467ms)
+✔ userCanEdit: unknown role defaults to deny (false) (0.0647ms)
+✔ demoAuth canEdit: owner -> true (0.5149ms)
+✔ demoAuth canEdit: admin -> true (0.0671ms)
+✔ demoAuth canEdit: editor -> true (0.0487ms)
+✔ demoAuth canEdit: viewer -> false (read-only) (0.4881ms)
+✔ demoAuth canEdit: unknown role -> false (deny-by-default) (0.075ms)
+✔ demoAuth canIntervene: owner -> true (0.071ms)
+✔ demoAuth canIntervene: admin -> true (0.0631ms)
+✔ demoAuth canIntervene: editor -> true (0.0543ms)
+✔ demoAuth canIntervene: viewer -> false (0.0608ms)
+✔ demoAuth canIntervene: unknown role -> false (0.0965ms)
+✔ demoAuth rejectViewerEdit: returns true (abort) for viewer (0.0578ms)
+✔ demoAuth rejectViewerEdit: returns false (proceed) for owner (0.061ms)
+✔ demoAuth rejectViewerEdit: returns false (proceed) for admin (0.0402ms)
+✔ demoAuth rejectViewerEdit: returns false (proceed) for editor (0.0271ms)
+✔ demoAuth mutation handler early-return: viewer causes no-op (0.0472ms)
+✔ demoAuth mutation handler early-return: editor proceeds, viewer is blocked (0.0768ms)
+✔ exportArtifacts writes graph.json + Dockerfile + docker-compose.yml with required strings (0.7416ms)
+✔ CLI: node src/forge/exportArtifacts.js exits 0 and emits artifacts (31.6798ms)
+✔ promptToGraph(prompt) produces valid JSON (>=1 node + >=1 edge) with required keys id/type/label + source/target (0.8383ms)
+✔ promptToGraph is deterministic (same prompt => exact same shape and values) (0.1033ms)
+✔ F-0023: every emitted node model is either "none" (start) or equals DEFAULT_MODEL — no stale grok-3/grok-4 literals (0.1334ms)
+✔ CLI: node src/forge/promptToGraph.js exits 0 and prints valid graph JSON (with sample emit side-effect) (30.6244ms)
+✔ check: owner allows all actions (read/edit/export/run) (0.5789ms)
+✔ check: viewer allows reads, denies mutations (403/404 per security.md) (0.0897ms)
+✔ CLI: node src/forge/rbac.js exits 0 and prints JSON with owner/viewer results (32.2364ms)
+✔ check: graph-mutation two-principal — owner and editor allowed, viewer denied (0.0819ms)
+✔ check: res argument changes decision — admin denied on billing resource, allowed on graph (0.0747ms)
+✔ check: admin allows graph/logs/run, denies org/billing (0.0565ms)
+✔ check: editor allows read+mutate-graph, denies run-control/manage (0.0628ms)
+✔ check: editor cannot mutate org/billing resources (no privilege escalation past admin) (0.0646ms)
+✔ check: role hierarchy is monotonic (lower allow ⟹ higher allow) (0.1927ms)
+✔ check: viewer read-only across multiple resources (0.1108ms)
+✔ getHealth() reports status ok and the correct service name (0.8796ms)
+✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.1103ms)
+✔ getHealth() uptime_s is a non-negative number (0.0642ms)
+✔ CLI: node src/health.js exits 0 and prints JSON with status ok (30.5812ms)
 ℹ tests 45
 ℹ suites 0
 ℹ pass 45
@@ -59,21 +59,14 @@ Checked 18 files in 10ms. No fixes applied.
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 480.2772
+ℹ duration_ms 453.0961
 ──── unit tests: OK
 
 ──── verify: build ────
- ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
- We detected multiple lockfiles and selected the directory of C:\dev\ai-operations-template\package-lock.json as the root directory.
- To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
-   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
- Detected additional lockfiles: 
-   * C:\dev\ai-operations-template\.claude\worktrees\agent-a38d2e28d817a130b\package-lock.json
-
    ▲ Next.js 15.5.19
 
    Creating an optimized production build ...
- ✓ Compiled successfully in 1492ms
+ ✓ Compiled successfully in 1423ms
    Linting and checking validity of types ...
    Collecting page data ...
    Generating static pages (0/6) ...
@@ -90,9 +83,9 @@ The width(-1) and height(-1) of chart should be greater than 0,
 
 Route (app)                                 Size  First Load JS
 ┌ ○ /                                    12.1 kB         164 kB
-├ ○ /_not-found                            992 B         103 kB
+├ ○ /_not-found                            993 B         103 kB
 ├ ○ /demo                                 186 kB         342 kB
-└ ○ /pricing                             3.61 kB         159 kB
+└ ○ /pricing                              3.6 kB         159 kB
 + First Load JS shared by all             102 kB
   ├ chunks/255-98a0bdaa30757bda.js       46.2 kB
   ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB
@@ -106,17 +99,17 @@ Route (app)                                 Size  First Load JS
 (placeholder check: template repo — self-skipped; activates after adoption rename)
 
 ──── verify: features.json schema + invariants ────
-(node:14140) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/.claude/worktrees/agent-a38d2e28d817a130b/scripts/update-state.ts is not specified and it doesn't parse as CommonJS.
+(node:34344) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/scripts/update-state.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
-To eliminate this warning, add "type": "module" to \\?\C:\dev\ai-operations-template\.claude\worktrees\agent-a38d2e28d817a130b\package.json.
+To eliminate this warning, add "type": "module" to \\?\C:\dev\ai-operations-template\package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)
 [update-state] valid: 31 features, 30 passing (evidence re-verified).
 ──── features.json schema + invariants: OK
 
 ──── verify: assertion shield ────
-(node:31596) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/.claude/worktrees/agent-a38d2e28d817a130b/scripts/assertion-shield.ts is not specified and it doesn't parse as CommonJS.
+(node:25528) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/scripts/assertion-shield.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
-To eliminate this warning, add "type": "module" to \\?\C:\dev\ai-operations-template\.claude\worktrees\agent-a38d2e28d817a130b\package.json.
+To eliminate this warning, add "type": "module" to \\?\C:\dev\ai-operations-template\package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)
 [32m[Assertion Shield] Check passed. No deleted assertions detected in test files.[0m
 ──── assertion shield: OK
@@ -255,7 +248,7 @@ Checked 4 files in 8ms. No fixes applied.
 ── session-brief.sh
   [PASS] exits 0
   [PASS] emits brief content
-── update-state.ts (fixture: tmp/hook-tests-9mAQUy)
+── update-state.ts (fixture: tmp/hook-tests-wz4a0O)
   [PASS] validate accepts valid fixture
   [PASS] validate exits 0 despite stale policy
   [PASS] validate warns on stale model-policy
@@ -304,6 +297,8 @@ Checked 4 files in 8ms. No fixes applied.
   [PASS] shield module-decl FP: deleting require() decl passes (exit 0)
   [PASS] shield module-decl FP: deleting real assertion still blocked (exit 1)
   [PASS] shield module-decl FP: require-in-assertion line still blocked (exit 1)
+  [PASS] shield module-decl FP: prefix-bypass (require;+assertion) still blocked (exit 1)
+  [PASS] shield module-decl FP: destructuring require decl passes (exit 0)
   [PASS] shield first-commit (no upstream) passes
   [PASS] shield first-commit emits no git fatal
   [PASS] shield first-commit prints a calm line
@@ -314,7 +309,7 @@ Checked 4 files in 8ms. No fixes applied.
   [PASS] delegates to seed script (success)
   [PASS] propagates seed script failure
   [PASS] circular delegation fails fast
-── update-state.ts invariants (fixture: tmp/hook-tests-9mAQUy)
+── update-state.ts invariants (fixture: tmp/hook-tests-wz4a0O)
   [PASS] status:done without passes is rejected
   [PASS] dependency cycle is rejected
   [PASS] validate audits evidence of passing features (missing file rejected)
@@ -412,8 +407,8 @@ Checked 4 files in 8ms. No fixes applied.
   [PASS] F-0026 corpus: PS Get-Content .env BLOCKED by guard-bash
 ── F-0026 known-bad corpus complete
 
-hook contract tests: 262 passed, 0 failed
+hook contract tests: 264 passed, 0 failed
 ──── hook contract tests: OK
 
-VERIFY-COMMIT: 535ffa4733d9bb8f65f68a24772e9e1dbd607967 @ 2026-06-14T15:04:35Z
+VERIFY-COMMIT: 7d3fcbc86efbd8a4342929ac61ab199d9d447821 @ 2026-06-14T15:25:33Z
 VERIFY: PASS (exit 0)

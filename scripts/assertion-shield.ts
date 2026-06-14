@@ -155,8 +155,15 @@ function scanDiffForWeakening(diffText: string): Violation[] {
         }
 
         // Skip CJS module import/require declarations (CJS→ESM migration boilerplate, not assertions):
-        // 'const|let|var X = require(...)' and a bare 'use strict' pragma carry no test coverage.
-        const isModuleDecl = /^(?:const|let|var)\s+\S.*=\s*require\(/.test(cleanedLine)
+        // 'const|let|var X = require(...);' or a destructuring 'const { a, b } = require(...);',
+        // plus a bare 'use strict' pragma. These carry no test coverage.
+        // SECURITY (security-review): the pattern is anchored at BOTH ends — require(...) must be
+        // the ENTIRE right-hand side and the line must END there (optional ';'). Without the end
+        // anchor, a line like `const _ = require('x'); expect(role).toBe('admin');` would match the
+        // prefix and let a real deleted assertion slip past. A single LHS binding only (a bare
+        // identifier or one {...} destructure) — no ','-chained second binding, no trailing code.
+        const isModuleDecl =
+          /^(?:const|let|var)\s+(?:[A-Za-z_$][\w$]*|\{[^}]*\})\s*=\s*require\([^)]*\)\s*;?\s*$/.test(cleanedLine)
           || cleanedLine === "'use strict';";
         if (isModuleDecl) {
           continue;
