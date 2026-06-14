@@ -4,8 +4,10 @@
 set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT" || exit 1
+mkdir -p tmp
 HOOKS=".claude/hooks"
-FIX="tmp/hook-tests"
+FIX="$(mktemp -d "tmp/hook-tests-XXXXXX")"
+trap 'rm -rf "$FIX"' EXIT
 PASS=0; FAIL=0
 
 check() { # check <name> <expected-exit> <actual-exit>
@@ -97,7 +99,9 @@ printf '%s' "$OUT" | grep -q "SESSION BRIEF" ; check "emits brief content" 0 "$?
 echo "── update-state.ts (fixture: $FIX)"
 rm -rf "$FIX"; mkdir -p "$FIX"
 export STATE_FILE="$FIX/features.json"
-US() { npx ts-node scripts/update-state.ts "$@" >/dev/null 2>&1; echo $?; }
+US_WITH_STATE() { local state_file="$1"; shift; STATE_FILE="$state_file" npx ts-node scripts/update-state.ts "$@" >/dev/null 2>&1; echo $?; }
+US() { US_WITH_STATE "$FIX/features.json" "$@"; }
+US_REAL() { STATE_FILE='' npx ts-node scripts/update-state.ts "$@" >/dev/null 2>&1; echo $?; }
 cat > "$STATE_FILE" <<'EOF'
 { "features": [ { "id": "F-9101", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
   "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [],
@@ -127,7 +131,7 @@ check "add accepts valid feature"               0 "$(US --add '{"id":"F-9104","e
 # refused there, so an escaped fixture call fails loudly instead of corrupting.
 # Row-count snapshot proves "no write" directly (security review, this PR).
 PRE_COUNT="$(node -e "console.log(require('./roadmap/features.json').features.length)")"
-check "add refuses reserved F-9xxx range on real backlog" 1 "$(unset STATE_FILE; US --add '{"id":"F-9105","epic":"t","title":"t","spec_ref":"t","description":"t","acceptance":["a"],"authorized_paths":[],"priority":1,"status":"pending","passes":false,"evidence":[],"attempts":0,"blocked_reason":null}')"
+check "add refuses reserved F-9xxx range on real backlog" 1 "$(US_REAL --add '{"id":"F-9105","epic":"t","title":"t","spec_ref":"t","description":"t","acceptance":["a"],"authorized_paths":[],"priority":1,"status":"pending","passes":false,"evidence":[],"attempts":0,"blocked_reason":null}')"
 check "reserved-range refusal wrote nothing to real backlog" "$PRE_COUNT" "$(node -e "console.log(require('./roadmap/features.json').features.length)")"
 check "status rejects unknown id"               1 "$(US --status F-9999 'done')"
 check "status rejects invalid enum"             1 "$(US --status F-9101 finished)"
@@ -141,16 +145,16 @@ check "paths rejects catch-all glob"            1 "$(US --paths F-9101 '["**"]')
 check "paths rejects parent traversal"          1 "$(US --paths F-9101 '["roadmap/../scripts/**"]')"
 check "paths replaces authorized_paths"         0 "$(US --paths F-9101 '["src/**","docs/**"]')"
 check "passes refuses without evidence"         1 "$(US --passes F-9101 true)"
-check "evidence refuses missing file"           1 "$(US --evidence F-9101 $FIX/nope.log)"
+check "evidence refuses missing file"           1 "$(US --evidence F-9101 "$FIX/nope.log")"
 echo 'audit said: need a verify.log containing "VERIFY: PASS (exit 0)" ... VERIFY: FAIL' > "$FIX/verify.log"
-check "evidence accepts existing file"          0 "$(US --evidence F-9101 $FIX/verify.log)"
+check "evidence accepts existing file"          0 "$(US --evidence F-9101 "$FIX/verify.log")"
 check "passes rejects QUOTED marker in failed log" 1 "$(US --passes F-9101 true)"
 printf 'gate output...\nVERIFY: PASS (exit 0)\n' > "$FIX/verify.log"
 check "passes accepts green verify log (exact line)" 0 "$(US --passes F-9101 true)"
 cat > "$STATE_FILE.corrupt" <<'EOF'
 { "features": [ { "id": "BAD", "status": "nope" } ] }
 EOF
-STATE_FILE="$STATE_FILE.corrupt" check "validate rejects corrupt backlog" 1 "$(STATE_FILE="$FIX/features.json.corrupt" US --validate)"
+check "validate rejects corrupt backlog" 1 "$(US_WITH_STATE "$FIX/features.json.corrupt" --validate)"
 unset STATE_FILE
 rm -rf "$FIX"
 
@@ -551,6 +555,58 @@ check "ship: merge failure propagates" nonzero "$(rc=$(run_ship 5 --merge); [ "$
 
 unset FAKE_NOCHECK_FILE FAKE_WATCH_RC FAKE_BASE FAKE_MERGE_RC
 rm -rf "$SHIP_FIX"
+
+echo "── path-guard.sh"
+PG_FIX="$(mktemp -d "tmp/path-guard-test-XXXXXX")"
+PG_STATE="$PG_FIX/features.json"
+
+cat > "$PG_STATE" << 'EOF'
+{
+  "features": [
+    {
+      "id": "F-9501",
+      "epic": "test",
+      "title": "Test Path Guard",
+      "spec_ref": "test",
+      "description": "test",
+      "acceptance": ["a"],
+      "authorized_paths": ["src/**", "package.json"],
+      "forbidden_paths": ["src/api/auth/**", "roadmap/**"],
+      "priority": 1,
+      "status": "in_progress",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null
+    }
+  ]
+}
+EOF
+
+run_pg() {
+  local filepath="$1"
+  local feat="${2:-}"
+  if [ -n "$feat" ]; then
+    printf '{"tool_input":{"file_path":"%s"}}' "$filepath" | CLAUDE_ACTIVE_FEATURE="$feat" STATE_FILE="$PG_STATE" bash "$HOOKS/path-guard.sh" >/dev/null 2>&1
+    echo $?
+  else
+    printf '{"tool_input":{"file_path":"%s"}}' "$filepath" | STATE_FILE="$PG_STATE" bash "$HOOKS/path-guard.sh" >/dev/null 2>&1
+    echo $?
+  fi
+}
+
+check "pg: no active feature allows everything" 0 "$(run_pg 'roadmap/features.json')"
+check "pg: no active feature allows auth path"  0 "$(run_pg 'src/api/auth/login.ts')"
+check "pg: active feature allows authorized file" 0 "$(run_pg 'src/health.js' 'F-9501')"
+check "pg: active feature allows package.json"    0 "$(run_pg 'package.json' 'F-9501')"
+check "pg: active feature blocks unauthorized file" 2 "$(run_pg 'scripts/verify.sh' 'F-9501')"
+check "pg: active feature blocks forbidden path" 2 "$(run_pg 'src/api/auth/login.ts' 'F-9501')"
+check "pg: active feature blocks forbidden subpath" 2 "$(run_pg 'roadmap/features.json' 'F-9501')"
+check "pg: active feature handles backslashes in authorized path" 0 "$(run_pg 'src\\health.js' 'F-9501')"
+check "pg: active feature resolves relative traversal in authorized path" 0 "$(run_pg 'src/api/auth/../../health.js' 'F-9501')"
+check "pg: non-existent active feature allows everything" 0 "$(run_pg 'scripts/verify.sh' 'F-9999')"
+
+rm -rf "$PG_FIX"
 
 echo ""
 echo "hook contract tests: $PASS passed, $FAIL failed"
