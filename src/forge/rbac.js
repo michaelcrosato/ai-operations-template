@@ -50,6 +50,7 @@ function check(principal, res, act) {
   }
 
   if (p === 'viewer') {
+    if (ORG_BILLING_RESOURCES.has(r)) return 'deny'; // org/billing is owner-only (stay monotonic with admin/editor)
     if (a === 'read' || a === '') return 'allow';
     return 'deny'; // mutation denied; 403/404 semantics per security.md (two-principal tests)
   }
