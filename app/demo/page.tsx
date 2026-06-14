@@ -688,8 +688,14 @@ export default function ForgeOpsDemo() {
     toast.success('Live simulation started — nodes will highlight as trace advances');
   }
 
+  // F-0021: toast helper for viewer read-only rejection (mirrors canIntervene pattern)
+  function rejectViewerEdit(action = 'edit the graph') {
+    toast.error(`Read-only: viewers cannot ${action}`);
+  }
+
   // F-0018: prompt -> high quality nodes (uses lib helper + seed realism)
   function handleCreateFromPrompt(text: string) {
+    if (!canEdit) { rejectViewerEdit('create nodes'); return; }
     const trimmed = (text || '').trim();
     if (!trimmed) return;
     const { nodes: newNs, edges: newEs } = promptToGraph(trimmed);
@@ -712,6 +718,7 @@ export default function ForgeOpsDemo() {
 
   // F-0018: palette add (used by buttons + inside canvas)
   function addNodeOfType(typ: NodeType) {
+    if (!canEdit) { rejectViewerEdit('add nodes'); return; }
     if (!workflow) return;
     const existing = workflow.graph.nodes;
     const maxX = existing.length ? Math.max(...existing.map(n => n.position?.x || 0)) + 210 : 160;
@@ -738,6 +745,7 @@ export default function ForgeOpsDemo() {
 
   // E2E helper: simulate a drag by mutating selected (or first) node position via the update helper
   function simulateDrag() {
+    if (!canEdit) { rejectViewerEdit('drag nodes'); return; }
     if (!workflow || workflow.graph.nodes.length === 0) return;
     const nid = selectedCanvasNodeId || workflow.graph.nodes[0].id;
     updateCurrentWorkflowGraph(g => {
@@ -789,6 +797,7 @@ services:
 
   // F-0018: save current graph as a new marketplace template (demo seed only)
   function saveCurrentGraphAsTemplate() {
+    if (!canEdit) { rejectViewerEdit('save templates'); return; }
     if (!workflow) return;
     const tplName = `${workflow.name} (canvas)`;
     setSeed(current => {
@@ -877,6 +886,8 @@ services:
 
   // Start a run from a template (used by marketplace "start now")
   function startRunFromTemplate(templateId: string, importGraph = false) {
+    // Graph import is a mutation; viewer cannot import
+    if (importGraph && !canEdit) { rejectViewerEdit('import graph from template'); return; }
     const tpl = seed.templates.find(t => t.id === templateId);
     if (!tpl) return;
 
@@ -916,6 +927,7 @@ services:
 
   // "Use in workspace" — import graph to current workflow (no run) or start run
   function useTemplateInWorkspace(tpl: Template, startRun = true) {
+    if (!canEdit) { rejectViewerEdit('import graph templates'); return; }
     setSeed(current => {
       const next = cloneSeed(current);
       const wf = next.workflows.find(w => w.id === selectedWorkflowId);
@@ -948,6 +960,7 @@ services:
 
   // Publish your own (stub) — creates a new template in demo seed state
   function publishOwnTemplate() {
+    if (!canEdit) { rejectViewerEdit('publish templates'); return; }
     if (!publishForm.name.trim()) {
       toast.error('Name is required');
       return;
@@ -1295,24 +1308,26 @@ services:
                     <div className="flex items-center justify-between mb-2">
                       <div className="font-medium">Visual Workflow — {workflow?.name}</div>
                       <div className="flex items-center gap-2">
-                        {/* Load from seed graphs (tied to seed per AC) */}
+                        {/* Load from seed graphs (tied to seed per AC) — viewer read-only */}
                         {getSeedGraphs().map(sg => (
                           <button
                             key={sg.id}
                             onClick={() => {
+                              if (!canEdit) { rejectViewerEdit('load graphs'); return; }
                               updateCurrentWorkflowGraph(() => JSON.parse(JSON.stringify(sg.graph)));
                               setSelectedCanvasNodeId(null);
                               toast.success(`Loaded ${sg.name}`);
                             }}
-                            className="text-[10px] px-2 py-0.5 rounded border border-white/10 hover:bg-white/5"
+                            className="text-[10px] px-2 py-0.5 rounded border border-white/10 hover:bg-white/5 disabled:opacity-40"
                             aria-label={`Load seed graph: ${sg.name}`}
+                            aria-disabled={!canEdit}
                           >
                             {sg.name.split(' ').slice(0, 2).join(' ')}
                           </button>
                         ))}
-                        <Button size="sm" variant="ghost" onClick={saveCurrentGraphAsTemplate}>Save as template</Button>
+                        <Button size="sm" variant="ghost" onClick={saveCurrentGraphAsTemplate} disabled={!canEdit}>Save as template</Button>
                         <Button data-testid="btn-run-live" size="sm" onClick={startLiveRunForCurrent} disabled={!canIntervene || !workflow}>▶ Run live</Button>
-                        <Button data-testid="btn-sim-drag" size="sm" variant="ghost" onClick={simulateDrag}>Drag</Button>
+                        <Button data-testid="btn-sim-drag" size="sm" variant="ghost" onClick={simulateDrag} disabled={!canEdit}>Drag</Button>
                         <Button data-testid="btn-export-script" size="sm" variant="ghost" onClick={exportAsScript}>Export script</Button>
                         <Button data-testid="btn-export-docker" size="sm" variant="ghost" onClick={exportDocker}>Export docker</Button>
                       </div>
@@ -1323,9 +1338,10 @@ services:
                       <input
                         id="prompt-create"
                         data-testid="canvas-prompt-input"
-                        placeholder="Prompt to create (e.g. 'deep arxiv researcher' or 'human gate for legal' or 'parallel web scrapers')"
-                        className="flex-1 min-w-[260px] bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-sm placeholder:text-white/40"
+                        placeholder={canEdit ? "Prompt to create (e.g. 'deep arxiv researcher' or 'human gate for legal' or 'parallel web scrapers')" : "Read-only: viewers cannot create nodes"}
+                        className="flex-1 min-w-[260px] bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-sm placeholder:text-white/40 disabled:opacity-50"
                         aria-label="Natural language prompt to create nodes"
+                        disabled={!canEdit}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             handleCreateFromPrompt((e.target as HTMLInputElement).value);
@@ -1333,13 +1349,13 @@ services:
                           }
                         }}
                       />
-                      <Button data-testid="btn-create-from-prompt" size="sm" onClick={() => {
+                      <Button data-testid="btn-create-from-prompt" size="sm" disabled={!canEdit} onClick={() => {
                         const el = document.getElementById('prompt-create') as HTMLInputElement | null;
                         if (el) { handleCreateFromPrompt(el.value); el.value = ''; }
                       }}>Create</Button>
                       {/* Quick palette also in header for discoverability (mirrors inside-canvas palette) */}
                       {(['agent','tool','human-gate','parallel','merge'] as const).map(t => (
-                        <Button data-testid={`btn-add-${t}`} key={t} size="sm" variant="ghost" onClick={() => addNodeOfType(t)} aria-label={`Add ${t} via palette`}>+{t === 'human-gate' ? 'gate' : t}</Button>
+                        <Button data-testid={`btn-add-${t}`} key={t} size="sm" variant="ghost" disabled={!canEdit} onClick={() => addNodeOfType(t)} aria-label={`Add ${t} via palette`}>+{t === 'human-gate' ? 'gate' : t}</Button>
                       ))}
                     </div>
 
@@ -1348,7 +1364,10 @@ services:
                       <div data-testid="workflow-canvas" className="flex-1 rounded-xl border border-white/10 overflow-hidden bg-black/60" style={{ height: 420 }}>
                         <InteractiveCanvas
                           graph={(workflow?.graph || { nodes: [], edges: [] })}
-                          onChange={(newG) => updateCurrentWorkflowGraph(() => newG)}
+                          onChange={(newG) => {
+                            if (!canEdit) { rejectViewerEdit('edit the graph'); return; }
+                            updateCurrentWorkflowGraph(() => newG);
+                          }}
                           runningNodeIds={runningNodeIds}
                           highlightedNodeId={highlightedNode}
                           onNodeClick={(id) => {
@@ -1365,12 +1384,12 @@ services:
                       {/* Sidebar properties panel (AC: edit prompt, model, cost estimates; live) */}
                       <div className="w-72 rounded-xl border border-white/10 bg-white/5 p-3 overflow-auto text-xs" style={{ height: 420 }}>
                         <div className="font-medium text-white/80 mb-2 flex items-center justify-between">
-                          Properties <span className="text-white/30 text-[9px]">live edits</span>
+                          Properties <span className="text-white/30 text-[9px]">{canEdit ? 'live edits' : 'read-only'}</span>
                         </div>
                         {!selectedCanvasNodeId && (
                           <div className="text-white/40 py-8 text-center">
-                            Select a node on the canvas to edit.<br />
-                            Drag nodes • connect handles • snap-to-grid • delete key.
+                            Select a node on the canvas to view{canEdit ? ' and edit' : ''}.<br />
+                            {canEdit ? 'Drag nodes • connect handles • snap-to-grid • delete key.' : 'Read-only: viewers cannot edit the graph.'}
                           </div>
                         )}
                         {selectedCanvasNodeId && workflow && (() => {
@@ -1379,6 +1398,7 @@ services:
                             return <div className="text-white/40 py-6">Node not found (graph may have changed).</div>;
                           }
                           const updateNode = (patch: Partial<any>) => {
+                            if (!canEdit) { rejectViewerEdit('edit node properties'); return; }
                             updateCurrentWorkflowGraph(g => ({
                               nodes: g.nodes.map((nn: any) => nn.id === node.id ? { ...nn, ...patch } : nn),
                               edges: g.edges,
@@ -1386,18 +1406,23 @@ services:
                           };
                           return (
                             <div className="space-y-3" role="form" aria-label="Node properties editor">
+                              {!canEdit && (
+                                <div data-testid="viewer-readonly-notice" className="text-[10px] text-amber-400/80 bg-amber-400/10 rounded px-2 py-1">
+                                  Read-only: viewers cannot edit the graph
+                                </div>
+                              )}
                               <div>
                                 <div className="text-white/50 mb-0.5">Label</div>
-                                <input value={node.label || ''} onChange={e => updateNode({ label: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded px-2 py-1" aria-label="Node label" />
+                                <input value={node.label || ''} onChange={e => updateNode({ label: e.target.value })} disabled={!canEdit} className="w-full bg-black/40 border border-white/10 rounded px-2 py-1 disabled:opacity-50" aria-label="Node label" />
                               </div>
                               <div>
                                 <div className="text-white/50 mb-0.5">Prompt</div>
-                                <textarea value={node.prompt || ''} onChange={e => updateNode({ prompt: e.target.value })} rows={3} className="w-full bg-black/40 border border-white/10 rounded px-2 py-1 font-mono text-[10px]" aria-label="Node prompt" />
+                                <textarea value={node.prompt || ''} onChange={e => updateNode({ prompt: e.target.value })} disabled={!canEdit} rows={3} className="w-full bg-black/40 border border-white/10 rounded px-2 py-1 font-mono text-[10px] disabled:opacity-50" aria-label="Node prompt" />
                               </div>
                               <div className="grid grid-cols-2 gap-2">
                                 <div>
                                   <div className="text-white/50 mb-0.5">Model</div>
-                                  <select value={node.model || ''} onChange={e => updateNode({ model: e.target.value || undefined })} className="w-full bg-black/40 border border-white/10 rounded px-2 py-1" aria-label="Model">
+                                  <select value={node.model || ''} onChange={e => updateNode({ model: e.target.value || undefined })} disabled={!canEdit} className="w-full bg-black/40 border border-white/10 rounded px-2 py-1 disabled:opacity-50" aria-label="Model">
                                     <option value="">—</option>
                                     <option value="grok-4">grok-4</option>
                                     <option value="grok-3">grok-3</option>
@@ -1405,17 +1430,18 @@ services:
                                 </div>
                                 <div>
                                   <div className="text-white/50 mb-0.5">Est. cost</div>
-                                  <input type="number" step="0.01" value={node.estimatedCost ?? ''} onChange={e => updateNode({ estimatedCost: e.target.value ? parseFloat(e.target.value) : undefined })} className="w-full bg-black/40 border border-white/10 rounded px-2 py-1 tabular-nums" aria-label="Estimated cost" />
+                                  <input type="number" step="0.01" value={node.estimatedCost ?? ''} onChange={e => updateNode({ estimatedCost: e.target.value ? parseFloat(e.target.value) : undefined })} disabled={!canEdit} className="w-full bg-black/40 border border-white/10 rounded px-2 py-1 tabular-nums disabled:opacity-50" aria-label="Estimated cost" />
                                 </div>
                               </div>
                               {node.tool && (
                                 <div>
                                   <div className="text-white/50 mb-0.5">Tool</div>
-                                  <input value={node.tool} onChange={e => updateNode({ tool: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded px-2 py-1" />
+                                  <input value={node.tool} onChange={e => updateNode({ tool: e.target.value })} disabled={!canEdit} className="w-full bg-black/40 border border-white/10 rounded px-2 py-1 disabled:opacity-50" />
                                 </div>
                               )}
                               <div className="pt-1 flex gap-2">
-                                <Button size="sm" variant="ghost" onClick={() => {
+                                <Button size="sm" variant="ghost" disabled={!canEdit} onClick={() => {
+                                  if (!canEdit) { rejectViewerEdit('delete nodes'); return; }
                                   // delete via properties too
                                   updateCurrentWorkflowGraph(g => ({
                                     nodes: g.nodes.filter((nn: any) => nn.id !== node.id),

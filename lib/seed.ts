@@ -585,11 +585,17 @@ export function generateGraphAwareLog(
 // Test helpers (pure functions for Vitest coverage of clone, get*, graph, costs, RBAC gating)
 // Authorized for test helpers only per F-0019 brief. No core data changes.
 export function canIntervene(role: TeamMember['role']): boolean {
-  return role !== 'viewer';
+  // owner, admin, editor can trigger/intervene runs; viewer cannot
+  return role === 'owner' || role === 'admin' || role === 'editor';
 }
 
+/**
+ * F-0021: unified canEdit predicate — viewer is strictly read-only.
+ * owner/admin/editor can mutate graph nodes, edges, and properties.
+ * Used by demo canvas to gate every mutation control.
+ */
 export function canEdit(role: TeamMember['role']): boolean {
-  return role !== 'viewer';
+  return role === 'owner' || role === 'admin' || role === 'editor';
 }
 
 export function computeGraphCost(graph: WorkflowGraph): number {
