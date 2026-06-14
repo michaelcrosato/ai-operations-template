@@ -836,9 +836,12 @@
       "dependencies": [
         "F-0021"
       ],
-      "status": "pending",
-      "passes": false,
-      "evidence": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0024/verify-e2e.log",
+        "roadmap/evidence/F-0024/viewer-readonly-state.png"
+      ],
       "attempts": 0,
       "blocked_reason": null,
       "forbidden_paths": [
@@ -931,9 +934,11 @@
     },
     {
       "dependencies": [],
-      "status": "pending",
-      "passes": false,
-      "evidence": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0027/verify.log"
+      ],
       "attempts": 1,
       "blocked_reason": null,
       "forbidden_paths": [
@@ -1026,9 +1031,11 @@
     },
     {
       "dependencies": [],
-      "status": "pending",
-      "passes": false,
-      "evidence": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0030/verify.log"
+      ],
       "attempts": 0,
       "blocked_reason": null,
       "forbidden_paths": [
