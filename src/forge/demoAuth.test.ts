@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * F-0029: Unit tests for the centralized demo authorization logic.
  *
@@ -13,25 +11,25 @@
  * is NOT tested here (that path lives in E2E).
  */
 
-const test = require('node:test');
-const assert = require('node:assert/strict');
+import test from 'node:test';
+import assert from 'node:assert/strict';
 
 // Re-use the already-tested pure predicate from the CJS mirror.
 // (lib/seed.ts canEdit / canIntervene have identical logic — this avoids
 // duplicating the predicate definition while keeping tests self-contained.)
-const { userCanEdit } = require('./canEdit.js');
+import { userCanEdit } from './canEdit.ts';
 
 // ── canIntervene predicate ────────────────────────────────────────────────────
 // canIntervene mirrors canEdit exactly in the current demo RBAC policy.
 // If the policy diverges in the future, this guard will catch it.
-function canIntervene(role) {
+function canIntervene(role: string): boolean {
   const r = String(role || '').toLowerCase();
   return r === 'owner' || r === 'admin' || r === 'editor';
 }
 
 // ── rejectViewerEdit contract (pure, toast-free) ───────────────────────────
 // Returns true when the call-site should abort (viewer), false when it should proceed.
-function rejectViewerEditPure(canEdit) {
+function rejectViewerEditPure(canEdit: boolean): boolean {
   // The actual hook emits a toast; this pure wrapper tests the boolean contract.
   return !canEdit;
 }
@@ -104,7 +102,7 @@ test('demoAuth rejectViewerEdit: returns false (proceed) for editor', () => {
 // after calling rejectViewerEdit: if it returns true, they return early (no-op).
 test('demoAuth mutation handler early-return: viewer causes no-op', () => {
   let mutationRan = false;
-  function mutationHandler(role) {
+  function mutationHandler(role: string): void {
     const canEdit = userCanEdit(role);
     if (rejectViewerEditPure(canEdit)) return; // early return for viewer
     mutationRan = true;
@@ -118,8 +116,8 @@ test('demoAuth mutation handler early-return: viewer causes no-op', () => {
 });
 
 test('demoAuth mutation handler early-return: editor proceeds, viewer is blocked', () => {
-  const results = [];
-  function tryMutate(role) {
+  const results: Array<{ role: string; ran: boolean }> = [];
+  function tryMutate(role: string): void {
     if (rejectViewerEditPure(userCanEdit(role))) {
       results.push({ role, ran: false });
       return;

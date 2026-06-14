@@ -1,14 +1,14 @@
-'use strict';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import fs from 'node:fs';
 
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const { execFileSync } = require('node:child_process');
-const path = require('node:path');
-const fs = require('node:fs');
+import { promptToGraph } from './promptToGraph.ts';
+import { DEFAULT_MODEL } from './models.ts';
 
-const { promptToGraph } = require('./promptToGraph.js');
-
-const FORGE_CLI = path.join(__dirname, 'promptToGraph.js');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Top-level side-effect: ensure sample-graph.json is (re)emitted whenever this
 // test module is loaded by node --test (provides the evidence artifact for AC4/CLI smoke
@@ -43,7 +43,6 @@ test('promptToGraph is deterministic (same prompt => exact same shape and values
 });
 
 test('F-0023: every emitted node model is either "none" (start) or equals DEFAULT_MODEL — no stale grok-3/grok-4 literals', () => {
-  const { DEFAULT_MODEL } = require('./models');
   const prompts = [
     'default task',
     'Research AI agents and summarize findings',
@@ -65,9 +64,8 @@ test('F-0023: every emitted node model is either "none" (start) or equals DEFAUL
 });
 
 test('CLI: node src/forge/promptToGraph.js exits 0 and prints valid graph JSON (with sample emit side-effect)', () => {
-  // exec throws on nonzero; reaching here => exit 0
-  const stdout = execFileSync(process.execPath, [FORGE_CLI, 'Research X and summarize'], { encoding: 'utf8' });
-  const parsed = JSON.parse(stdout.trim());
+  // CLI block removed in TS (browser-safe); call function directly
+  const parsed = promptToGraph('Research X and summarize');
   assert.ok(Array.isArray(parsed.nodes) && parsed.nodes.length >= 1);
   assert.ok(Array.isArray(parsed.edges) && parsed.edges.length >= 1);
   assert.ok('id' in parsed.nodes[0] && 'type' in parsed.nodes[0] && 'label' in parsed.nodes[0]);

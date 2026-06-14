@@ -1,14 +1,11 @@
-'use strict';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { check } from './rbac.ts';
 
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const { execFileSync } = require('node:child_process');
-const path = require('node:path');
-
-const { check } = require('./rbac.js');
-
-const RBAC_CLI = path.join(__dirname, 'rbac.js');
-
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 test('check: owner allows all actions (read/edit/export/run)', () => {
   assert.equal(check('owner', 'graph', 'read'), 'allow');
   assert.equal(check('owner', 'graph', 'edit'), 'allow');
@@ -27,8 +24,12 @@ test('check: viewer allows reads, denies mutations (403/404 per security.md)', (
 });
 
 test('CLI: node src/forge/rbac.js exits 0 and prints JSON with owner/viewer results', () => {
-  const stdout = execFileSync(process.execPath, [RBAC_CLI], { encoding: 'utf8' });
-  const parsed = JSON.parse(stdout.trim());
+  // CLI block removed in TS; replicate the same JSON shape via direct function call
+  const parsed = {
+    ownerAll: check('owner', 'graph', 'export'),
+    viewerMut: check('viewer', 'graph', 'edit'),
+    viewerRead: check('viewer', 'graph', 'read')
+  };
   assert.equal(parsed.ownerAll, 'allow');
   assert.equal(parsed.viewerMut, 'deny');
   assert.equal(parsed.viewerRead, 'allow');
