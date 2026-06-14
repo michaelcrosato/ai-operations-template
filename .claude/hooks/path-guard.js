@@ -39,12 +39,6 @@ function normalizePath(p) {
 }
 
 function run() {
-  const activeFeature = process.env.CLAUDE_ACTIVE_FEATURE;
-  if (!activeFeature) {
-    // No active feature, fail-open
-    process.exit(0);
-  }
-
   // Read stdin
   let input = '';
   try {
@@ -67,7 +61,7 @@ function run() {
 
   const normFile = normalizePath(filePath);
 
-  // Load roadmap/features.json
+  // Load roadmap/features.json (needed for both derivation and authz lookup)
   const featuresPath = process.env.STATE_FILE
     ? path.resolve(process.env.STATE_FILE)
     : path.join(process.cwd(), 'roadmap', 'features.json');
@@ -82,8 +76,24 @@ function run() {
     process.exit(0);
   }
 
+  // F-0022: Derive active feature mechanically if CLAUDE_ACTIVE_FEATURE not set.
+  // Precedence: env var > exactly-one-in_progress > permissive fallback (0 or multiple).
+  let activeFeature = process.env.CLAUDE_ACTIVE_FEATURE || '';
+  if (!activeFeature) {
+    const inProgress = (featuresData.features || []).filter(f => f && f.status === 'in_progress');
+    if (inProgress.length === 1) {
+      activeFeature = inProgress[0].id;
+    }
+  }
+
+  if (!activeFeature) {
+    // Zero or multiple in_progress and no env override → permissive fallback
+    process.exit(0);
+  }
+
   const feature = (featuresData.features || []).find(f => f.id === activeFeature);
   if (!feature) {
+    // Unknown feature: path-guard.js keeps existing fail-open behavior for unknown ids
     process.exit(0);
   }
 
