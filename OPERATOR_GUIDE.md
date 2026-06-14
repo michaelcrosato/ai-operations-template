@@ -1,4 +1,4 @@
-# Operator Guide: How to run <REPO_NAME>
+# Operator Guide: How to run ForgeOps
 
 Welcome to your AI-coded repository! You do not need to run commands or read code. The AI workforce handles the execution, and you act as the planner and the final release authority.
 

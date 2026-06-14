@@ -716,6 +716,111 @@
       "id": "F-0020",
       "epic": "forgeops",
       "description": "RBAC sim (synthetic owner full edit/run/export, non-owner read-only 403/404 on resources; no client-supplied ID trust per security.md) + export (portable graph JSON + minimal Dockerfile + docker-compose with DEMO_MODE/healthcheck). Small testable slice of F-0017 vision; auth/RBAC/deploy foundation now engine guard stable."
+    },
+    {
+      "dependencies": [
+        "F-0018"
+      ],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        "roadmap/features.json",
+        ".github/workflows/**"
+      ],
+      "id": "F-0021",
+      "epic": "forgeops",
+      "priority": 1,
+      "title": "F-0018 follow-up: enforce viewer read-only RBAC on the visual canvas + Playwright E2E + unify rbac.js role model",
+      "description": "F-0018 shipped done/passes but app/demo/page.tsx computes canEdit without enforcing it; its brief AC requires viewer mutations to be visibly rejected. Enforce canEdit on all edit paths, add a browser-level test proving a viewer cannot mutate the graph, and align engine rbac.js (currently owner/viewer with the resource arg ignored) with frontend roles owner/admin/editor/viewer plus resource binding.",
+      "authorized_paths": [
+        "app/**",
+        "components/**",
+        "lib/**",
+        "src/forge/rbac.js",
+        "src/forge/rbac.test.js",
+        "tests/**",
+        "e2e/**",
+        "playwright.config.ts",
+        "roadmap/evidence/F-0021/**"
+      ],
+      "spec_ref": "roadmap/briefs/F-0018.md AC3; docs/feedback-3-verification.md",
+      "acceptance": [
+        "app/demo/page.tsx: every graph-mutation control (add node, delete, property edits for label/prompt/model/cost, load/import, save) is disabled or blocked when canEdit is false, and a viewer attempting a mutation gets a visible rejection",
+        "src/forge/rbac.js honors the resource argument with a role-to-permission model covering owner/admin/editor/viewer; two-principal unit tests prove a viewer is denied a mutation the owner is allowed, per security.md",
+        "a Playwright E2E walks the canvas as a viewer persona and asserts a mutation is rejected; evidence includes the E2E output or screenshot under roadmap/evidence/F-0021/",
+        "bash scripts/verify.sh --e2e returns VERIFY: PASS (exit 0) and evidence is saved"
+      ]
+    },
+    {
+      "dependencies": [
+        "F-0007"
+      ],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        "roadmap/features.json",
+        ".github/workflows/**"
+      ],
+      "id": "F-0022",
+      "epic": "factory-hardening",
+      "priority": 1,
+      "title": "Arm the F-0007 path-authorization guard mechanically (set CLAUDE_ACTIVE_FEATURE outside prompts) or honestly scope the claim",
+      "description": "verify-gate.sh and path-guard.js enforce authorized_paths/forbidden_paths only when CLAUDE_ACTIVE_FEATURE is set, but that variable is set nowhere in executable code (only requested in briefs), so the guard is a no-op in real sessions and fails open. Inject CLAUDE_ACTIVE_FEATURE from the spawn/settings layer so the guard fires, or correct the docs and STATUS claims to describe the real evaluator-diff backstop.",
+      "authorized_paths": [
+        ".claude/hooks/verify-gate.sh",
+        ".claude/hooks/path-guard.js",
+        ".claude/settings.json",
+        "scripts/**",
+        "docs/**",
+        "roadmap/evidence/F-0022/**"
+      ],
+      "spec_ref": "docs/feedback-3-verification.md; briefs/F-0007.md",
+      "acceptance": [
+        "CLAUDE_ACTIVE_FEATURE is set by a mechanical layer (settings.json env, a wrapper, or the spawn step) for BUILD work rather than only requested in prose, OR the docs and STATUS are corrected to describe the real enforcement",
+        "a contract test in test-hooks.sh proves the guard blocks an out-of-scope edit under the mechanical mechanism, not only when the variable is manually exported",
+        "bash scripts/verify.sh returns VERIFY: PASS (exit 0) and the decision is recorded in DECISIONS.md"
+      ]
+    },
+    {
+      "dependencies": [],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        "roadmap/features.json",
+        ".claude/**",
+        ".github/workflows/**"
+      ],
+      "id": "F-0023",
+      "epic": "forgeops",
+      "priority": 2,
+      "title": "Product model-currency: replace hardcoded grok-3/grok-4 with a single product model registry pointing at a current model",
+      "description": "Product code hardcodes grok-3/grok-4 in ~57 places across src/forge/promptToGraph.js, abSim.js, exportArtifacts.js (graph-node defaults) and lib/seed.ts, app/demo/page.tsx, app/page.tsx (UI). grok-4 is stale (superseded by grok-4.3; coding specialist grok-build-0.1). Introduce one product-side model constant/registry (mirroring how .claude/model-policy.json centralizes engine tiers) and point the forge defaults and demo select options at it; regenerate committed forge evidence to match and keep the gate green. The engine model-policy.json is already correct and must not change to dated ids.",
+      "authorized_paths": [
+        "src/forge/**",
+        "lib/**",
+        "app/**",
+        "components/**",
+        "roadmap/evidence/F-0017/**",
+        "roadmap/evidence/F-0019/**",
+        "roadmap/evidence/F-0020/**",
+        "roadmap/evidence/F-0023/**"
+      ],
+      "spec_ref": "docs/ai-capabilities-research-2026-06.md; docs/feedback-3-verification.md",
+      "acceptance": [
+        "a single product model registry or constant is the only place a product model id is defined; promptToGraph.js, abSim.js, exportArtifacts.js and the demo select reference it (no scattered grok-3/grok-4 literals remain in product code)",
+        "the default product model is a current verified id such as grok-4.3 per the research doc; .claude/model-policy.json is unchanged",
+        "committed forge evidence artifacts are regenerated to match and update-state.ts --validate passes; existing forge tests stay green (assertions added, none removed)",
+        "bash scripts/verify.sh returns VERIFY: PASS (exit 0) and evidence is saved"
+      ]
     }
   ]
 }

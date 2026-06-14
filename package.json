@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
-  "description": "ForgeOps — Premium AI Agent Operations Platform (product built on the ai-operations-template engine). Visually build, orchestrate, monitor and export Grok-powered agent swarms and workflows.",
+  "description": "ForgeOps — a synthetic-data demo console for visually building, simulating, and exporting AI agent workflow graphs, built on the ai-operations-template engine: an autonomous, Claude-Code-driven AI coding factory governed by file-based guardrails.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -37,10 +37,13 @@
     "@types/node": "^25.9.2",
     "@types/react": "^19.1.4",
     "@types/react-dom": "^19.1.5",
-    "postcss": "^8.5.3",
+    "postcss": "^8.5.10",
     "shellcheck": "^4.1.0",
     "tailwindcss": "^4.1.6",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
+  },
+  "overrides": {
+    "postcss": "^8.5.10"
   }
 }
