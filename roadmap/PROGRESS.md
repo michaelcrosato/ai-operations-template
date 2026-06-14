@@ -1,3 +1,11 @@
+## 2026-06-14 — F-0024 (E2E), F-0030 (guard hardening), F-0027 (assertion-shield FP) shipped
+
+- **F-0024 (PR #53)** — Playwright E2E program: browser-level viewer-RBAC test, `e2e.yml` installs browsers and runs `verify.sh --e2e` (CI e2e job green). The E2E backlog item is delivered.
+- **F-0030 (PR #54)** — command guards broadened to cross-shell/indirection forms (PowerShell/.NET/Unix). Attempt 1 over-blocked nested relative cleanup paths (security-reviewer BLOCK); attempt 2 anchored the target to a path boundary. Deterrent-layer-not-boundary documented.
+- **F-0027 (PR #55)** — assertion-shield false-positive fixed (removing an in-branch-added test file no longer flags) WITHOUT weakening (gutting an existing assertion is still blocked — new contract test proves it). Attempt 1's AST-count approach was correctly BLOCKED for weakening and discarded; attempt 2 uses BASE-existence suppression.
+- **Session tally: 7 features merged through the full gate** (F-0021, F-0022, F-0023, F-0024, F-0025, F-0027, F-0030) + the earlier #44 remediation + GitHub hardening. Backlog now 31 features, **27 passing**. Three real security-reviewer BLOCKs were caught and fixed before merge.
+- **Remaining (groomed):** F-0026 (test the LLM judges — deferred per optional-modules.md until eval budget; mechanical guards already tested), F-0028 (src/forge TS migration), F-0029 (page.tsx decomposition), F-0031 (major dep upgrades). The three F-002x/003x large items are each a focused build cycle.
+
 ## 2026-06-14 — F-0025 shipped (path-guard self-bypass closed); backlog status
 
 - **F-0025 (PR #50)** merged + recorded: single-in_progress invariant in update-state.ts (writer rejects a 2nd concurrent in_progress; validate flags >1) + both hooks fail-closed on multiple-in_progress. Closes the self-bypass the F-0022 security review flagged. Evaluator PASS, security-reviewer APPROVE (no findings). 205 hook contract tests.
