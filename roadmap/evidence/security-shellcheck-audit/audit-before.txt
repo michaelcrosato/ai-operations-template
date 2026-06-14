@@ -1,0 +1,34 @@
+# npm audit (dev, BEFORE fix) — 2026-06-14T16:44:07Z
+# shellcheck devDep: ^4.1.0
+
+# npm audit report
+
+file-type  13.0.0 - 21.3.1
+Severity: moderate
+file-type affected by infinite loop in ASF parser on malformed input with zero-size sub-header - https://github.com/advisories/GHSA-5v7r-6r5c-r473
+file-type: ZIP Decompression Bomb DoS via [Content_Types].xml entry - https://github.com/advisories/GHSA-j47w-4g3g-c36v
+fix available via `npm audit fix --force`
+Will install shellcheck@3.1.0, which is a breaking change
+node_modules/file-type
+  @felipecrs/decompress-tarxz  <=5.0.4
+  Depends on vulnerable versions of @xhmikosr/decompress-tar
+  Depends on vulnerable versions of file-type
+  node_modules/@felipecrs/decompress-tarxz
+    shellcheck  2.0.0 - 2.1.0 || >=4.0.0
+    Depends on vulnerable versions of @felipecrs/decompress-tarxz
+    Depends on vulnerable versions of @xhmikosr/decompress-unzip
+    node_modules/shellcheck
+  @xhmikosr/decompress-tar  6.0.0 - 8.1.0
+  Depends on vulnerable versions of file-type
+  node_modules/@xhmikosr/decompress-tar
+  @xhmikosr/decompress-unzip  6.0.0 - 7.1.0
+  Depends on vulnerable versions of file-type
+  node_modules/@xhmikosr/decompress-unzip
+
+5 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+## production-only audit (--omit=dev):
+found 0 vulnerabilities

@@ -1,0 +1,33 @@
+# Gate comparison: baseline (shellcheck@4.1.0) vs fix (shellcheck@3.1.0) — same environment
+# Captured 2026-06-14T16:51:38Z. SHELLCHECKJS_BIN=/usr/bin/shellcheck (apt shellcheck 0.9.0; CI fetches 'latest' 0.10.x).
+
+## BASELINE (4.1.0, pre-change): hook contract tests:
+hook contract tests: 252 passed, 12 failed
+──── hook contract tests: FAILED (exit 1)
+## FIX (3.1.0, this change): hook contract tests:
+hook contract tests: 252 passed, 12 failed
+──── hook contract tests: FAILED (exit 1)
+
+## Identical failure sets prove the dependency change adds NO new failures.
+## Two environmental failure classes (both pass in CI):
+##  1) shellcheck stage: apt's shellcheck 0.9.0 flags SC2002 (useless cat) + SC2015 (A&&B||C)
+##     on pre-existing .sh scripts this diff never touches; CI's 'latest' binary does not.
+##  2) 12 contract tests that make real 'git commit' calls fail because this sandbox enforces
+##     commit signing (signing server returns 400 -> 'fatal: failed to write commit object');
+##     CI uses normal commits. Both wrappers (4.1.0 and 3.1.0) default SHELLCHECKJS_RELEASE='latest'.
+
+## BASELINE FAIL lines:
+──── shellcheck (hooks + gate scripts): FAILED (exit 1)
+  [FAIL] allows stop on clean tree (expected exit 0, got 2)
+  [FAIL] shield catches STAGED assertion deletion (expected exit 1, got 0)
+  [FAIL] shield catches deleted test FILE (expected exit 1, got 0)
+  [FAIL] shield catches ADDED test.skip (expected exit 1, got 0)
+  [FAIL] shield catches ADDED it.only (expected exit 1, got 0)
+  [FAIL] F-0027: shield still blocks gutting an existing assertion to a tautology (expected exit 1, got 0)
+  [FAIL] shield rename-detection: rename+deleted assertion blocked (exit 1) (expected exit 1, got 0)
+  [FAIL] shield rename-detection: in-place deletion still blocked (exit 1) (expected exit 1, got 0)
+  [FAIL] shield module-decl FP: deleting real assertion still blocked (exit 1) (expected exit 1, got 0)
+  [FAIL] shield module-decl FP: require-in-assertion line still blocked (exit 1) (expected exit 1, got 0)
+  [FAIL] shield module-decl FP: prefix-bypass (require;+assertion) still blocked (exit 1) (expected exit 1, got 0)
+  [FAIL] F-0026 corpus: weakened-assertion diff BLOCKED by assertion-shield (expected exit 1, got 0)
+──── hook contract tests: FAILED (exit 1)

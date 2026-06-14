@@ -37,7 +37,7 @@
     "@types/react": "^19.1.4",
     "@types/react-dom": "^19.1.5",
     "postcss": "^8.5.10",
-    "shellcheck": "^4.1.0",
+    "shellcheck": "^3.1.0",
     "tailwindcss": "^4.1.6",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
