@@ -1020,6 +1020,8 @@
         "components/**",
         "lib/**",
         "tests/**",
+        "src/forge/**",
+        "package.json",
         "roadmap/evidence/F-0029/**"
       ],
       "spec_ref": "docs/feedback-3-verification.md",
