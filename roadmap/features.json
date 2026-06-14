@@ -741,9 +741,9 @@
         "lib/**",
         "src/forge/rbac.js",
         "src/forge/rbac.test.js",
-        "tests/**",
-        "e2e/**",
-        "playwright.config.ts",
+        "src/forge/canEdit.js",
+        "src/forge/canEdit.test.js",
+        "package.json",
         "roadmap/evidence/F-0021/**"
       ],
       "spec_ref": "roadmap/briefs/F-0018.md AC3; docs/feedback-3-verification.md",

@@ -73,6 +73,22 @@ test('check: editor allows read+mutate-graph, denies run-control/manage', () => 
   assert.equal(check('editor', 'workspace', 'manage'), 'deny', 'editor cannot manage');
 });
 
+// F-0021 (security fix): editor must never exceed admin's reach on org/billing
+// resources — the resource arg constrains editor mutations, not just the action.
+test('check: editor cannot mutate org/billing resources (no privilege escalation past admin)', () => {
+  // admin is denied these; editor (lower privilege) must be denied too
+  assert.equal(check('editor', 'billing', 'edit'), 'deny', 'editor cannot edit billing');
+  assert.equal(check('editor', 'subscription', 'edit'), 'deny', 'editor cannot edit subscription');
+  assert.equal(check('editor', 'plan', 'edit'), 'deny', 'editor cannot edit plan');
+  assert.equal(check('editor', 'org', 'edit'), 'deny', 'editor cannot edit org');
+  assert.equal(check('editor', 'seat', 'edit'), 'deny', 'editor cannot edit seats');
+  // and a resource outside the editor-mutable set is default-denied
+  assert.equal(check('editor', 'secrets', 'edit'), 'deny', 'editor cannot edit arbitrary resources');
+  // sanity: editor's allowed mutations still work, and editor never exceeds admin
+  assert.equal(check('editor', 'graph', 'edit'), 'allow', 'editor can still edit graph');
+  assert.equal(check('admin', 'billing', 'edit'), 'deny', 'admin baseline: billing denied');
+});
+
 test('check: viewer read-only across multiple resources', () => {
   assert.equal(check('viewer', 'graph', 'read'), 'allow');
   assert.equal(check('viewer', 'logs', 'read'), 'allow');
