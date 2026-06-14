@@ -409,6 +409,17 @@ check "shield catches ADDED it.only" 1 "$(cd "$AS" && BASE_BRANCH=base node "$TS
 ( cd "$AS" && printf 'test("new healthy test", () => {\n  expect(2).toBe(2);\n});\n' >> tests/a.test.js && git add -A )
 check "shield allows ADDED healthy test" 0 "$(cd "$AS" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
 ( cd "$AS" && git reset -q --hard )
+# F-0027: removing/editing a test file CREATED IN THIS BRANCH (absent on base) removes no
+# pre-existing coverage → must PASS (the false positive attempt 1 set out to fix).
+( cd "$AS" && printf 'test("branch-new", () => {\n  expect(9).toBe(9);\n});\n' > tests/branch_new.test.js && git add -A && git commit -qm addnew )
+( cd "$AS" && git rm -q tests/branch_new.test.js )
+check "F-0027: shield allows removing an in-branch-added test file" 0 "$(cd "$AS" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+( cd "$AS" && git reset -q --hard base )
+# F-0027 (no-weakening): gutting an EXISTING test's assertion into a tautology deletes the
+# original assertion line → must still be CAUGHT (the regression attempt 1 introduced).
+( cd "$AS" && printf 'test("a", () => {\n  expect(true).toBe(true);\n});\n' > tests/a.test.js && git add -A )
+check "F-0027: shield still blocks gutting an existing assertion to a tautology" 1 "$(cd "$AS" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+( cd "$AS" && git reset -q --hard base )
 rm -rf "$AS"
 
 # F-0016: a first commit before the upstream base exists must NOT leak git's

@@ -63,6 +63,29 @@ function scanDiffForWeakening(diffText: string): Violation[] {
   const lines = diffText.split('\n');
   let currentFile = '';
   let currentNewFile = '';
+
+  // F-0027: distinguish "a pre-existing test lost coverage" (a real weakening, block)
+  // from "a test file created in THIS branch is being removed/edited" (removes no
+  // pre-existing coverage, so not a weakening). We only relax when BASE is available
+  // to compare against — with no upstream we cannot tell, so we stay strict.
+  const baseAvailable = refExists(BASE_BRANCH);
+  const baseExistsCache = new Map<string, boolean>();
+  const existedOnBase = (file: string): boolean => {
+    if (!file) return false;
+    const cached = baseExistsCache.get(file);
+    if (cached !== undefined) return cached;
+    let exists = false;
+    try {
+      // git cat-file -e BASE:path exits 0 iff the path exists on BASE. BASE_BRANCH is
+      // env-supplied → execFileSync arg array (no shell), same hardening as getDiff().
+      execFileSync('git', ['cat-file', '-e', `${BASE_BRANCH}:${file}`], { stdio: 'pipe' });
+      exists = true;
+    } catch {
+      exists = false;
+    }
+    baseExistsCache.set(file, exists);
+    return exists;
+  };
   // Added-line weakening (F-0009): skipping a test mutes it as effectively as
   // deleting its assertions.
   const skipPatterns = [/\.(only|skip)\s*\(/, /\b(xit|xdescribe|xtest)\s*\(/];
@@ -124,7 +147,12 @@ function scanDiffForWeakening(diffText: string): Violation[] {
         }
 
         const containsAssertion = assertionKeywords.some(keyword => cleanedLine.includes(keyword));
-        if (containsAssertion) {
+        // F-0027: only a deletion from a file that EXISTED on BASE is a weakening
+        // (when base is unavailable, stay strict and flag). A branch-new test file
+        // being removed/edited removes no pre-existing coverage → not flagged. The
+        // strict scan is otherwise unchanged, so content-gutting in an existing test
+        // (a deleted assertion line) is still blocked.
+        if (containsAssertion && (!baseAvailable || existedOnBase(currentFile))) {
           violations.push({
             file: currentFile,
             line: cleanedLine
