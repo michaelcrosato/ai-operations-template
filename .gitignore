@@ -28,6 +28,10 @@ Thumbs.db
 # Claude Code local (personal) overrides — project settings stay checked in
 .claude/settings.local.json
 
+# Ephemeral agent worktrees (workflow/Agent isolation) — auto-created/removed,
+# never committed; tracking them trips the Stop hook with transient dirty state
+.claude/worktrees/
+
 # Playwright / E2E artifacts (evidence is curated into roadmap/evidence/ instead)
 test-results/
 playwright-report/
