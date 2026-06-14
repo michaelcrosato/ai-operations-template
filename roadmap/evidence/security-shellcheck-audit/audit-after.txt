@@ -1,0 +1,7 @@
+# npm audit (dev, AFTER fix) — 2026-06-14T16:44:27Z
+# shellcheck devDep: ^3.1.0
+
+found 0 vulnerabilities
+
+## production-only audit (--omit=dev):
+found 0 vulnerabilities

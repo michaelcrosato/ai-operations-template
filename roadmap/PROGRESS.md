@@ -8,6 +8,14 @@ Picked up the two items deliberately deferred earlier and finished them as caref
 - **Capstone verification:** an independent 6-agent adversarial workflow on develop confirmed earlier — no privilege escalation, guardrails not weakened (15 hostile bypass attempts blocked), migration sound, all claims present, gate green.
 - **Final state: 33 features, 33 passing, 0 blocked, 0 pending.** Every named queue item (F-0021/22/23), Q-0003, and the entire recommended backlog (TS migration, decomposition, AST/judge tests, E2E program, guard hardening, **all** major dep upgrades incl. Next 16) are done. Open: the shellcheck dev-audit follow-up (#67) is a spawned-session PR still resolving a merge conflict — a dev-only advisory cleanup, not queue work.
 
+## 2026-06-14 — Security hygiene: cleared 5 moderate npm-audit advisories (dev-only `file-type`)
+
+Scoped `fix` off `develop` (operator-reported). `npm audit` flagged 5 moderate advisories — GHSA-5v7r-6r5c-r473 (ASF parser infinite loop) and GHSA-j47w-4g3g-c36v (ZIP decompression-bomb DoS) — all from `file-type@20.5.0`, dragged in transitively by the `shellcheck` devDependency wrapper. Production was already clean (`npm audit --omit=dev` = 0); this was dev-tooling only.
+
+- **Fix:** pinned the `shellcheck` wrapper to `^3.1.0` (npm's blessed `fixAvailable`), which drops the modern `@xhmikosr/decompress-*` extraction chain (and its vulnerable `file-type@20`) for the legacy `decompress@4.2.1` path whose old file-type is below the advisory floor. `npm audit` is now **0/0**.
+- **Why not an `overrides` bump of `file-type`:** no patched 20.x exists (fix only lands in `21.3.2+`), so an override would force an *untested major* onto the wrapper, and the shellcheck binary download is network-blocked in the build container so it couldn't be runtime-verified.
+- **No behavior change to the gate:** both wrapper 4.1.0 and 3.1.0 default `SHELLCHECKJS_RELEASE` to the same `latest` shellcheck binary — only the npm-side archive-extraction tooling changes, not the analysis binary. Verified: every non-environmental `verify.sh` stage stays green, and a clean-tree baseline run produced an identical pass/fail set (proof in `roadmap/evidence/security-shellcheck-audit/gate-comparison.txt`). The two locally-failing stages (shellcheck SC2002/SC2015 under the container's older apt binary; 12 contract tests that make real `git commit`s the sandbox signer rejects) fail identically without this change and pass in CI.
+
 ## 2026-06-14 — Queue FINISHED: F-0026 + F-0028 shipped (blockers removed), Q-0003 resolved — 31/31 passing
 
 Drove the previously blocked/deferred review-queue items to a genuine terminal **done**, not a stopping point.
