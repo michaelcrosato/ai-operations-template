@@ -3,14 +3,14 @@
 ──── typecheck: OK
 
 ──── verify: lint ────
-Checked 6 files in 6ms. No fixes applied.
+Checked 6 files in 20ms. No fixes applied.
 ──── lint: OK
 
 ──── verify: unit tests ────
-✔ getHealth() reports status ok and the correct service name (0.8616ms)
-✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.125ms)
-✔ getHealth() uptime_s is a non-negative number (0.0632ms)
-✔ CLI: node src/health.js exits 0 and prints JSON with status ok (32.2298ms)
+✔ getHealth() reports status ok and the correct service name (2.1178ms)
+✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.2991ms)
+✔ getHealth() uptime_s is a non-negative number (0.1631ms)
+✔ CLI: node src/health.js exits 0 and prints JSON with status ok (82.8592ms)
 ℹ tests 4
 ℹ suites 0
 ℹ pass 4
@@ -18,22 +18,22 @@ Checked 6 files in 6ms. No fixes applied.
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 79.0709
+ℹ duration_ms 208.5631
 ──── unit tests: OK
 (no build script — skipping)
 ──── test coverage guard: OK (every src test file is wired into npm test)
 (placeholder check: template repo — self-skipped; activates after adoption rename)
 
 ──── verify: features.json schema + invariants ────
-[update-state] valid: 16 features, 15 passing (evidence re-verified).
+[update-state] valid: 18 features, 16 passing (evidence re-verified).
 ──── features.json schema + invariants: OK
 
 ──── verify: assertion shield ────
-[32m[Assertion Shield] Check passed. No deleted assertions detected in test files.[0m
+[Assertion Shield] Check passed. No deleted assertions detected in test files.
 ──── assertion shield: OK
 
 ──── verify: engine lint (biome) ────
-Checked 4 files in 7ms. No fixes applied.
+Checked 4 files in 21ms. No fixes applied.
 ──── engine lint (biome): OK
 
 ──── verify: shellcheck (hooks + gate scripts) ────
@@ -92,16 +92,6 @@ Checked 4 files in 7ms. No fixes applied.
   [PASS] fail-closed without jq/node (sed branch)
   [PASS] sed branch ignores decoy file_path in content
   [PASS] sed branch still allows other files
-── verify-gate.sh per-feature authz (F-0007, AC1/2/3)
-  [PASS] no-active-feature (orchestrator) allows file outside any feature scope
-  [PASS] no-active-feature (orchestrator) allows file in scripts
-  [PASS] allows edit inside authorized_paths (scripts/**)
-  [PASS] allows edit inside authorized_paths (.claude/hooks/**)
-  [PASS] blocks edit outside authorized_paths
-  [PASS] blocks edit to package.json (outside F-9999 authorized_paths)
-  [PASS] blocks edit inside forbidden_paths
-  [PASS] blocks when active feature unknown (fail-closed)
-  [PASS] blocks when active feature has empty authorized_paths (fail-closed)
 ── commit-on-stop.sh
   [PASS] blocks stop on dirty tree
   [PASS] allows stop on clean tree
@@ -109,7 +99,7 @@ Checked 4 files in 7ms. No fixes applied.
 ── session-brief.sh
   [PASS] exits 0
   [PASS] emits brief content
-── update-state.ts (fixture: tmp/hook-tests)
+── update-state.ts (fixture: tmp/hook-tests-qlXNz4)
   [PASS] validate accepts valid fixture
   [PASS] validate exits 0 despite stale policy
   [PASS] validate warns on stale model-policy
@@ -157,7 +147,7 @@ Checked 4 files in 7ms. No fixes applied.
   [PASS] delegates to seed script (success)
   [PASS] propagates seed script failure
   [PASS] circular delegation fails fast
-── update-state.ts invariants (fixture: tmp/hook-tests)
+── update-state.ts invariants (fixture: tmp/hook-tests-qlXNz4)
   [PASS] status:done without passes is rejected
   [PASS] dependency cycle is rejected
   [PASS] validate audits evidence of passing features (missing file rejected)
@@ -228,9 +218,20 @@ Checked 4 files in 7ms. No fixes applied.
   [PASS] ship: refuses when base cannot be determined
   [PASS] ship: undetermined-base PR not merged
   [PASS] ship: merge failure propagates
+── path-guard.sh
+  [PASS] pg: no active feature allows everything
+  [PASS] pg: no active feature allows auth path
+  [PASS] pg: active feature allows authorized file
+  [PASS] pg: active feature allows package.json
+  [PASS] pg: active feature blocks unauthorized file
+  [PASS] pg: active feature blocks forbidden path
+  [PASS] pg: active feature blocks forbidden subpath
+  [PASS] pg: active feature handles backslashes in authorized path
+  [PASS] pg: active feature resolves relative traversal in authorized path
+  [PASS] pg: non-existent active feature allows everything
 
-hook contract tests: 173 passed, 0 failed
+hook contract tests: 174 passed, 0 failed
 ──── hook contract tests: OK
 
-VERIFY-COMMIT: 5f2bb7cf5bb8b9417b7dfb2de9991746b61fcf68 @ 2026-06-13T17:17:52Z
+VERIFY-COMMIT: 32f4835be3fb7de89006a0123b61c8931e2709dd @ 2026-06-14T00:31:12Z
 VERIFY: PASS (exit 0)
