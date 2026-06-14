@@ -63,6 +63,7 @@ make_fake_bin "$PFIX/missing-node" "MINGW64_NT-10.0" "3.5.4" no yes yes
 NODE_OUT="$(PATH="$PFIX/missing-node" "$BASH" "$PREFLIGHT" 2>&1 >/dev/null)"; NODE_RC=$?
 check "preflight: missing node fails" 1 "$NODE_RC"
 printf '%s' "$NODE_OUT" | grep -qi "node" ; check "preflight: missing node message names node" 0 "$?"
+printf '%s' "$NODE_OUT" | grep -qi "wsl" ; check "preflight: missing-tool message is not WSL-specific" 1 "$?"
 
 rm -rf "$PFIX"
 
