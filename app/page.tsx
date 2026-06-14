@@ -141,7 +141,7 @@ export default function ForgeOpsLanding() {
           The operating system<br />for AI agent teams.
         </h1>
         <p className="text-2xl text-white/70 max-w-3xl mx-auto mb-6 tracking-tight">
-          Visually orchestrate Grok-powered swarms, monitor every token and dollar in real time, 
+          Visually orchestrate multi-agent swarms, monitor every token and dollar in real time,
           iterate with simulation &amp; A/B, and export production-grade self-hosted agents.
         </p>
         <p className="text-sm text-emerald-400/90 max-w-2xl mx-auto mb-10 tracking-tight">
@@ -156,16 +156,16 @@ export default function ForgeOpsLanding() {
             <Play className="mr-2 h-4 w-4" /> See 60-second demo
           </Button>
         </div>
-        <p className="mt-4 text-xs text-white/50">No credit card • Seeded with realistic production data • Runs instantly</p>
+        <p className="mt-4 text-xs text-white/50">No credit card • Seeded with synthetic demo data • Runs instantly</p>
       </div>
 
       {/* Trust bar */}
       <div className="border-y border-white/10 py-5">
         <div className="max-w-5xl mx-auto px-8 flex flex-wrap items-center justify-center gap-x-10 gap-y-3 text-xs uppercase tracking-[3px] text-white/40">
-          <div>Used by teams at</div>
-          <div className="text-white/60">Acme Research • Linear Labs • Vercel • Notion AI • Replicate</div>
+          <div>A self-building demo</div>
+          <div className="text-white/60">Synthetic data • no real customers • built and maintained entirely by its own AI engine</div>
           <div className="hidden md:block">•</div>
-          <div>4,812 workflows shipped this week</div>
+          <div>Open source on GitHub</div>
         </div>
       </div>
 
@@ -222,7 +222,7 @@ export default function ForgeOpsLanding() {
             </tbody>
           </table>
         </div>
-        <p className="text-[10px] text-white/40 mt-3 text-center tracking-widest">Facts verified live 2026-06-12 against primary sources. Export is the escape hatch we actually deliver.</p>
+        <p className="text-[10px] text-white/40 mt-3 text-center tracking-widest">Illustrative comparison for this demo — synthetic, not independently verified. Export is the escape hatch we actually deliver.</p>
       </div>
 
       {/* The Demo Section — immediate delight */}
