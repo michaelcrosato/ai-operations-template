@@ -20,6 +20,9 @@ import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { DEMO_SEED, cloneSeed, getWorkflowById, getExecutionsForWorkflow, getTemplateById, getSyntheticDatasets, generateGraphAwareLog, getTeamForWorkspace, promptToGraph, getSeedGraphs, canIntervene as userCanIntervene, canEdit as userCanEdit, computeGraphCost, getNodeCount, getEdgeCount, type DemoSeed, type WorkflowGraph, type Execution, type Template, type SyntheticDataset, type NodeType } from '@/lib/seed';
 import { DEFAULT_MODEL, MODEL_OPTIONS } from '@/lib/models';
+import { useDemoAuth } from './_hooks/useDemoAuth';
+import { MetricsCards } from './_components/MetricsCards';
+import { LiveTickerPanel } from './_components/LiveTickerPanel';
 
 // @xyflow/react — full interactive canvas (already in deps per brief)
 import {
@@ -483,8 +486,8 @@ export default function ForgeOpsDemo() {
   const detailExec = detailExecId ? seed.executions.find(e => e.id === detailExecId) : null;
   const runningNodeIds = (selectedExec?.trace || []) as string[];
 
-  const canIntervene = userCanIntervene(persona);
-  const canEdit = userCanEdit(persona); // simple RBAC demo via seed helper (exercises pure gating for tests)
+  // F-0029: centralized auth — single hook replaces the three inline declarations
+  const { canEdit, canIntervene, rejectViewerEdit } = useDemoAuth(persona);
 
   // Categories for filters
   const allCategories = React.useMemo(() => Array.from(new Set(seed.templates.map(t => t.category))), [seed.templates]);
@@ -689,10 +692,7 @@ export default function ForgeOpsDemo() {
     toast.success('Live simulation started — nodes will highlight as trace advances');
   }
 
-  // F-0021: toast helper for viewer read-only rejection (mirrors canIntervene pattern)
-  function rejectViewerEdit(action = 'edit the graph') {
-    toast.error(`Read-only: viewers cannot ${action}`);
-  }
+  // F-0029: rejectViewerEdit is now provided by useDemoAuth hook (see _hooks/useDemoAuth.ts)
 
   // F-0018: prompt -> high quality nodes (uses lib helper + seed realism)
   function handleCreateFromPrompt(text: string) {
@@ -1198,21 +1198,14 @@ services:
             {/* OPERATIONS CENTER */}
             {view === 'ops' && (
               <>
-                {/* Overview cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[
-                    { label: 'Active Runs', value: activeRuns, sub: 'across all workspaces', icon: <Activity className="h-4 w-4" /> },
-                    { label: 'Workspace Spend', value: `$${totalSpend.toFixed(2)}`, sub: 'this month', icon: <TrendingUp className="h-4 w-4" /> },
-                    { label: 'Success Rate', value: `${successRate}%`, sub: `${wsExecutions.length} runs`, icon: <CheckCircle className="h-4 w-4" /> },
-                    { label: 'Marketplace Templates', value: templateCount, sub: 'ready to import', icon: <Layers className="h-4 w-4" /> },
-                  ].map((c, i) => (
-                    <Card key={i} className="p-4">
-                      <div className="text-white/50 text-xs flex items-center gap-2">{c.icon}{c.label}</div>
-                      <div className="text-4xl font-semibold tabular-nums tracking-tighter mt-1">{c.value}</div>
-                      <div className="text-[11px] text-white/40 mt-0.5">{c.sub}</div>
-                    </Card>
-                  ))}
-                </div>
+                {/* Overview cards — F-0029: extracted to MetricsCards panel */}
+                <MetricsCards
+                  activeRuns={activeRuns}
+                  totalSpend={totalSpend}
+                  successRate={successRate}
+                  executionCount={wsExecutions.length}
+                  templateCount={templateCount}
+                />
 
                 {/* Cost trend + Live ticker side by side */}
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
@@ -1235,27 +1228,19 @@ services:
                     <div className="text-[10px] text-white/40 mt-2">Trend is computed live from the cloned seed executions for the selected workspace.</div>
                   </Card>
 
-                  <Card className="lg:col-span-2 p-4 flex flex-col">
-                    <div className="font-medium mb-2 flex items-center gap-2"><Zap className="h-4 w-4" /> Live Ticker — Running Executions</div>
-                    <div className="space-y-2 overflow-auto flex-1 text-sm">
-                      {seed.executions.filter(e => e.status === 'running').length === 0 && (
-                        <div className="empty-state py-6 text-xs">No runs currently executing. Start one from the canvas controls or Marketplace.</div>
-                      )}
-                      {seed.executions.filter(e => e.status === 'running').map(exec => {
-                        const wf = getWorkflowById(seed, exec.workflowId);
-                        return (
-                          <button key={exec.id} onClick={() => openExecutionDetail(exec)} className="w-full text-left border border-white/10 rounded-xl px-3 py-2 hover:bg-white/5 flex items-center justify-between">
-                            <div>
-                              <div className="font-medium">{wf?.name || exec.workflowId} <span className="text-white/40">· {exec.id}</span></div>
-                              <div className="text-[11px] text-white/50">{exec.triggeredBy} • ${(exec.totalCost || 0).toFixed(2)} • {Math.round((exec.durationMs || 0)/1000)}s</div>
-                            </div>
-                            <Badge variant="success">RUNNING</Badge>
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div className="text-[10px] text-white/40 mt-2">Ticker uses graph-aware log generation from seed graphs (see lib/seed.ts).</div>
-                  </Card>
+                  {/* Live Ticker — F-0029: extracted to LiveTickerPanel component */}
+                  {(() => {
+                    const runningExecs = seed.executions.filter(e => e.status === 'running');
+                    const wfNameMap: Record<string, string> = {};
+                    seed.workflows.forEach(wf => { wfNameMap[wf.id] = wf.name; });
+                    return (
+                      <LiveTickerPanel
+                        runningExecutions={runningExecs}
+                        workflowNameMap={wfNameMap}
+                        onExecutionClick={openExecutionDetail}
+                      />
+                    );
+                  })()}
                 </div>
 
                 {/* Recent executions table */}
