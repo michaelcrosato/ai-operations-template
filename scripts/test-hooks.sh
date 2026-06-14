@@ -159,6 +159,40 @@ cat > "$AST" <<'AEOF'
     "priority": 1, "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null } ] }
 AEOF
 check "blocks when active feature has empty authorized_paths (fail-closed)" 2 "$(CLAUDE_ACTIVE_FEATURE=F-EMPTY STATE_FILE="$AST" hook_file 'scripts/verify.sh')"
+
+# F-0022: mechanical derivation — no CLAUDE_ACTIVE_FEATURE, but exactly one in_progress in fixture.
+# helper: hook_file_s <state_file> <path> — run verify-gate with explicit STATE_FILE, no active feature env.
+hook_file_s() { printf '{"tool_input":{"file_path":"%s"}}' "$2" | STATE_FILE="$1" bash "$HOOKS/verify-gate.sh" >/dev/null 2>&1; echo $?; }
+cat > "$AST" <<'AEOF'
+{ "features": [
+  { "id": "F-9999", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+    "acceptance": ["a"], "authorized_paths": ["scripts/**", ".claude/hooks/**"], "forbidden_paths": ["scripts/forbidden-for-9999.ts"],
+    "dependencies": [], "priority": 1, "status": "in_progress", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null }
+] }
+AEOF
+check "F-0022: derived from in_progress blocks out-of-scope edit (no env)"  2 "$(hook_file_s "$AST" 'src/some-ui.tsx')"
+check "F-0022: derived from in_progress allows in-scope edit (no env)"      0 "$(hook_file_s "$AST" 'scripts/verify.sh')"
+check "F-0022: derived from in_progress blocks forbidden path (no env)"     2 "$(hook_file_s "$AST" 'scripts/forbidden-for-9999.ts')"
+# zero in_progress → permissive fallback (no env)
+cat > "$AST" <<'AEOF'
+{ "features": [
+  { "id": "F-9999", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+    "acceptance": ["a"], "authorized_paths": ["scripts/**"], "forbidden_paths": [],
+    "dependencies": [], "priority": 1, "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null }
+] }
+AEOF
+check "F-0022: zero in_progress → permissive fallback (no env) allows any file" 0 "$(hook_file_s "$AST" 'src/some-ui.tsx')"
+# env var still overrides derivation (even when state has in_progress)
+cat > "$AST" <<'AEOF'
+{ "features": [
+  { "id": "F-9999", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+    "acceptance": ["a"], "authorized_paths": ["scripts/**", ".claude/hooks/**"], "forbidden_paths": [],
+    "dependencies": [], "priority": 1, "status": "in_progress", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null }
+] }
+AEOF
+check "F-0022: env var overrides derived feature (env blocks when outside authz)" 2 "$(CLAUDE_ACTIVE_FEATURE=F-9999 STATE_FILE="$AST" hook_file 'src/some-ui.tsx')"
+check "F-0022: env var overrides derived feature (env allows inside authz)"       0 "$(CLAUDE_ACTIVE_FEATURE=F-9999 STATE_FILE="$AST" hook_file 'scripts/verify.sh')"
+
 rm -rf "$AFIX"
 
 echo "── commit-on-stop.sh"
@@ -640,7 +674,7 @@ rm -rf "$SHIP_FIX"
 echo "── path-guard.sh"
 PG_FIX="$(mktemp -d "tmp/path-guard-test-XXXXXX")"
 PG_STATE="$PG_FIX/features.json"
-
+# Fixture with exactly ONE in_progress feature (used for derivation + explicit-env tests)
 cat > "$PG_STATE" << 'EOF'
 {
   "features": [
@@ -664,6 +698,72 @@ cat > "$PG_STATE" << 'EOF'
 }
 EOF
 
+# Fixture with ZERO in_progress features (for permissive-fallback tests)
+PG_STATE_PENDING="$PG_FIX/features-pending.json"
+cat > "$PG_STATE_PENDING" << 'EOF'
+{
+  "features": [
+    {
+      "id": "F-9501",
+      "epic": "test",
+      "title": "Test Path Guard",
+      "spec_ref": "test",
+      "description": "test",
+      "acceptance": ["a"],
+      "authorized_paths": ["src/**", "package.json"],
+      "forbidden_paths": ["src/api/auth/**", "roadmap/**"],
+      "priority": 1,
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null
+    }
+  ]
+}
+EOF
+
+# Fixture with TWO in_progress features (for multiple-in_progress permissive-fallback tests)
+PG_STATE_MULTI="$PG_FIX/features-multi.json"
+cat > "$PG_STATE_MULTI" << 'EOF'
+{
+  "features": [
+    {
+      "id": "F-9501",
+      "epic": "test",
+      "title": "Test Path Guard A",
+      "spec_ref": "test",
+      "description": "test",
+      "acceptance": ["a"],
+      "authorized_paths": ["src/**"],
+      "forbidden_paths": [],
+      "priority": 1,
+      "status": "in_progress",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null
+    },
+    {
+      "id": "F-9502",
+      "epic": "test",
+      "title": "Test Path Guard B",
+      "spec_ref": "test",
+      "description": "test",
+      "acceptance": ["a"],
+      "authorized_paths": ["scripts/**"],
+      "forbidden_paths": [],
+      "priority": 2,
+      "status": "in_progress",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null
+    }
+  ]
+}
+EOF
+
 run_pg() {
   local filepath="$1"
   local feat="${2:-}"
@@ -676,8 +776,19 @@ run_pg() {
   fi
 }
 
-check "pg: no active feature allows everything" 0 "$(run_pg 'roadmap/features.json')"
-check "pg: no active feature allows auth path"  0 "$(run_pg 'src/api/auth/login.ts')"
+# run_pg_s <filepath> <state_file> — run path-guard with explicit state, no active feature env var
+run_pg_s() {
+  local filepath="$1" sf="$2"
+  printf '{"tool_input":{"file_path":"%s"}}' "$filepath" | STATE_FILE="$sf" bash "$HOOKS/path-guard.sh" >/dev/null 2>&1
+  echo $?
+}
+
+# --- zero in_progress → permissive fallback (no env var, no derived feature) ---
+# (Updated for F-0022: fixture must have no single in_progress to get allow-all behavior)
+check "pg: zero in_progress (no env) allows out-of-scope file" 0 "$(run_pg_s 'roadmap/features.json' "$PG_STATE_PENDING")"
+check "pg: zero in_progress (no env) allows forbidden path"    0 "$(run_pg_s 'src/api/auth/login.ts' "$PG_STATE_PENDING")"
+
+# --- explicit CLAUDE_ACTIVE_FEATURE env var (unchanged behavior) ---
 check "pg: active feature allows authorized file" 0 "$(run_pg 'src/health.js' 'F-9501')"
 check "pg: active feature allows package.json"    0 "$(run_pg 'package.json' 'F-9501')"
 check "pg: active feature blocks unauthorized file" 2 "$(run_pg 'scripts/verify.sh' 'F-9501')"
@@ -686,6 +797,15 @@ check "pg: active feature blocks forbidden subpath" 2 "$(run_pg 'roadmap/feature
 check "pg: active feature handles backslashes in authorized path" 0 "$(run_pg 'src\\health.js' 'F-9501')"
 check "pg: active feature resolves relative traversal in authorized path" 0 "$(run_pg 'src/api/auth/../../health.js' 'F-9501')"
 check "pg: non-existent active feature allows everything" 0 "$(run_pg 'scripts/verify.sh' 'F-9999')"
+
+# --- F-0022: mechanical derivation (no env var, exactly one in_progress in fixture) ---
+check "pg F-0022: derived feature blocks out-of-scope edit (no env)" 2 "$(run_pg_s 'scripts/verify.sh' "$PG_STATE")"
+check "pg F-0022: derived feature allows in-scope edit (no env)"     0 "$(run_pg_s 'src/health.js' "$PG_STATE")"
+check "pg F-0022: derived feature blocks forbidden path (no env)"    2 "$(run_pg_s 'src/api/auth/login.ts' "$PG_STATE")"
+# env var overrides derived feature — explicit env takes precedence
+check "pg F-0022: env var overrides derivation (F-9999 allows everything)" 0 "$(run_pg 'scripts/verify.sh' 'F-9999')"
+# multiple in_progress → permissive fallback (no env)
+check "pg F-0022: multiple in_progress (no env) → permissive (allows any file)" 0 "$(run_pg_s 'roadmap/ROADMAP.md' "$PG_STATE_MULTI")"
 
 rm -rf "$PG_FIX"
 
