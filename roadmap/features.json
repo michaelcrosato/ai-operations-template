@@ -721,9 +721,14 @@
       "dependencies": [
         "F-0018"
       ],
-      "status": "pending",
-      "passes": false,
-      "evidence": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0021/verify.log",
+        "roadmap/evidence/F-0021/ui-walkthrough.md",
+        "roadmap/evidence/F-0021/viewer-readonly.png",
+        "roadmap/evidence/F-0021/rbac-tests.txt"
+      ],
       "attempts": 0,
       "blocked_reason": null,
       "forbidden_paths": [
@@ -758,9 +763,12 @@
       "dependencies": [
         "F-0007"
       ],
-      "status": "pending",
-      "passes": false,
-      "evidence": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0022/verify.log",
+        "roadmap/evidence/F-0022/hook-tests.txt"
+      ],
       "attempts": 0,
       "blocked_reason": null,
       "forbidden_paths": [
@@ -789,9 +797,11 @@
     },
     {
       "dependencies": [],
-      "status": "pending",
-      "passes": false,
-      "evidence": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0023/verify.log"
+      ],
       "attempts": 0,
       "blocked_reason": null,
       "forbidden_paths": [
@@ -855,6 +865,223 @@
         "e2e/ suite includes a viewer-RBAC spec proving a viewer cannot mutate the canvas and an owner can; plus at least one core smoke flow",
         "e2e.yml installs Playwright browsers and runs bash scripts/verify.sh --e2e (no longer skips); verify.sh --e2e returns VERIFY: PASS (exit 0) locally and in CI",
         "evidence under roadmap/evidence/F-0024/ includes the --e2e log and a screenshot"
+      ]
+    },
+    {
+      "dependencies": [
+        "F-0022"
+      ],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        "roadmap/features.json"
+      ],
+      "id": "F-0025",
+      "epic": "factory-hardening",
+      "priority": 1,
+      "title": "Enforce single in_progress feature so the path-guard cannot be self-bypassed",
+      "description": "Security-reviewer follow-up from F-0022: the path-authorization guard falls back to permissive when zero OR multiple features are in_progress, and update-state.ts does not prevent 2+ in_progress. An agent could set a second feature in_progress to disable the guard. Add a single-in_progress invariant in update-state.ts (validate + a status guard rejecting a 2nd concurrent in_progress) and make the hooks fail-closed (block writes) on multiple-in_progress instead of permissive.",
+      "authorized_paths": [
+        "scripts/update-state.ts",
+        "scripts/test-hooks.sh",
+        ".claude/hooks/verify-gate.sh",
+        ".claude/hooks/path-guard.js",
+        "roadmap/evidence/F-0025/**"
+      ],
+      "spec_ref": "docs/feedback-3-verification.md; F-0022 security review",
+      "acceptance": [
+        "update-state.ts status command rejects setting a feature in_progress when another is already in_progress; validate flags more-than-one in_progress as invalid",
+        "the hooks fail-closed (block write-like ops) when 2+ in_progress rather than allowing everything",
+        "contract tests in test-hooks.sh prove the 2nd in_progress is rejected by the writer and the multiple-in_progress hook path blocks; no existing assertion removed",
+        "bash scripts/verify.sh returns VERIFY PASS exit 0; evidence saved"
+      ]
+    },
+    {
+      "dependencies": [],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        "roadmap/features.json",
+        ".claude/agents/**"
+      ],
+      "id": "F-0026",
+      "epic": "factory-hardening",
+      "priority": 2,
+      "title": "Test the judges: deterministic behavioral fixtures for the evaluator and security-reviewer",
+      "description": "feedback-2 and the 5-source review both flag that there are zero behavioral tests for the prompts that grade everything else. Add the lean slice: deterministic fixtures (a weakened-assertion diff must be caught; a seeded access-control hole must be blocked; irrelevant evidence must be flagged NEEDS_WORK; a guard-evasion corpus) wired into the contract-test suite, advisory-first, so the judgment layer is itself tested against known-bad inputs.",
+      "authorized_paths": [
+        "scripts/test-hooks.sh",
+        "tests/judges/**",
+        "roadmap/evidence/F-0026/**"
+      ],
+      "spec_ref": "docs/feedback-2-verification.md item 29; docs/feedback-3-verification.md",
+      "acceptance": [
+        "a deterministic fixture set encodes known-bad inputs with expected verdicts",
+        "fixtures run in the contract suite or a documented advisory lane and pass; failures are loud",
+        "bash scripts/verify.sh returns VERIFY PASS exit 0; evidence saved"
+      ]
+    },
+    {
+      "dependencies": [],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        "roadmap/features.json"
+      ],
+      "id": "F-0027",
+      "epic": "factory-hardening",
+      "priority": 2,
+      "title": "AST-based assertion-shield (structural assertion counting; keep regex fallback)",
+      "description": "The assertion-shield uses keyword/line-diff matching, which false-positives on test renames (driving local bypass fatigue) and misses non-keyword assertions. Upgrade to parse test files with an AST (typescript or babel parser) and compare assertion-node counts/structure between BASE and HEAD; keep the regex shield as a fallback for unparseable diffs; CI still refuses any local bypass override.",
+      "authorized_paths": [
+        "scripts/assertion-shield.ts",
+        "scripts/test-hooks.sh",
+        "package.json",
+        "package-lock.json",
+        "roadmap/evidence/F-0027/**"
+      ],
+      "spec_ref": "docs/feedback-3-verification.md; docs/ai-capabilities-research-2026-06.md",
+      "acceptance": [
+        "assertion-shield parses test files into an AST and compares assertion counts/structure; a genuine rename no longer false-positives while a real deletion or weakening is still blocked",
+        "the regex approach remains a fallback for unparseable diffs; CI still refuses any bypass override",
+        "contract tests cover both the no-false-positive-on-rename case and the still-blocks-deletion case; bash scripts/verify.sh PASS"
+      ]
+    },
+    {
+      "dependencies": [
+        "F-0023"
+      ],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        "roadmap/features.json",
+        ".claude/**"
+      ],
+      "id": "F-0028",
+      "epic": "hardening",
+      "priority": 3,
+      "title": "Migrate src/forge from CommonJS to TypeScript so the core is type-checked and the frontend imports one source",
+      "description": "The core engine modules in src/forge are untyped CommonJS while the rest of the repo is TypeScript, so they escape tsc noEmit and the frontend duplicates promptToGraph in lib/seed.ts. Migrate src/forge to TypeScript, integrate into the typecheck/build, and have the frontend import the single implementation. Large, build-affecting; keep tests green throughout.",
+      "authorized_paths": [
+        "src/forge/**",
+        "lib/**",
+        "app/**",
+        "tsconfig.json",
+        "package.json",
+        "package-lock.json",
+        "roadmap/evidence/F-0028/**"
+      ],
+      "spec_ref": "docs/feedback-3-verification.md",
+      "acceptance": [
+        "src/forge modules are TypeScript, type-checked by tsc noEmit, with tests preserved or ported (assertions added, none removed)",
+        "the frontend imports the single forge implementation instead of the duplicate heuristic in lib/seed.ts",
+        "bash scripts/verify.sh returns VERIFY PASS exit 0; evidence saved"
+      ]
+    },
+    {
+      "dependencies": [
+        "F-0021"
+      ],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        "roadmap/features.json",
+        ".claude/**"
+      ],
+      "id": "F-0029",
+      "epic": "hardening",
+      "priority": 3,
+      "title": "Decompose app/demo/page.tsx (about 1700 lines) into hooks and panels with focused tests",
+      "description": "The demo page concentrates state, graph rendering, RBAC decisions, export flows, and toasts in one large file. Extract a useWorkflowCanvas hook plus panel components (canvas, node inspector, run controls, metrics, timeline), centralize authorization, and add tests around graph-mutation and permission logic independent of React rendering.",
+      "authorized_paths": [
+        "app/**",
+        "components/**",
+        "lib/**",
+        "tests/**",
+        "roadmap/evidence/F-0029/**"
+      ],
+      "spec_ref": "docs/feedback-3-verification.md",
+      "acceptance": [
+        "app/demo/page.tsx is decomposed into a hook plus panel components; authorization is centralized",
+        "focused tests cover graph-mutation and permission logic independent of rendering; behavior unchanged for owner and viewer",
+        "bash scripts/verify.sh returns VERIFY PASS exit 0; UI evidence per frontend.md"
+      ]
+    },
+    {
+      "dependencies": [],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        "roadmap/features.json"
+      ],
+      "id": "F-0030",
+      "epic": "factory-hardening",
+      "priority": 2,
+      "title": "Harden command guards for cross-shell and indirection, or move to capability sandboxing",
+      "description": "The guard denylist misses PowerShell cmdlets, dotNET file APIs, and Unix indirection (hex-dump/octal-dump/dd, while-read redirection) for secret reads and exfil. Best fixed by capability sandboxing (read-only mounts, network egress control) per Claude Code native sandbox; the lean slice is to broaden the deterministic patterns and document that the deterrent is not the boundary.",
+      "authorized_paths": [
+        ".claude/hooks/guard-bash.sh",
+        ".claude/claude-security-guidance.md",
+        ".claude/security-patterns.json",
+        "scripts/test-hooks.sh",
+        "docs/**",
+        "roadmap/evidence/F-0030/**"
+      ],
+      "spec_ref": "docs/feedback-3-verification.md; docs/ai-capabilities-research-2026-06.md",
+      "acceptance": [
+        "either capability-sandbox enforcement is documented and wired, OR the deterministic guard patterns cover cross-shell and indirection equivalents for secret-file reads and exfil",
+        "contract tests cover the new patterns; the docs state plainly that guards are a deterrent layer, not the security boundary",
+        "bash scripts/verify.sh returns VERIFY PASS exit 0; security-reviewer APPROVE"
+      ]
+    },
+    {
+      "dependencies": [],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        "roadmap/features.json",
+        ".claude/**"
+      ],
+      "id": "F-0031",
+      "epic": "hardening",
+      "priority": 3,
+      "title": "Major dependency upgrades (next 15 to 16, zod 3 to 4, lucide-react 0.x to 1.x) as scoped tested migrations",
+      "description": "npm outdated shows breaking-major gaps verified current in the research doc: next 16.2.9, zod 4.4.3, lucide-react 1.18.0. Each is a breaking change requiring a scoped migration, not a blanket bump. Do one major per PR with the gate green. The security floors (Next at least 15.5.18, postcss at least 8.5.10) are already satisfied, so this is freshness, not urgent security.",
+      "authorized_paths": [
+        "package.json",
+        "package-lock.json",
+        "app/**",
+        "components/**",
+        "lib/**",
+        "src/forge/**",
+        "roadmap/evidence/F-0031/**"
+      ],
+      "spec_ref": "docs/ai-capabilities-research-2026-06.md",
+      "acceptance": [
+        "each major upgrade lands as its own scoped change with breaking-change fixes applied",
+        "bash scripts/verify.sh returns VERIFY PASS exit 0 after each; build and tests green",
+        "no security regression; lockfile updated"
       ]
     }
   ]
