@@ -1,0 +1,488 @@
+
+──── verify: typecheck ────
+──── typecheck: OK
+
+──── verify: lint ────
+Checked 18 files in 10ms. No fixes applied.
+──── lint: OK
+
+──── verify: unit tests ────
+(node:34728) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/src/forge/abSim.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\C:\dev\ai-operations-template\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ abSim executes two graph variants over synthetic inputs and emits real-time structured logs (AC2) (1.4628ms)
+✔ abSim logs are JSON serializable (for CLI/UI hook consumption) (0.6418ms)
+✔ abSim.test covers RBAC 2 principals (owner allowed, non-owner 403/404 deny on mut) per security.md (0.1311ms)
+✔ CLI: node src/forge/abSim.js exits 0 and prints chain + structured logs (0.3983ms)
+(node:20360) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/src/forge/canEdit.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\C:\dev\ai-operations-template\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ userCanEdit: owner can edit (true) (0.459ms)
+✔ userCanEdit: admin can edit (true) (0.0784ms)
+✔ userCanEdit: editor can edit (true) (0.0532ms)
+✔ userCanEdit: viewer cannot edit (false) — read-only persona (0.0511ms)
+✔ userCanEdit: unknown role defaults to deny (false) (0.0651ms)
+(node:27896) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/src/forge/demoAuth.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\C:\dev\ai-operations-template\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ demoAuth canEdit: owner -> true (0.5016ms)
+✔ demoAuth canEdit: admin -> true (0.0712ms)
+✔ demoAuth canEdit: editor -> true (0.5126ms)
+✔ demoAuth canEdit: viewer -> false (read-only) (0.061ms)
+✔ demoAuth canEdit: unknown role -> false (deny-by-default) (0.0599ms)
+✔ demoAuth canIntervene: owner -> true (0.0602ms)
+✔ demoAuth canIntervene: admin -> true (0.0518ms)
+✔ demoAuth canIntervene: editor -> true (0.0481ms)
+✔ demoAuth canIntervene: viewer -> false (0.0573ms)
+✔ demoAuth canIntervene: unknown role -> false (0.0935ms)
+✔ demoAuth rejectViewerEdit: returns true (abort) for viewer (0.0585ms)
+✔ demoAuth rejectViewerEdit: returns false (proceed) for owner (0.1377ms)
+✔ demoAuth rejectViewerEdit: returns false (proceed) for admin (0.0427ms)
+✔ demoAuth rejectViewerEdit: returns false (proceed) for editor (0.0282ms)
+✔ demoAuth mutation handler early-return: viewer causes no-op (0.1117ms)
+✔ demoAuth mutation handler early-return: editor proceeds, viewer is blocked (0.1108ms)
+(node:30872) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/src/forge/exportArtifacts.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\C:\dev\ai-operations-template\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ exportArtifacts writes graph.json + Dockerfile + docker-compose.yml with required strings (0.7375ms)
+✔ CLI: node src/forge/exportArtifacts.js exits 0 and emits artifacts (0.6496ms)
+(node:29284) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/src/forge/promptToGraph.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\C:\dev\ai-operations-template\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ promptToGraph(prompt) produces valid JSON (>=1 node + >=1 edge) with required keys id/type/label + source/target (0.8585ms)
+✔ promptToGraph is deterministic (same prompt => exact same shape and values) (0.1039ms)
+✔ F-0023: every emitted node model is either "none" (start) or equals DEFAULT_MODEL — no stale grok-3/grok-4 literals (0.5753ms)
+✔ CLI: node src/forge/promptToGraph.js exits 0 and prints valid graph JSON (with sample emit side-effect) (0.1074ms)
+(node:14904) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/src/forge/rbac.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\C:\dev\ai-operations-template\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ check: owner allows all actions (read/edit/export/run) (0.4877ms)
+✔ check: viewer allows reads, denies mutations (403/404 per security.md) (0.0756ms)
+✔ CLI: node src/forge/rbac.js exits 0 and prints JSON with owner/viewer results (0.4628ms)
+✔ check: graph-mutation two-principal — owner and editor allowed, viewer denied (0.0901ms)
+✔ check: res argument changes decision — admin denied on billing resource, allowed on graph (0.0633ms)
+✔ check: admin allows graph/logs/run, denies org/billing (0.0501ms)
+✔ check: editor allows read+mutate-graph, denies run-control/manage (0.0638ms)
+✔ check: editor cannot mutate org/billing resources (no privilege escalation past admin) (0.0584ms)
+✔ check: role hierarchy is monotonic (lower allow ⟹ higher allow) (0.1774ms)
+✔ check: viewer read-only across multiple resources (0.1067ms)
+✔ getHealth() reports status ok and the correct service name (0.8959ms)
+✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.1205ms)
+✔ getHealth() uptime_s is a non-negative number (0.0647ms)
+✔ CLI: node src/health.js exits 0 and prints JSON with status ok (44.0718ms)
+ℹ tests 45
+ℹ suites 0
+ℹ pass 45
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 510.9634
+──── unit tests: OK
+
+──── verify: build ────
+   ▲ Next.js 15.5.19
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 1501ms
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/6) ...
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+   Generating static pages (1/6) 
+   Generating static pages (2/6) 
+   Generating static pages (4/6) 
+ ✓ Generating static pages (6/6)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    12.1 kB         164 kB
+├ ○ /_not-found                            993 B         103 kB
+├ ○ /demo                                 187 kB         342 kB
+└ ○ /pricing                              3.6 kB         159 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/255-98a0bdaa30757bda.js       46.2 kB
+  ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB
+  └ other shared chunks (total)             2 kB
+
+
+○  (Static)  prerendered as static content
+
+──── build: OK
+──── test coverage guard: OK (every src test file is wired into npm test)
+(placeholder check: template repo — self-skipped; activates after adoption rename)
+
+──── verify: features.json schema + invariants ────
+(node:10652) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/scripts/update-state.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\C:\dev\ai-operations-template\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[update-state] valid: 31 features, 30 passing (evidence re-verified).
+──── features.json schema + invariants: OK
+
+──── verify: assertion shield ────
+(node:27024) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/scripts/assertion-shield.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\C:\dev\ai-operations-template\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m[Assertion Shield] Check passed. No deleted assertions detected in test files.[0m
+──── assertion shield: OK
+
+──── verify: engine lint (biome) ────
+Checked 4 files in 8ms. No fixes applied.
+──── engine lint (biome): OK
+
+──── verify: shellcheck (hooks + gate scripts) ────
+──── shellcheck (hooks + gate scripts): OK
+(actionlint not installed locally — enforced in CI)
+
+──── verify: hook contract tests ────
+── local-cli-preflight.sh
+  [PASS] preflight: Git Bash/MSYS passes
+  [PASS] preflight: Linux/cloud passes
+  [PASS] preflight: WSL bash without cygpath fails
+  [PASS] preflight: WSL failure prints Git Bash fix
+  [PASS] preflight: missing node fails
+  [PASS] preflight: missing node message names node
+  [PASS] preflight: missing-tool message is not WSL-specific
+── guard-bash.sh
+  [PASS] blocks push to main
+  [PASS] blocks push to master
+  [PASS] blocks refspec push to main
+  [PASS] blocks refs/heads refspec
+  [PASS] blocks bare refs/heads dst
+  [PASS] blocks -C flag push to main
+  [PASS] blocks -c flag push to main
+  [PASS] blocks force push
+  [PASS] blocks -C force push
+  [PASS] blocks +refspec to main
+  [PASS] blocks +refs/heads refspec
+  [PASS] blocks -C +refspec to main
+  [PASS] blocks +refspec force (any branch)
+  [PASS] blocks --work-tree push to main
+  [PASS] blocks --git-dir= push to main
+  [PASS] blocks .env read
+  [PASS] blocks .env.local read
+  [PASS] blocks pipe-to-shell
+  [PASS] blocks npm publish
+  [PASS] blocks shield bypass
+  [PASS] blocks rm -rf on root
+  [PASS] blocks exfil POST (key-shaped data)
+  [PASS] blocks exfil upload (env secret ref)
+  [PASS] blocks exfil form (github token)
+  [PASS] blocks wget --post-data exfil
+  [PASS] blocks curl -T secret upload
+  [PASS] allows gh api read
+  [PASS] allows harmless POST
+  [PASS] allows gh api POST of plain refs
+  [PASS] allows push to develop
+  [PASS] allows -C push to develop
+  [PASS] allows feature branch push
+  [PASS] allows scoped rm
+  [PASS] allows plain git commit
+── guard-bash.sh F-0030 cross-shell patterns
+  [PASS] F-0030: blocks Get-Content .env
+  [PASS] F-0030: blocks Get-Content .env.local
+  [PASS] F-0030: blocks gc .env.production
+  [PASS] F-0030: blocks Get-ChildItem .env
+  [PASS] F-0030: blocks gci .env.test
+  [PASS] F-0030: allows Get-Content src/app.ts
+  [PASS] F-0030: allows Get-Content .envrc
+  [PASS] F-0030: allows Get-Content .environment
+  [PASS] F-0030: blocks [System.IO.File]::ReadAllText .env
+  [PASS] F-0030: blocks [System.IO.File]::ReadAllLines .env
+  [PASS] F-0030: blocks [System.IO.File]::ReadAllBytes .env
+  [PASS] F-0030: allows [System.IO.File]::ReadAllText config.json
+  [PASS] F-0030: blocks xxd .env
+  [PASS] F-0030: blocks od .env
+  [PASS] F-0030: blocks base64 .env
+  [PASS] F-0030: blocks nl .env
+  [PASS] F-0030: blocks cut .env
+  [PASS] F-0030: blocks dd if=.env
+  [PASS] F-0030: allows xxd binary.bin
+  [PASS] F-0030: allows base64 image.png
+  [PASS] F-0030: blocks < .env
+  [PASS] F-0030: blocks < .env.local
+  [PASS] F-0030: allows < input.txt
+  [PASS] F-0030: allows < .envrc
+  [PASS] F-0030: blocks Remove-Item -Recurse /
+  [PASS] F-0030: blocks recursive Remove-Item on a C:\ Windows path (real hook)
+  [PASS] F-0030: blocks Remove-Item -Recurse ~
+  [PASS] F-0030: blocks Remove-Item -Recurse $HOME
+  [PASS] F-0030: blocks Remove-Item $env:USERPROFILE -Recurse
+  [PASS] F-0030: allows Remove-Item tmp/foo.txt
+  [PASS] F-0030: allows Remove-Item -Recurse node_modules
+  [PASS] F-0030: allows Remove-Item -Recurse build/output
+  [PASS] F-0030: allows Remove-Item -r src/generated
+  [PASS] F-0030: allows Remove-Item -Recurse roadmap/evidence/x
+  [PASS] F-0030: blocks Invoke-RestMethod -Method Post
+  [PASS] F-0030: blocks irm -Body
+  [PASS] F-0030: blocks Invoke-WebRequest -InFile
+  [PASS] F-0030: blocks iwr -Method Post
+  [PASS] F-0030: allows Invoke-RestMethod GET
+  [PASS] F-0030: allows Invoke-WebRequest GET
+  [PASS] F-0030: blocks PS env bypass (ASSERTION_SHIELD_BYPASS via env:)
+── guard-bash.sh kill switch
+  [PASS] AGENT_STOP halts all commands
+── verify-gate.sh
+  [PASS] blocks features.json (posix path)
+  [PASS] blocks features.json (rel path)
+  [PASS] blocks features.json (backslash path)
+  [PASS] blocks features.json (dot segment)
+  [PASS] blocks features.json (double slash)
+  [PASS] blocks features.json (parent re-entry)
+  [PASS] allows other files
+  [PASS] allows other features.json outside roadmap
+  [PASS] allows file mentioning it in content only
+── verify-gate.sh degraded environment (no jq, no node → sed fallback)
+  [PASS] fail-closed without jq/node (sed branch)
+  [PASS] sed branch ignores decoy file_path in content
+  [PASS] sed branch still allows other files
+── verify-gate.sh per-feature authz (F-0007, AC1/2/3)
+  [PASS] no-active-feature (orchestrator) allows file outside any feature scope
+  [PASS] no-active-feature (orchestrator) allows file in scripts
+  [PASS] allows edit inside authorized_paths (scripts/**)
+  [PASS] allows edit inside authorized_paths (.claude/hooks/**)
+  [PASS] blocks edit outside authorized_paths
+  [PASS] blocks edit to package.json (outside F-9999 authorized_paths)
+  [PASS] blocks edit inside forbidden_paths
+  [PASS] blocks when active feature unknown (fail-closed)
+  [PASS] blocks when active feature has empty authorized_paths (fail-closed)
+  [PASS] F-0022: derived from in_progress blocks out-of-scope edit (no env)
+  [PASS] F-0022: derived from in_progress allows in-scope edit (no env)
+  [PASS] F-0022: derived from in_progress blocks forbidden path (no env)
+  [PASS] F-0022: zero in_progress → permissive fallback (no env) allows any file
+  [PASS] F-0025: multiple in_progress → fail-closed (verify-gate blocks any edit, no env)
+  [PASS] F-0022: env var overrides derived feature (env blocks when outside authz)
+  [PASS] F-0022: env var overrides derived feature (env allows inside authz)
+── commit-on-stop.sh
+  [PASS] blocks stop on dirty tree
+  [PASS] allows stop on clean tree
+  [PASS] kill switch overrides dirty block
+── session-brief.sh
+  [PASS] exits 0
+  [PASS] emits brief content
+── update-state.ts (fixture: tmp/hook-tests-uu64Ke)
+  [PASS] validate accepts valid fixture
+  [PASS] validate exits 0 despite stale policy
+  [PASS] validate warns on stale model-policy
+  [PASS] validate accepts well-formed metrics
+  [PASS] validate rejects malformed metrics line
+  [PASS] validate rejects metrics missing date
+  [PASS] validate rejects oversized metrics record
+  [PASS] add rejects malformed JSON
+  [PASS] add rejects passes:true at birth
+  [PASS] add rejects dangling dependency
+  [PASS] add accepts valid feature
+  [PASS] add refuses reserved F-9xxx range on real backlog
+  [PASS] reserved-range refusal wrote nothing to real backlog
+  [PASS] status rejects unknown id
+  [PASS] status rejects invalid enum
+  [PASS] status blocked requires+stores reason
+  [PASS] F-0025: status sets in_progress when none active
+  [PASS] F-0025: status rejects a 2nd concurrent in_progress
+  [PASS] F-0025: validate rejects 2+ in_progress (hand-edit defense)
+  [PASS] paths rejects non-array
+  [PASS] paths rejects empty array
+  [PASS] paths rejects guardrail surface .claude
+  [PASS] paths rejects guardrail surface scripts
+  [PASS] paths rejects guardrail surface .github
+  [PASS] paths rejects catch-all glob
+  [PASS] paths rejects parent traversal
+  [PASS] paths replaces authorized_paths
+  [PASS] passes refuses without evidence
+  [PASS] evidence refuses missing file
+  [PASS] evidence accepts existing file
+  [PASS] passes rejects QUOTED marker in failed log
+  [PASS] passes accepts green verify log (exact line)
+  [PASS] validate rejects corrupt backlog
+── assertion-shield.ts (fixture repo)
+  [PASS] shield catches STAGED assertion deletion
+  [PASS] shield catches deleted test FILE
+  [PASS] shield passes on clean tree
+  [PASS] shield catches ADDED test.skip
+  [PASS] shield catches ADDED it.only
+  [PASS] shield allows ADDED healthy test
+  [PASS] F-0027: shield allows removing an in-branch-added test file
+  [PASS] F-0027: shield still blocks gutting an existing assertion to a tautology
+  [PASS] shield rename-detection: pure rename passes (exit 0)
+  [PASS] shield rename-detection: rename+deleted assertion blocked (exit 1)
+  [PASS] shield rename-detection: in-place deletion still blocked (exit 1)
+  [PASS] shield first-commit (no upstream) passes
+  [PASS] shield first-commit emits no git fatal
+  [PASS] shield first-commit prints a calm line
+── seed.ts delegating shim
+  [PASS] template mode (no src, no seed script) exits 0
+  [PASS] refuses prod DATABASE_URL
+  [PASS] product mode without seed script fails
+  [PASS] delegates to seed script (success)
+  [PASS] propagates seed script failure
+  [PASS] circular delegation fails fast
+── update-state.ts invariants (fixture: tmp/hook-tests-uu64Ke)
+  [PASS] status:done without passes is rejected
+  [PASS] dependency cycle is rejected
+  [PASS] validate audits evidence of passing features (missing file rejected)
+── install-into.sh
+  [PASS] refusal: missing arg exits 1
+  [PASS] refusal: template root exits 1
+  [PASS] refusal: ancestor of template root exits 1
+  [PASS] exclusion: no src/ copied
+  [PASS] exclusion: no package-lock.json
+  [PASS] exclusion: no docs/feedback-2-verification
+  [PASS] exclusion: no docs/feedback-2-verdicts
+  [PASS] exclusion: no roadmap/briefs/F-0012.md
+  [PASS] exclusion: no roadmap/evidence/F-0001
+  [PASS] exclusion: features.json has empty array
+  [PASS] fresh pkg: no test script
+  [PASS] fresh pkg: lint is biome lint scripts
+  [PASS] fresh pkg: name is not ai-operations-template
+  [PASS] fresh pkg: devDep @biomejs/biome present
+  [PASS] fresh pkg: devDep @types/node present
+  [PASS] fresh pkg: devDep shellcheck present
+  [PASS] fresh pkg: devDep ts-node present
+  [PASS] fresh pkg: devDep typescript present
+  [PASS] merge pkg: name preserved
+  [PASS] merge pkg: test script preserved
+  [PASS] merge pkg: lint script preserved
+  [PASS] merge pkg: verify script added
+  [PASS] merge pkg: shield script added
+  [PASS] merge pkg: state script added
+  [PASS] merge pkg: devDep @biomejs/biome added
+  [PASS] merge pkg: devDep @types/node added
+  [PASS] merge pkg: devDep shellcheck added
+  [PASS] merge pkg: devDep ts-node added
+  [PASS] merge pkg: devDep typescript added
+  [PASS] idempotent: marker feature survives re-run
+  [PASS] idempotent: engine-owned scripts/verify.sh present after re-run
+  [PASS] product-mode warning: present when src/ exists
+  [PASS] product-mode warning: absent when no src/
+  [PASS] seeded features.json validates against schema
+  [PASS] seeded ROADMAP: exactly one '## Now'
+  [PASS] seeded ROADMAP: exactly one '## Next'
+  [PASS] seeded ROADMAP: exactly one '## Later'
+  [PASS] seeded ROADMAP: exactly one '## Ideas'
+  [PASS] merge-copy: adopter scripts/custom.sh survives install
+  [PASS] merge-copy: adopter .github/workflows/deploy.yml survives
+  [PASS] merge-copy: adopter .claude/settings.local.json survives
+  [PASS] merge-copy: engine scripts/verify.sh present after install
+── workflow lane parity (F-0014)
+  [PASS] lane parity: every verify.sh workflow conforms
+  [PASS] lane parity: refs extracted from ci.yml
+  [PASS] lane parity: broken fixture workflow rejected
+  [PASS] e2e.yml triggers on its own changes
+── ship.sh
+  [PASS] ship: rejects missing PR number
+  [PASS] ship: rejects non-numeric PR
+  [PASS] ship: rejects unknown flag
+  [PASS] ship: fails closed when no checks ever register
+  [PASS] ship: no-checks path does not merge
+  [PASS] ship: green + --merge merges
+  [PASS] ship: merge happened
+  [PASS] ship: green without --merge exits 0
+  [PASS] ship: no merge without --merge
+  [PASS] ship: failing checks exit non-zero
+  [PASS] ship: failing checks do not merge
+  [PASS] ship: registers after a delay then merges
+  [PASS] ship: delayed registration merged
+  [PASS] ship: refuses to merge PR based on main
+  [PASS] ship: main-based PR not merged
+  [PASS] ship: refuses when base cannot be determined
+  [PASS] ship: undetermined-base PR not merged
+  [PASS] ship: merge failure propagates
+── path-guard.sh
+  [PASS] pg: zero in_progress (no env) allows out-of-scope file
+  [PASS] pg: zero in_progress (no env) allows forbidden path
+  [PASS] pg: active feature allows authorized file
+  [PASS] pg: active feature allows package.json
+  [PASS] pg: active feature blocks unauthorized file
+  [PASS] pg: active feature blocks forbidden path
+  [PASS] pg: active feature blocks forbidden subpath
+  [PASS] pg: active feature handles backslashes in authorized path
+  [PASS] pg: active feature resolves relative traversal in authorized path
+  [PASS] pg: non-existent active feature allows everything
+  [PASS] pg F-0022: derived feature blocks out-of-scope edit (no env)
+  [PASS] pg F-0022: derived feature allows in-scope edit (no env)
+  [PASS] pg F-0022: derived feature blocks forbidden path (no env)
+  [PASS] pg F-0022: env var overrides derivation (F-9999 allows everything)
+  [PASS] pg F-0025: multiple in_progress (no env) → fail-closed (blocks any file)
+── F-0026 known-bad corpus (mechanical judge DENY assertions)
+  [PASS] F-0026 corpus: weakened-assertion diff BLOCKED by assertion-shield
+  [PASS] F-0026 corpus: forbidden-path edit BLOCKED by path-guard
+  [PASS] F-0026 corpus: out-of-scope edit BLOCKED by path-guard
+  [PASS] F-0026 corpus: status:done without passes REJECTED by update-state
+  [PASS] F-0026 corpus: 2nd concurrent in_progress REJECTED by update-state
+  [PASS] F-0026 corpus: secret-read (cat .env) BLOCKED by guard-bash
+  [PASS] F-0026 corpus: exfil via secret-shaped POST BLOCKED by guard-bash
+  [PASS] F-0026 corpus: PS Get-Content .env BLOCKED by guard-bash
+── F-0026 known-bad corpus complete
+
+hook contract tests: 259 passed, 0 failed
+──── hook contract tests: OK
+
+──── verify: seed ────
+(node:21420) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/scripts/seed.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\C:\dev\ai-operations-template\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[seed] in-memory demo data via lib/seed.ts — no database to seed
+──── seed: OK
+
+──── verify: e2e ────
+[2m[WebServer] [22m   [1m[38;2;173;127;168m▲ Next.js 15.5.19[39m[22m
+[2m[WebServer] [22m
+[2m[WebServer] [22m [37m[1m [22m[39m Creating an optimized production build ...
+[2m[WebServer] [22m [32m[1m✓[22m[39m Compiled successfully in 1674ms
+[2m[WebServer] [22m [37m[1m [22m[39m Linting and checking validity of types ...
+[2m[WebServer] [22m [37m[1m [22m[39m Collecting page data ...
+[2m[WebServer] [22m [37m[1m [22m[39m Generating static pages (0/6) ...
+[2m[WebServer] [22mThe width(-1) and height(-1) of chart should be greater than 0,
+[2m[WebServer] [22m       please check the style of container, or the props width(100%) and height(100%),
+[2m[WebServer] [22m       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+[2m[WebServer] [22m       height and width.
+[2m[WebServer] [22m [37m[1m [22m[39m Generating static pages (1/6) 
+[2m[WebServer] [22m [37m[1m [22m[39m Generating static pages (2/6) 
+[2m[WebServer] [22m [37m[1m [22m[39m Generating static pages (4/6) 
+[2m[WebServer] [22m [32m[1m✓[22m[39m Generating static pages (6/6)
+[2m[WebServer] [22m [37m[1m [22m[39m Finalizing page optimization ...
+[2m[WebServer] [22m [37m[1m [22m[39m Collecting build traces ...
+[2m[WebServer] [22m
+[2m[WebServer] [22m[4mRoute (app)[24m                                 [4mSize[24m  [4mFirst Load JS[24m  [4m[24m  [4m[24m
+[2m[WebServer] [22m┌ ○ /                                    12.1 kB         [37m[1m164 kB[22m[39m
+[2m[WebServer] [22m├ ○ /_not-found                            993 B         [37m[1m103 kB[22m[39m
+[2m[WebServer] [22m├ ○ /demo                                 187 kB         [37m[1m342 kB[22m[39m
+[2m[WebServer] [22m└ ○ /pricing                              3.6 kB         [37m[1m159 kB[22m[39m
+[2m[WebServer] [22m+ First Load JS shared by all             [37m[1m102 kB[22m[39m
+[2m[WebServer] [22m  ├ chunks/255-98a0bdaa30757bda.js       46.2 kB
+[2m[WebServer] [22m  ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB
+[2m[WebServer] [22m  └ other shared chunks (total)             2 kB
+[2m[WebServer] [22m
+[2m[WebServer] [22m
+[2m[WebServer] [22m○  (Static)  prerendered as static content
+[2m[WebServer] [22m
+[2m[WebServer] [22m   [1m[38;2;173;127;168m▲ Next.js 15.5.19[39m[22m
+[2m[WebServer] [22m   - Local:        http://localhost:3000
+[2m[WebServer] [22m   - Network:      http://192.168.1.222:3000
+[2m[WebServer] [22m
+[2m[WebServer] [22m [32m[1m✓[22m[39m Starting...
+[2m[WebServer] [22m [32m[1m✓[22m[39m Ready in 375ms
+
+Running 2 tests using 1 worker
+
+  ok 1 [chromium] › e2e\viewer-rbac.spec.ts:43:7 › Viewer RBAC — demo canvas › Viewer persona: palette buttons disabled and read-only notice on node selection (544ms)
+  ok 2 [chromium] › e2e\viewer-rbac.spec.ts:64:7 › Viewer RBAC — demo canvas › Owner persona: palette buttons enabled and no read-only notice (498ms)
+
+  2 passed (11.6s)
+──── e2e: OK
+
+VERIFY-COMMIT: 6137d95d3ea0ad94e3b0cc00a0d3563ca1feef28 @ 2026-06-14T14:48:52Z
+VERIFY: PASS (exit 0)
