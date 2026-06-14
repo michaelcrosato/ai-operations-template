@@ -154,6 +154,16 @@ function scanDiffForWeakening(diffText: string): Violation[] {
           continue;
         }
 
+        // F-0028: Skip CJS module import/require declarations during CJS→ESM migrations.
+        // 'const assert = require(...)' is infrastructure boilerplate, not a test assertion.
+        // Deleting a require() import while adding an equivalent ESM import does not weaken
+        // test coverage. Pattern: const/let/var X = require(...) or 'use strict'.
+        const isModuleDecl = /^(?:const|let|var)\s+\S.*=\s*require\(/.test(cleanedLine)
+          || cleanedLine === "'use strict';";
+        if (isModuleDecl) {
+          continue;
+        }
+
         const containsAssertion = assertionKeywords.some(keyword => cleanedLine.includes(keyword));
         // F-0027: only a deletion from a file that EXISTED on BASE is a weakening
         // (when base is unavailable, stay strict and flag). A branch-new test file

@@ -1,14 +1,12 @@
-'use strict';
-
 /**
  * F-0021: Behavioral proof that viewer cannot mutate (unit-level).
  * Tests the pure userCanEdit(role) predicate that gates every canvas
  * graph-mutation control in app/demo/page.tsx.
  */
 
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const { userCanEdit } = require('./canEdit.js');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { userCanEdit } from './canEdit.ts';
 
 test('userCanEdit: owner can edit (true)', () => {
   assert.equal(userCanEdit('owner'), true);

@@ -1,26 +1,41 @@
-'use strict';
-
 /**
  * Export helper (F-0020): writes portable graph.json + minimal Dockerfile + docker-compose.yml
  * to roadmap/evidence/F-0020/ as runtime side-effect (matches F-0019 promptToGraph sample emit).
  * No changes to engine src. Artifacts are valid and contain required strings (DEMO_MODE, healthcheck).
- * Zero-dependency CommonJS, health.js style (module.exports + CLI-if-main).
+ * Zero-dependency TypeScript module.
  */
 
-const fs = require('node:fs');
-const path = require('node:path');
-const { DEFAULT_MODEL } = require('./models');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { DEFAULT_MODEL } from './models.ts';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const EVIDENCE_DIR = path.resolve(__dirname, '..', '..', 'roadmap', 'evidence', 'F-0020');
 
-function ensureDir(d) { fs.mkdirSync(d, { recursive: true }); }
+function ensureDir(d: string): void { fs.mkdirSync(d, { recursive: true }); }
+
+export interface ExportGraph {
+  nodes: Array<{
+    id: string;
+    type: string;
+    label: string;
+    position: { x: number; y: number };
+    model?: string;
+    prompt?: string;
+    estimatedCost?: number;
+  }>;
+  edges: Array<{ source: string; target: string }>;
+}
 
 /**
  * Minimal graph compatible with F-0019 shape.
  * nodes: id/type/label + optional position/model/prompt/estimatedCost
  * edges: source/target
  */
-function minimalGraph() {
+export function minimalGraph(): ExportGraph {
   return {
     nodes: [
       {
@@ -48,7 +63,7 @@ function minimalGraph() {
   };
 }
 
-function dockerfileContent() {
+export function dockerfileContent(): string {
   // node base, COPY graph, healthcheck
   return `FROM node:20-alpine
 WORKDIR /app
@@ -57,7 +72,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD node -
 `;
 }
 
-function dockerComposeContent() {
+export function dockerComposeContent(): string {
   // DEMO_MODE + health (healthcheck)
   return `version: '3.8'
 services:
@@ -73,19 +88,17 @@ services:
 `;
 }
 
-function exportArtifacts() {
+export interface ExportResult {
+  graph: ExportGraph;
+  dockerfile: string;
+  dockerCompose: string;
+}
+
+export function exportArtifacts(): ExportResult {
   ensureDir(EVIDENCE_DIR);
   const g = minimalGraph();
   fs.writeFileSync(path.join(EVIDENCE_DIR, 'graph.json'), `${JSON.stringify(g, null, 2)}\n`);
   fs.writeFileSync(path.join(EVIDENCE_DIR, 'Dockerfile'), dockerfileContent());
   fs.writeFileSync(path.join(EVIDENCE_DIR, 'docker-compose.yml'), dockerComposeContent());
   return { graph: g, dockerfile: dockerfileContent(), dockerCompose: dockerComposeContent() };
-}
-
-module.exports = { exportArtifacts, minimalGraph, dockerfileContent, dockerComposeContent };
-
-if (require.main === module) {
-  exportArtifacts();
-  process.stdout.write('exported graph.json, Dockerfile, docker-compose.yml\n');
-  process.exitCode = 0;
 }
