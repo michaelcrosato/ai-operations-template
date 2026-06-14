@@ -821,6 +821,41 @@
         "committed forge evidence artifacts are regenerated to match and update-state.ts --validate passes; existing forge tests stay green (assertions added, none removed)",
         "bash scripts/verify.sh returns VERIFY: PASS (exit 0) and evidence is saved"
       ]
+    },
+    {
+      "dependencies": [
+        "F-0021"
+      ],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        "roadmap/features.json",
+        ".claude/**"
+      ],
+      "id": "F-0024",
+      "epic": "factory-hardening",
+      "priority": 2,
+      "title": "E2E program: Playwright suite + browser install in e2e.yml so verify.sh --e2e runs real browser tests",
+      "description": "Stand up the full browser-level E2E program so e2e.yml stops skipping and UI features can be gated on a real --e2e run. Add @playwright/test + playwright.config.ts (webServer builds/starts Next), an e2e/ suite covering the visual canvas viewer-RBAC (viewer cannot mutate; owner can) and core flows, an e2e npm script, and a browser-install step in .github/workflows/e2e.yml. Until this lands, UI features use frontend.md screenshot/walkthrough evidence (e.g. F-0021).",
+      "authorized_paths": [
+        "e2e/**",
+        "tests/**",
+        "playwright.config.ts",
+        "package.json",
+        "package-lock.json",
+        ".github/workflows/e2e.yml",
+        "roadmap/evidence/F-0024/**"
+      ],
+      "spec_ref": "docs/feedback-3-verification.md; .claude/rules/frontend.md",
+      "acceptance": [
+        "@playwright/test installed; playwright.config.ts with a webServer that serves the built app; an e2e script in package.json",
+        "e2e/ suite includes a viewer-RBAC spec proving a viewer cannot mutate the canvas and an owner can; plus at least one core smoke flow",
+        "e2e.yml installs Playwright browsers and runs bash scripts/verify.sh --e2e (no longer skips); verify.sh --e2e returns VERIFY: PASS (exit 0) locally and in CI",
+        "evidence under roadmap/evidence/F-0024/ includes the --e2e log and a screenshot"
+      ]
     }
   ]
 }

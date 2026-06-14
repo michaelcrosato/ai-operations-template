@@ -3,7 +3,7 @@
 /**
  * F-0021: Pure userCanEdit predicate (CJS, zero-dep) for direct unit testing.
  * owner/admin/editor -> true (can mutate graph); viewer -> false (read-only).
- * Mirrors lib/rbac-helpers.ts policy used by the demo canvas.
+ * Mirrors the canEdit policy in lib/seed.ts used by the demo canvas.
  *
  * @param {string} role - 'owner' | 'admin' | 'editor' | 'viewer'
  * @returns {boolean}

@@ -7,7 +7,8 @@
  * Role policy:
  *   owner  — allow all on all resources
  *   admin  — allow all on graph/logs/run/template; deny org/billing-type resources
- *   editor — allow read + mutate graph/template; deny run-control/manage actions
+ *   editor — read non-billing resources + mutate graph/template; deny org/billing
+ *            entirely (incl. read, so editor never exceeds admin) and run/manage
  *   viewer — allow read only; deny every mutation
  *
  * Backward-compatible: all existing rbac.test.js assertions remain true.
@@ -38,9 +39,12 @@ function check(principal, res, act) {
   }
 
   if (p === 'editor') {
-    if (a === 'read' || a === '') return 'allow'; // editor can read anything
+    // org/billing is owner-only: admin is denied it entirely, so editor (lower
+    // privilege) must be too — INCLUDING read. This check is first so a read
+    // never escalates past admin (monotonicity: editor 'allow' ⟹ admin 'allow').
+    if (ORG_BILLING_RESOURCES.has(r)) return 'deny';
+    if (a === 'read' || a === '') return 'allow'; // editor can read non-billing resources
     if (RUN_MANAGE_ACTIONS.has(a)) return 'deny'; // no run-control/manage
-    if (ORG_BILLING_RESOURCES.has(r)) return 'deny'; // never exceed admin on org/billing
     if (EDITOR_MUTABLE_RESOURCES.has(r)) return 'allow'; // mutate only graph/template
     return 'deny'; // default-deny resources outside editor scope
   }

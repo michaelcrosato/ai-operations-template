@@ -87,6 +87,32 @@ test('check: editor cannot mutate org/billing resources (no privilege escalation
   // sanity: editor's allowed mutations still work, and editor never exceeds admin
   assert.equal(check('editor', 'graph', 'edit'), 'allow', 'editor can still edit graph');
   assert.equal(check('admin', 'billing', 'edit'), 'deny', 'admin baseline: billing denied');
+  // READ-side denial: org/billing is owner-only, so editor cannot even READ it
+  // (admin is denied read too — editor must not exceed admin on the read path).
+  assert.equal(check('editor', 'billing', 'read'), 'deny', 'editor cannot read billing');
+  assert.equal(check('editor', 'org', 'read'), 'deny', 'editor cannot read org');
+  assert.equal(check('editor', 'subscription', 'read'), 'deny', 'editor cannot read subscription');
+  assert.equal(check('editor', 'billing', ''), 'deny', 'editor empty-action on billing denied');
+});
+
+// F-0021 (security fix): monotonicity invariant — for every resource/action,
+// a lower-privilege role granted 'allow' implies the higher role is also 'allow'.
+// This property test is what would have caught the editor read/mutate escalations.
+test('check: role hierarchy is monotonic (lower allow ⟹ higher allow)', () => {
+  const resources = ['graph', 'template', 'logs', 'run', 'billing', 'org', 'subscription', 'seat', 'plan', 'secrets'];
+  const actions = ['read', '', 'edit', 'delete', 'run', 'manage', 'deploy'];
+  const order = ['viewer', 'editor', 'admin', 'owner']; // ascending privilege
+  for (const r of resources) {
+    for (const a of actions) {
+      for (let i = 0; i < order.length - 1; i++) {
+        const lower = check(order[i], r, a);
+        const higher = check(order[i + 1], r, a);
+        if (lower === 'allow') {
+          assert.equal(higher, 'allow', `${order[i + 1]} must allow what ${order[i]} allows: ${r}/${a || '(none)'}`);
+        }
+      }
+    }
+  }
 });
 
 test('check: viewer read-only across multiple resources', () => {
