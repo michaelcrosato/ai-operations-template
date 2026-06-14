@@ -83,10 +83,10 @@ echo "$CMD" | grep -q 'ASSERTION_SHIELD_BYPASS' \
 # ~ (home shorthand), $HOME, $env:USERPROFILE, $env:HOME.
 # Benign Remove-Item (e.g. "Remove-Item tmp/foo" or "Remove-Item -Recurse node_modules") is NOT matched.
 # shellcheck disable=SC2016  # patterns match literal $HOME/$env: tokens; no expansion intended
-echo "$CMD" | grep -qiE 'Remove-Item[^|;&]*((-Recurse|-r[[:space:]]))[^|;&]*("?(/([a-zA-Z[:space:]]|$)|C:\\\\|~|\$HOME|\$env:(USERPROFILE|HOME)))' \
+echo "$CMD" | grep -qiE 'Remove-Item[^|;&]*(-Recurse|-r[[:space:]])[^|;&]*[[:space:]]"?(/([a-zA-Z]|$)|C:\\|~|\$HOME|\$env:(USERPROFILE|HOME))' \
   && block "recursive PowerShell Remove-Item on root/home paths is prohibited."
 # shellcheck disable=SC2016  # patterns match literal $HOME/$env: tokens; no expansion intended
-echo "$CMD" | grep -qiE 'Remove-Item[^|;&]*("?(/([a-zA-Z[:space:]]|$)|C:\\\\|~|\$HOME|\$env:(USERPROFILE|HOME)))[^|;&]*(-Recurse|-r[[:space:]])' \
+echo "$CMD" | grep -qiE 'Remove-Item[^|;&]*[[:space:]]"?(/([a-zA-Z]|$)|C:\\|~|\$HOME|\$env:(USERPROFILE|HOME))[^|;&]*(-Recurse|-r[[:space:]])' \
   && block "recursive PowerShell Remove-Item on root/home paths is prohibited."
 
 # Exfil — PowerShell Invoke-RestMethod / Invoke-WebRequest with upload indicators
