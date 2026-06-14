@@ -40,3 +40,6 @@ playwright-report/
 # groomed feature, never as a side-effect of an unrelated branch
 .agents/
 .codex/
+
+# Next.js build output
+.next/
