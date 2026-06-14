@@ -4,16 +4,15 @@
 
 ---
 
-## Q-0001 (2026-06-09, partially resolved 2026-06-10) — One-time GitHub/claude.ai setup
+## Q-0001 (2026-06-09, resolved 2026-06-13) — One-time GitHub/claude.ai setup
 
-**✅ Done (by the agent, with your authorization):** branch protection is ACTIVE — `develop` requires a pull request with a green "verify" check; `main` additionally requires 1 human approval; rules apply to admins too, and force-pushes/deletions are blocked.
+**✅ Done:**
+1. **Branch protection is ACTIVE** — `develop` requires a pull request with a green "verify" check; `main` additionally requires 1 human approval; rules apply to admins too, and force-pushes/deletions are blocked.
+2. **Claude GitHub App is installed** on this repository.
+3. **CLAUDE_CODE_OAUTH_TOKEN secret is configured** on GitHub.
+4. **Cloud environment created** at claude.ai/code with `scripts/init.sh` as setup script.
 
-**Still needs you (~15 minutes of clicking):**
-1. **Install the Claude GitHub App** on this repository (claude.ai/code → settings → GitHub) — lets cloud sessions and `@claude` comments work.
-2. **Add your subscription token** (no API key needed — this runs on your Claude Max plan): open a terminal in the project folder, type `claude setup-token`, copy the token it prints. Then on GitHub: repo → Settings → Secrets and variables → Actions → New repository secret → name `CLAUDE_CODE_OAUTH_TOKEN`, paste, save. Without it, commenting `@claude fix this` on a PR does nothing.
-3. **Create the cloud environment** at claude.ai/code (network: Trusted; setup script: `scripts/init.sh`) — enables cloud/mobile sessions and, later, scheduled Routines.
-
-**Why it matters:** Until ② is set, CI failures don't self-heal and `@claude` comments are inert.
+**Why it matters:** Setup is complete; the automated CI self-healing and Routine runs are now fully enabled.
 
 ---
 

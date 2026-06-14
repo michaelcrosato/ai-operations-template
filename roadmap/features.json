@@ -114,11 +114,13 @@
         "F-0001"
       ],
       "priority": 2,
-      "status": "blocked",
-      "passes": false,
-      "evidence": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0004/verify.log"
+      ],
       "attempts": 0,
-      "blocked_reason": "Requires human operator actions: Claude GitHub App install, CLAUDE_CODE_OAUTH_TOKEN secret, and cloud environment setup — see QUESTIONS.md."
+      "blocked_reason": null
     },
     {
       "dependencies": [
@@ -547,6 +549,81 @@
         "scripts/test-hooks.sh",
         "roadmap/briefs/F-0016.md",
         "roadmap/evidence/F-0016/**"
+      ],
+      "priority": 1
+    },
+    {
+      "dependencies": [
+        "F-0007"
+      ],
+      "status": "in_progress",
+      "passes": false,
+      "evidence": [
+        "roadmap/evidence/F-0017/verify.log",
+        "roadmap/evidence/F-0017/sample-graph.json",
+        "roadmap/evidence/F-0017/sample-ab-logs.txt",
+        "roadmap/evidence/F-0017/sample-exports.txt"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/**",
+        "scripts/**",
+        "roadmap/**"
+      ],
+      "id": "F-0017",
+      "epic": "product",
+      "title": "ForgeOps MVP Core: prompt-to-graph, A-B simulation foundation, RBAC, real-time logs, exports/Docker",
+      "spec_ref": "roadmap/PROGRESS.md (ForgeOps plan gap + F-0017/18 mentions) + README.md (product architecture placeholder) + original vision (ForgeOps: drag-drop @xyflow canvas, marketplace, sim/A-B, RBAC, billing/Stripe, exports/Docker, real-time logs, prompt-to-graph, premium UI)",
+      "description": "Implement the core non-UI foundations of the ForgeOps agent platform (prompt-to-graph translation to executable graphs, basic A-B simulation with real-time structured logs, owner/viewer RBAC, JSON + Docker scaffold exports). Enables sellable product and canvas UI. Strict product-only paths; depends on stable F-0007 engine guard. No engine/hook/script/roadmap touches.",
+      "acceptance": [
+        "promptToGraph(prompt: string) or equivalent core produces valid executable agent graph JSON (nodes + edges) consumable by the engine",
+        "A/B simulator executes two graph variants over synthetic inputs and emits real-time structured logs viewable via CLI/UI hook",
+        "RBAC layer enforces owner (full edit/run) vs non-owner (read-only 403/404 on resources)",
+        "Export produces portable JSON + minimal Dockerfile/docker-compose scaffold for the graph; integrates cleanly with existing engine",
+        "bash scripts/verify.sh exits 0 (units + product-mode checks; --e2e if UI surface added)"
+      ],
+      "authorized_paths": [
+        "src/**",
+        "app/**",
+        "components/**",
+        "package.json"
+      ],
+      "priority": 1
+    },
+    {
+      "dependencies": [
+        "F-0007"
+      ],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/**",
+        "scripts/**",
+        "roadmap/**"
+      ],
+      "id": "F-0018",
+      "epic": "product",
+      "title": "Full interactive visual canvas with @xyflow/react",
+      "spec_ref": "roadmap/PROGRESS.md (ForgeOps plan gap + F-0017/18 mentions) + README.md (product architecture placeholder) + original vision (ForgeOps: drag-drop @xyflow canvas, marketplace, sim/A-B, RBAC, billing/Stripe, exports/Docker, real-time logs, prompt-to-graph, premium UI) + open PR on feat/F-0018",
+      "description": "Full interactive drag-and-drop visual canvas using @xyflow/react for ForgeOps agent graphs/workflows. Supports prompt-to-graph seeding of canvas, node/edge editing, marketplace browse/publish stubs, A-B sim launch + results viz, premium UI polish (theming/toolbar), exports. Builds directly on F-0017 core. Product-only paths; no engine surfaces.",
+      "acceptance": [
+        "Interactive @xyflow/react canvas mounts and supports full drag, drop, pan, zoom, connect of agent/prompt nodes and workflow edges",
+        "Prompt-to-graph input seeds and renders initial editable graph on the canvas; local/session edits are reflected immediately",
+        "Marketplace panel (stub) allows browse/publish of graph templates; A-B sim panel triggers runs (via core) and visualizes results + real-time logs",
+        "Premium UI elements (theming, toolbar, export buttons) are present, styled, and functional; basic export from canvas works",
+        "UI/product feature passes bash scripts/verify.sh (lint + units + --e2e where configured); evidence includes live run artifacts or equivalent visual confirmation"
+      ],
+      "authorized_paths": [
+        "src/**",
+        "app/**",
+        "components/**",
+        "package.json"
       ],
       "priority": 1
     }
