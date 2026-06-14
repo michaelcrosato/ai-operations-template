@@ -62,3 +62,19 @@ Nothing flips to `passes: true` without physical evidence on disk; nothing reach
 - Node.js ≥ 20 (engine meta-tooling; the product stack is whatever you choose)
 - Git + bash (hooks are bash scripts; on Windows use **Git Bash** — note that inside PowerShell, `bash` may resolve to WSL's bash, which has a different PATH and gives misleading results when testing hooks by hand)
 - GitHub repo with the Claude GitHub App installed (cloud sessions / `@claude` PR fixes)
+
+### Windows local CLI recovery
+
+If local Claude/agent CLI sessions show repeated `PostToolUse hook (failed)` messages, or the prompt fills with `[I[O[I[O` text and stops accepting input, the terminal is usually running WSL bash instead of Git Bash. Close the stuck tab, then launch the CLI from Git Bash or prepend Git Bash in PowerShell first:
+
+```powershell
+$env:Path = 'C:\Program Files\Git\bin;' + $env:Path
+claude
+```
+
+If the shell is usable but still echoing focus events, reset focus reporting and clear the screen:
+
+```powershell
+[Console]::Write("$([char]27)[?1004l")
+cls
+```
