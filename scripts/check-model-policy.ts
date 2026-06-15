@@ -27,6 +27,10 @@ interface Policy {
   agents: Record<string, unknown>;
 }
 
+// Agent names become path segments (`<name>.md`) in --write. Constrain them to a safe
+// shape so a hand-edited/compromised policy can never traverse out of the agents dir.
+const SAFE_NAME = /^[a-z0-9][a-z0-9-]*$/;
+
 function fail(msg: string): never {
   console.error(`[check-model-policy] ${msg}`);
   process.exit(1);
@@ -85,6 +89,12 @@ function main(): void {
   const write = process.argv.includes('--write');
   const policy = loadPolicy();
   const agentNames = Object.keys(policy.agents);
+
+  // Validate every mapped name BEFORE it is used to build a file path (--write writes
+  // `<name>.md`). Fail closed on anything that could escape the agents dir.
+  for (const name of agentNames) {
+    if (!SAFE_NAME.test(name)) fail(`policy.agents key "${name}" is not a safe agent name ([a-z0-9-])`);
+  }
 
   // Fail-closed: any agent .md that sets a `model:` must be governed by the policy map,
   // so a new agent cannot silently hardcode an unmanaged model name (§2.2).

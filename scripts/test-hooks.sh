@@ -1331,6 +1331,8 @@ check "F-MP1: --write wrote the policy model into the agent file" "yes" "$(grep 
 mk_agent rogue opus  # an agent declaring a model: but absent from policy.agents
 check "F-MP1: --check FAILS on an unmanaged agent model (fail-closed)" 1 "$(MODEL_POLICY_ROOT="$MP" node "$TSNODE" "$CMP" --check >/dev/null 2>&1; echo $?)"
 rm -f "$MP/agents/rogue.md"
+printf '%s\n' '{ "agents": { "../../evil": "fast" }, "tiers": { "fast": { "model": "haiku" } } }' > "$MP/model-policy.json"
+check "F-MP1: --check FAILS on an unsafe agent name (no path traversal in --write)" 1 "$(MODEL_POLICY_ROOT="$MP" node "$TSNODE" "$CMP" --check >/dev/null 2>&1; echo $?)"
 printf '%s\n' '{ "tiers": { "builder": { "model": "sonnet" } } }' > "$MP/model-policy.json"
 check "F-MP1: --check FAILS when policy.agents map is missing" 1 "$(MODEL_POLICY_ROOT="$MP" node "$TSNODE" "$CMP" --check >/dev/null 2>&1; echo $?)"
 rm -rf "$MP"
