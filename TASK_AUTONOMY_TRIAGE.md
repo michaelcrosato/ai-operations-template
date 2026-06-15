@@ -27,7 +27,7 @@ minority of work, but that minority carries the highest impact, so weight by imp
 - **Tier C — human directs / approval-gated.** Security-critical & cryptographic code, auth/authz,
   input validation, **performance tuning** (no profiling oracle), DB schema/migrations, IaC/deploy/IAM,
   novel architecture, concurrency/distributed correctness, embedded/systems, and anything with
-  **ambiguous/contested requirements or product-UX judgment**. `/work`: builder → evaluator +
+  **ambiguous/contested requirements or product-UX judgment**. `/work`: **`builder-strong` (opus)** → evaluator +
   **mandatory security-reviewer** → build behind a flag; **do not merge** the irreversible/visible
   surface until the operator approves (a `QUESTIONS.md` line + the PR), but keep the loop moving on
   other features.
@@ -71,10 +71,15 @@ underspecified task to L3 — "agents amplify bottlenecks" when the pipeline is 
   a one-sentence verifiable criterion; route it to `QUESTIONS.md` instead.
 - **BRIEF:** state the tier and the action gate (§3) in the immutable brief so the builder knows the
   merge constraint up front.
+- **BUILD (`/work` step 3) — model selection by tier:** Tier A/B build with `builder` (sonnet);
+  Tier C builds with `builder-strong` (opus). The model is fixed by each agent's frontmatter (synced
+  from `.claude/model-policy.json`, enforced by `scripts/check-model-policy.ts`) — there is no
+  per-invocation override in the CLI/Actions lanes, so model-switching = choosing which builder to spawn.
 - **JUDGE (`/work` step 5):** the fresh-context evaluator is **mandatory on every tier (never
-  sampled)** — tier modulates the security-reviewer, the human-approval gate, and (later) model
-  selection, NEVER the evaluator. A/B = evaluator (+ security-reviewer on sensitive paths), merge on
+  sampled)** — tier modulates the security-reviewer, the human-approval gate, and the builder model
+  (see BUILD above), NEVER the evaluator. A/B = evaluator (+ security-reviewer on sensitive paths), merge on
   green; C = evaluator + **mandatory** security-reviewer (tier-driven, not just path) + the
   REQUIRE_APPROVAL merge gate. Sensitive paths always add the security-reviewer regardless of tier.
 - **Cost:** a task can be agent-shaped yet uneconomical — prefer the cheapest model/agent that clears
-  the tier's gate (see `model-policy.json` per-tier agents).
+  the tier's gate: A/B on `builder` (sonnet), C on `builder-strong` (opus); never economize the
+  evaluator or the Tier-C security-reviewer.

@@ -1338,6 +1338,13 @@ check "F-MP1: --check FAILS when policy.agents map is missing" 1 "$(MODEL_POLICY
 rm -rf "$MP"
 # The REAL shipped config must be internally consistent (the invariant verify.sh enforces).
 check "F-MP1: real .claude config has no model-policy drift" 0 "$(node "$TSNODE" "$CMP" --check >/dev/null 2>&1; echo $?)"
+# F-MP2: per-tier builders — the model SWITCH itself. The drift gate proves frontmatter==policy
+# but NOT that the Tier-C builder is actually stronger; assert that intent here (model-agnostic:
+# compare resolved models, never hardcode a model name, so a /research rename can't false-fail).
+check "F-MP2: builder-strong resolves to the reasoning tier" "reasoning" \
+  "$(node -e 'const p=require("./.claude/model-policy.json");process.stdout.write(p.agents["builder-strong"])')"
+check "F-MP2: Tier-C builder uses a different model than the default builder" "differ" \
+  "$(node -e 'const p=require("./.claude/model-policy.json");const d=p.tiers[p.agents["builder"]].model,s=p.tiers[p.agents["builder-strong"]].model;process.stdout.write(d!==s?"differ":"same")')"
 
 echo ""
 echo "hook contract tests: $PASS passed, $FAIL failed"
