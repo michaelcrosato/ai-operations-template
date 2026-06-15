@@ -1,3 +1,12 @@
+## 2026-06-15 — Constitution de-fluff: CLAUDE.md §3 cleaned + JUDGE routing aligned (PR #84)
+
+Immediate follow-up to #82 — closed the contradiction that cleaning /work exposed. CLAUDE.md §3 was a jargon-laden prose duplicate of /work whose JUDGE line still said the pre-tier "sensitive paths also get security-reviewer", contradicting the freshly tier-routed /work + `TASK_AUTONOMY_TRIAGE.md §7`.
+
+- **§3 rebuilt** as a tight 8-step skeleton mirroring /work (SELECT→MANAGE), all jargon stripped (xAI 4/16, TELEMETRY 16/0+173/0, 0e/velocity, 6x RL, Heavy 16, TOOL_CALLS_APPROX, 4x cost, the 1min/5min + prompt-bloat snippets). A fresh-context evaluator confirmed every enforceable rule survived (explorer-first, Grep/Glob-before-edit, CLAUDE_ACTIVE_FEATURE, the git-hygiene contract, capture.sh evidence, the cross-platform rule, the state-drift guard, the manager doctrine).
+- **JUDGE routing now word-identical across all three docs** (CLAUDE.md §3 / /work step 5 / triage §7): evaluator mandatory every tier (never sampled); security-reviewer on Tier C OR sensitive path (mandatory regardless of path on C). This is *strictly tighter* than the line it replaced. Fixed a stale "/work step 6"→"step 5" cross-ref in triage §7.
+- **§9 checklist walked:** CLAUDE.md 59→**52 lines** (≤150 cap), no duplication/contradiction left, enforceable wording, logged in DECISIONS. Evaluator PASS (all 4 criteria), verify.sh PASS, CI green, merged.
+- **NEXT:** the `awaiting_approval` status + the Tier-C REQUIRE_APPROVAL merge gate (a state-machine change in update-state.ts — the critic said build the status fully first), then per-tier model agents (model switching).
+
 ## 2026-06-15 — Adaptive layer: /work loop de-fluffed + tier-routed JUDGE (PR #82, the loop-switching mechanism)
 
 Third PR of the operator /goal "loop switching / make it adaptable" program (after F-LP1 = tier data model, F-LP1b = triage rubric + groom assignment). This is the PR that gives the tier field its **mechanical routing behavior** in the main loop.
