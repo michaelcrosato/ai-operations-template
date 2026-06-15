@@ -119,6 +119,14 @@ else
 fi
 step "hook contract tests" "$BASH" scripts/test-hooks.sh
 
+# Mutation smoke (F-TC4): a green suite is necessary, not sufficient. Apply known mutations
+# to safety-critical code in-tree, run the guarding tests, and require each mutant to be KILLED
+# — a surviving mutant means a vacuous/tautological test. Restores the tree (cp-backup + trap);
+# only runs when the product code it targets exists (skips cleanly in template mode).
+if [ -f src/forge/rbac.ts ]; then
+  step "mutation smoke" bash scripts/mutation-smoke.sh
+fi
+
 # ---- E2E (opt-in) ----
 if $E2E; then
   if has_pkg_script e2e; then
