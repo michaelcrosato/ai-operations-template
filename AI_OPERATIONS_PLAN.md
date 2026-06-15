@@ -84,7 +84,7 @@ Phase 0 (§10) builds exactly this tree. One-line purpose per entry; detailed sp
 ├── roadmap/                      # ALL durable state shared between human and agents
 │   ├── ROADMAP.md                # Human-owned priorities, plain English bullets
 │   ├── features.json             # Machine backlog: every feature, default passes:false (§4.2)
-│   ├── features.schema.json      # JSON Schema for features.json — validated in CI (§4.2)
+│   ├── features.schema.json      # Closed-shape contract: key set + additionalProperties:false enforced by update-state validate() (run in CI) and cross-checked in test-hooks.sh; full ajv validation deliberately not in the gate (§4.2)
 │   ├── PROGRESS.md               # Agent-maintained session log / handoff notes (§4.3)
 │   ├── QUESTIONS.md              # Non-blocking escalations for the human (§6.1)
 │   ├── DECISIONS.md              # Append-only log of decisions agents made autonomously
