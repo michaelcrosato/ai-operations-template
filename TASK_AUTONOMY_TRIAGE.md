@@ -36,8 +36,11 @@ minority of work, but that minority carries the highest impact, so weight by imp
 - **AUTO** — read/analyze, internal-only, reversible, low blast radius → just do it.
 - **LOG** — research/web, low external impact → do it, note in `DECISIONS.md`.
 - **REQUIRE_APPROVAL** — deploy/push to prod, DB migration, data export/deletion, IAM/secrets, a
-  trust boundary, or operator-visible (pricing/branding/legal) → build behind a flag/branch, write
-  the QA + an approval request, **do not merge to the live/irreversible surface until approved.**
+  trust boundary, or operator-visible (pricing/branding/legal) → build behind a flag/branch, then
+  **park the feature `awaiting_approval`** (`/work` step 6 sets it after green CI + reviews) and write
+  the QA + a sign-off request to `QUESTIONS.md`; **do not merge to the live/irreversible surface until
+  approved.** Parking does not stop the loop — `awaiting_approval` is excluded from the in_progress
+  slot, so the next feature proceeds while this one waits.
 
 ## 4. Two hard rules (non-negotiable)
 1. **Trust-boundary code → mandatory human security review.** Auth, crypto, input handling, secrets.
