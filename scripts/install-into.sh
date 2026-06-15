@@ -47,7 +47,7 @@ echo ""
 echo "--- Copying engine-owned files (overwrite) ---"
 
 # Root docs
-for f in CLAUDE.md AGENTS.md AI_OPERATIONS_PLAN.md OPERATOR_GUIDE.md; do
+for f in CLAUDE.md AGENTS.md AI_OPERATIONS_PLAN.md OPERATOR_GUIDE.md TASK_AUTONOMY_TRIAGE.md; do
   if [ -f "$TEMPLATE_ROOT/$f" ]; then
     if [ -f "$TARGET/$f" ]; then
       cp "$TEMPLATE_ROOT/$f" "$TARGET/$f"
