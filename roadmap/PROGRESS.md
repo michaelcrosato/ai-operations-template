@@ -1,3 +1,12 @@
+## 2026-06-15 — Testing-suite PLAN: layered, oracle-first end-to-end benchmark (PR #98)
+
+Operator /goal (/deep-research + brutal-senior persona): real end-to-end test prompts (build-a-CRM, build-an-MCP-server) laddered easy→very-hard, each with an OBJECTIVE oracle, so engine changes can actually be verified. **Plan-only deliverable** (`bench/testing-suite-plan.md`) for operator review.
+
+- **Deep-research (3-vote-verified vs active repos):** the oracle is the whole ballgame — flawed oracles distort results up to **100%** (ABC, arXiv 2507.02825, Liang et al.); trivial cheats scored 38%/100% (tau-bench empty-response / SWE-Lancer `assert 1==1`); 15.7% SWE-bench-Verified false positives flipped 24% of the top-50. Oracle patterns catalogued: hidden FAIL_TO_PASS/PASS_TO_PASS (SWE-bench), triple-verified E2E acceptance (SWE-Lancer), own-suite reconstruction (Commit0), the 4-component task quadruple (Terminal-Bench), **state-hash + pass^k reliability** (tau-bench), **protocol-conformance** (MCP `@modelcontextprotocol/conformance` + inspector CLI — the cited, objective "build-an-MCP-server" oracle).
+- **The plan:** oracle doctrine (dual validity, isolate-agent-from-ground-truth, anti-cheat, resist-degenerate); the **L0→L5 ladder** with concrete example prompts + a cited oracle per tier (CRM at L4, MCP server at L3, trap/security/concurrency at L5); thin-vs-thick prompt modes; partial credit; the engine-effect protocol (model pinned); build-vs-adopt; failure modes; phased build + needs-help (Docker, API key, budget).
+- **Adversarially reviewed** (skeptical staff-eng critic → NEEDS REVISION) and **hardened**: (1) **gating criteria** so a broken-RBAC CRM can't score a "shippable" 65%; (2) a **statistical-reality + "what this can't measure"** section — N≥5 end-to-end runs can't detect small continuous deltas above loop noise, so those go on the cheap deterministic tiers; key the decision rule on categorical regressions; (3) **honest authoring cost** (days per L4 oracle; oracle-author ≠ reference-author) + Phase 1 validates ONE oracle (MCP) before scaling; plus MCP-harness realities, trap pass^k semantics, env-pinning + flaky-detection + fresh-session-per-task.
+- Docs-only, no guard surface. verify.sh PASS.
+
 ## 2026-06-15 — Bench: ran the loop for real, measured the context tax, wired bench into /kaizen (PR #97)
 
 Operator follow-up: run the measure-loop, fold the discoveries into the docs/README, write the findings, push to develop, and make the engine's automation loop trigger the measure→improve cycle.
