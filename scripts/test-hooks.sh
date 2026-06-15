@@ -1182,6 +1182,11 @@ check "F-EC1: rejects a non-F-XXXX feature id" 2 "$(ec_exit "$ECAP" NOPE x -- no
 check "F-EC1: rejects a name with a path separator" 2 "$(ec_exit "$ECAP" F-9901 'sub/evil' -- node -e "process.exit(0)")"
 rm -rf "$ECAP"
 
+# ── F-TC4: the mutation-smoke meta-gate must be able to DETECT a survivor ──────────
+# A mutation gate that cannot flag a vacuous test is itself worthless. --selftest runs a
+# known-surviving mutation through the real mutate() and exits 0 only if it is flagged.
+check "F-TC4: mutation-smoke detects a survivor (--selftest)" 0 "$(bash "$ROOT/scripts/mutation-smoke.sh" --selftest >/dev/null 2>&1; echo $?)"
+
 # ── F-DM1: evidence hermeticity guard ──────────────────────────────────────────
 # The unit tests run earlier in verify.sh. roadmap/evidence/ is a committed golden
 # snapshot — a test or product write there dirties the tree and races under parallel
