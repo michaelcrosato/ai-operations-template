@@ -191,3 +191,66 @@ test('check: monotonic under fail-closed contract (empty/unknown/padded inputs)'
     }
   }
 });
+
+// ── Held-out property tests (audit finding): default-deny over a generated input space ──
+// These encode SPEC properties (rbac.ts docstring) independently of the implementation's
+// branches, exercised over a broad, DETERMINISTIC (seeded — no Math.random flakiness) set of
+// inputs. They are the tests that would catch a regression of the fall-through `return 'deny'`.
+const KNOWN_ROLES = new Set(['owner', 'admin', 'editor', 'viewer']);
+
+test('check: arbitrary (non-role) principals are default-denied on every resource/action', () => {
+  // Curated adversarial principals an attacker might try (privilege-flavored + edge cases).
+  const curated = [
+    '', '   ', '\t\n', 'root', 'superuser', 'administrator', 'sysadmin', 'system', 'god',
+    'anonymous', 'guest', 'nobody', 'null', 'undefined', 'true', '0', '*', 'all', 'role',
+    'owner_', '0wner', 'ownerx', 'xowner', 'ad min', 'owner admin', 'editor;owner',
+    'owner\n', 'service', 'bot', 'agent', '__proto__', 'constructor', 'prototype'
+  ];
+  // Deterministic pseudo-random principals via a seeded LCG (reproducible; not Math.random).
+  let seed = 0x5eed1234;
+  const rand = () => {
+    seed = (Math.imul(seed, 1103515245) + 12345) & 0x7fffffff;
+    return seed / 0x7fffffff;
+  };
+  const charset = 'abcdefghijklmnopqrstuvwxyz0123456789 _-.@';
+  const generated: string[] = [];
+  for (let i = 0; i < 200; i++) {
+    const len = 1 + Math.floor(rand() * 16);
+    let s = '';
+    for (let j = 0; j < len; j++) s += charset[Math.floor(rand() * charset.length)];
+    generated.push(s);
+  }
+  // Keep only principals that do NOT normalize to a real role (those are correctly NOT default-denied).
+  const principals = [...curated, ...generated].filter((p) => !KNOWN_ROLES.has(String(p).toLowerCase().trim()));
+  const resources = ['graph', 'template', 'logs', 'run', 'billing', 'org', 'secrets', '', 'anything', ' graph '];
+  const actions = ['read', 'edit', 'create', 'update', 'delete', 'export', 'run', 'manage', 'deploy', 'admin', '', 'frobnicate', ' read '];
+  let checked = 0;
+  for (const p of principals) {
+    for (const r of resources) {
+      for (const a of actions) {
+        assert.equal(check(p, r, a), 'deny', `arbitrary principal ${JSON.stringify(p)} must be denied on ${JSON.stringify(r)}/${JSON.stringify(a)}`);
+        checked++;
+      }
+    }
+  }
+  // Anti-tautology guard: a property test that asserts over an empty space passes vacuously.
+  // Require a broad sweep so a future refactor that empties the input set fails loudly.
+  assert.ok(checked > 5000, `expected a broad sweep of the input space, only checked ${checked}`);
+});
+
+test('check: org/billing-type resources are owner-only (every non-owner denied, every action)', () => {
+  const ownerOnly = ['org', 'billing', 'subscription', 'seat', 'plan'];
+  const nonOwners = ['admin', 'editor', 'viewer', 'root', 'superuser', '', 'anything'];
+  const actions = ['read', 'edit', 'create', 'update', 'delete', 'export', 'run', 'manage', 'deploy', 'admin', '', 'frobnicate'];
+  for (const r of ownerOnly) {
+    for (const p of nonOwners) {
+      for (const a of actions) {
+        assert.equal(check(p, r, a), 'deny', `${p || '(empty)'} must be denied on owner-only ${r}/${a || '(none)'}`);
+      }
+    }
+    // Positive side (anti-tautology): owner IS allowed on these resources — proves the resource
+    // isn't just globally denied, so the deny assertions above are meaningful.
+    assert.equal(check('owner', r, 'read'), 'allow', `owner allowed to read ${r}`);
+    assert.equal(check('owner', r, 'manage'), 'allow', `owner allowed to manage ${r}`);
+  }
+});

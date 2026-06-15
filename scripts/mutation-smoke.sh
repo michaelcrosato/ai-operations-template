@@ -92,6 +92,9 @@ mutate "$RBAC" "s/'org', 'billing'/'org'/" "$RBAC_TEST" "rbac: 'billing' removed
 mutate "$RBAC" "s/new Set(\\['graph', 'template'\\])/new Set(['graph', 'template', 'secrets'])/" "$RBAC_TEST" "rbac: editor-mutable widened to include secrets"
 # Break the fail-closed action contract (known-actions gate) → unknown/empty-action tests must fail.
 mutate "$RBAC" "s/if (!KNOWN_ACTIONS.has(a)) return 'deny';/if (!KNOWN_ACTIONS.has(a)) { \\/* mutant: skip *\\/ }/" "$RBAC_TEST" "rbac: fail-closed unknown-action gate removed"
+# Flip the fall-through default-deny → allow (the ^  return 'deny';$ at end of check(), unique to
+# line 78) → the arbitrary-principal default-deny property test must fail.
+mutate "$RBAC" "s/^  return 'deny';\$/  return 'allow';/" "$RBAC_TEST" "rbac: fall-through default-deny flipped to allow"
 
 # ── update-state.ts: the state writer (the most-hardened guard surface this program) ──
 # Killers are FAST + TARGETED: one ts-node call each (the full contract suite is ~86s — far too
