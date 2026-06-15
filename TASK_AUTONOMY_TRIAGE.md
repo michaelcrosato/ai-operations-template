@@ -75,9 +75,11 @@ underspecified task to L3 — "agents amplify bottlenecks" when the pipeline is 
 - **BRIEF:** state the tier and the action gate (§3) in the immutable brief so the builder knows the
   merge constraint up front.
 - **BUILD (`/work` step 3) — model selection by tier:** Tier A/B build with `builder` (sonnet);
-  Tier C builds with `builder-strong` (opus). The model is fixed by each agent's frontmatter (synced
-  from `.claude/model-policy.json`, enforced by `scripts/check-model-policy.ts`) — there is no
-  per-invocation override in the CLI/Actions lanes, so model-switching = choosing which builder to spawn.
+  Tier C builds with `builder-strong` (opus). The model comes from each agent's frontmatter (synced
+  from `.claude/model-policy.json`, enforced by `scripts/check-model-policy.ts`). `builder-strong` is a
+  separate agent for its stricter Tier-C contract (system prompt), not a routing workaround — Claude
+  Code supports a per-invocation `model` param too, but selecting the builder keeps tier→model explicit
+  and policy-gated. Model-switching = choosing which builder to spawn.
 - **JUDGE (`/work` step 5):** the fresh-context evaluator is **mandatory on every tier (never
   sampled)** — tier modulates the security-reviewer, the human-approval gate, and the builder model
   (see BUILD above), NEVER the evaluator. A/B = evaluator (+ security-reviewer on sensitive paths), merge on
