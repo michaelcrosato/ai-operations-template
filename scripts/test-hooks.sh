@@ -429,6 +429,30 @@ cat > "$FIX/tier-bad.json" <<'EOF'
 EOF
 check "F-LP1: validate rejects an invalid tier (not A/B/C)" 1 "$(US_WITH_STATE "$FIX/tier-bad.json" --validate)"
 
+# ── F-AP1: awaiting_approval status (human-approval hold for Tier C / REQUIRE_APPROVAL) ──
+# A built+verified feature can be PARKED for operator sign-off before its irreversible merge —
+# never a way to skip the build, and never an occupant of the single in_progress slot.
+AP="$(mktemp -d)"
+ap_feat() { # ap_feat <id> <status> <evidence-json>
+  printf '{ "id": "%s", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [], "priority": 1, "status": "%s", "passes": false, "evidence": %s, "attempts": 0, "blocked_reason": null }' "$1" "$2" "$3"
+}
+printf '{ "features": [ %s ] }\n' "$(ap_feat F-9701 awaiting_approval '["roadmap/evidence/F-9701/verify.log"]')" > "$AP/ev.json"
+check "F-AP1: validate accepts awaiting_approval WITH evidence"        0 "$(US_WITH_STATE "$AP/ev.json" --validate)"
+printf '{ "features": [ %s ] }\n' "$(ap_feat F-9701 awaiting_approval '[]')" > "$AP/noev.json"
+check "F-AP1: validate REJECTS awaiting_approval with NO evidence"     1 "$(US_WITH_STATE "$AP/noev.json" --validate)"
+printf '{ "features": [ %s ] }\n' "$(ap_feat F-9701 in_progress '["roadmap/evidence/F-9701/verify.log"]')" > "$AP/wip.json"
+check "F-AP1: --status in_progress+evidence -> awaiting_approval allowed" 0 "$(US_WITH_STATE "$AP/wip.json" --status F-9701 awaiting_approval)"
+printf '{ "features": [ %s ] }\n' "$(ap_feat F-9701 pending '["roadmap/evidence/F-9701/verify.log"]')" > "$AP/pending.json"
+check "F-AP1: --status REJECTS awaiting_approval from pending (unbuilt)" 1 "$(US_WITH_STATE "$AP/pending.json" --status F-9701 awaiting_approval)"
+printf '{ "features": [ %s ] }\n' "$(ap_feat F-9701 in_progress '[]')" > "$AP/wip-noev.json"
+check "F-AP1: --status REJECTS awaiting_approval without evidence"      1 "$(US_WITH_STATE "$AP/wip-noev.json" --status F-9701 awaiting_approval)"
+printf '{ "features": [ %s, %s ] }\n' "$(ap_feat F-9701 awaiting_approval '["roadmap/evidence/F-9701/verify.log"]')" "$(ap_feat F-9702 pending '[]')" > "$AP/parked.json"
+check "F-AP1: awaiting_approval does NOT block a new in_progress (loop keeps moving)" 0 "$(US_WITH_STATE "$AP/parked.json" --status F-9702 in_progress)"
+rm -rf "$AP"
+# Schema status enum must match the writer's STATUSES (no drift — like the F-SM2 key cross-check).
+AP_ENUM="$(node -e 'const s=require("./roadmap/features.schema.json");process.stdout.write(s.properties.features.items.properties.status.enum.slice().sort().join(","))')"
+check "F-AP1: schema status enum matches the writer's STATUSES" "awaiting_approval,blocked,done,in_progress,pending" "$AP_ENUM"
+
 # ── F-EC1 (security review): the captured-marker laundering vector is closed end-to-end ──
 # Evidence under a gitignored tmp/ dir (cwd-relative so collectEvidenceErrors finds it; not
 # roadmap/evidence so the F-DM1 hermeticity guard stays clean).

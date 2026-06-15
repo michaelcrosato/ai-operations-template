@@ -8,7 +8,7 @@ import * as path from 'node:path';
  * Usage:
  *   ts-node scripts/update-state.ts --validate
  *   ts-node scripts/update-state.ts --add '<feature-json>'
- *   ts-node scripts/update-state.ts --status F-0001 in_progress|pending|blocked|done [reason]
+ *   ts-node scripts/update-state.ts --status F-0001 in_progress|pending|blocked|done|awaiting_approval [reason]
  *   ts-node scripts/update-state.ts --attempt F-0001
  *   ts-node scripts/update-state.ts --evidence F-0001 <path> [<path>...]
  *   ts-node scripts/update-state.ts --passes F-0001 true
@@ -20,7 +20,11 @@ import * as path from 'node:path';
 const FILE = process.env.STATE_FILE
   ? path.resolve(process.env.STATE_FILE)
   : path.join(process.cwd(), 'roadmap', 'features.json');
-const STATUSES = ['pending', 'in_progress', 'blocked', 'done'];
+// 'awaiting_approval' (F-AP1): a feature that is built + verified + reviewed but whose
+// irreversible/operator-visible MERGE is held for human sign-off (Tier C / REQUIRE_APPROVAL,
+// TASK_AUTONOMY_TRIAGE §3). It is PARKED — it does not occupy the single in_progress slot, so
+// the loop keeps moving on other features (the gate never blocks the loop).
+const STATUSES = ['pending', 'in_progress', 'blocked', 'done', 'awaiting_approval'];
 const REQUIRED = [
   'id', 'epic', 'title', 'spec_ref', 'description', 'acceptance',
   'authorized_paths', 'forbidden_paths', 'priority', 'status', 'passes',
@@ -120,6 +124,9 @@ function validate(features: Feature[]): string[] {
     if (f.status === 'blocked' && !f.blocked_reason) errors.push(`${f.id}: blocked without blocked_reason`);
     if (f.passes && f.evidence.length === 0) errors.push(`${f.id}: passes:true with no evidence (default-FAIL contract)`);
     if (f.status === 'done' && !f.passes) errors.push(`${f.id}: status:done requires passes:true (evidence-gated flow)`);
+    // F-AP1: a feature can only await approval AFTER it was built + verified — never a way to
+    // park an unbuilt feature in a human-gated limbo. The merge/passes still happens on approval.
+    if (f.status === 'awaiting_approval' && f.evidence.length === 0) errors.push(`${f.id}: status:awaiting_approval requires evidence (built + verified, pending operator sign-off)`);
   }
   // F-0025: single-in_progress invariant. The path-authorization guard (F-0007/F-0022)
   // derives the active feature from the lone in_progress row; 2+ in_progress makes that
@@ -291,6 +298,13 @@ switch (cmd) {
       if (other) {
         fail(`cannot set ${id} in_progress: ${other.id} is already in_progress (single-in_progress invariant — finish, block, or revert it first)`);
       }
+    }
+    // F-AP1: the only forward path into the human-approval hold is from an in_progress feature
+    // that already has build evidence. This keeps awaiting_approval a real post-build gate (not a
+    // way to skip the build) while leaving it OUT of the single-in_progress slot (loop keeps moving).
+    if (status === 'awaiting_approval') {
+      if (f.status !== 'in_progress') fail(`cannot set ${id} awaiting_approval: only an in_progress feature can be parked for sign-off (current: ${f.status})`);
+      if (f.evidence.length === 0) fail(`cannot set ${id} awaiting_approval: no evidence — build + verify before requesting operator sign-off`);
     }
     f.status = status;
     f.blocked_reason = status === 'blocked' ? (reason.join(' ') || 'unspecified') : null;
