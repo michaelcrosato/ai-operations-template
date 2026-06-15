@@ -48,3 +48,7 @@ playwright-report/
 
 # Next.js build output
 .next/
+
+# bench harness — committed: harness + tasks; local-only: run artifacts + scratch cwd
+bench/results/
+bench/sandbox/

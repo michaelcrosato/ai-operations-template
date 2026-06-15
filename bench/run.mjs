@@ -30,6 +30,12 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TASKS_DIR = path.join(ROOT, 'bench', 'tasks');
 const RESULTS_DIR = path.join(ROOT, 'bench', 'results');
+const SANDBOX = path.join(ROOT, 'bench', 'sandbox'); // clean cwd: no project CLAUDE.md/hooks → reproducible baseline
+// Context mode: 'clean' runs from an empty sandbox (the model's raw cost on the task);
+// 'engine' runs from the repo root with the full engine context (CLAUDE.md/hooks) loaded.
+// The clean→engine delta is the engine's CONTEXT TAX (tokens/cost) — a first-class signal:
+// re-run after de-fluffing CLAUDE.md and the engine-mode input tokens should drop.
+const CTX = (() => { const i = process.argv.indexOf('--ctx'); return i >= 0 ? process.argv[i + 1] : 'clean'; })();
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(name);
 const opt = (name) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; };
@@ -97,21 +103,31 @@ function buildArgs(task) {
   if (task.model) a.push('--model', task.model);
   if (task.json_schema) a.push('--json-schema', JSON.stringify(task.json_schema));
   if (task.allowedTools) a.push('--allowedTools', task.allowedTools);
-  if (task.max_turns) a.push('--max-turns', String(task.max_turns));
+  // Floor the turn cap at 6: a --json-schema task spends an extra turn synthesizing the
+  // structured output, so --max-turns 1 yields error_max_turns. No-tool tasks can't run away
+  // (no tools to loop on), so a generous cap costs nothing but avoids false failures.
+  const mt = task.max_turns && task.max_turns >= 6 ? task.max_turns : 6;
+  a.push('--max-turns', String(mt));
   return a;
 }
 
 function runTask(task) {
   const cliArgs = buildArgs(task);
+  const cwd = CTX === 'engine' ? ROOT : SANDBOX;
   const start = process.hrtime.bigint();
-  const r = spawnSync('claude', cliArgs, { cwd: ROOT, encoding: 'utf8', timeout: task.timeout_ms || 120000, shell: false, maxBuffer: 20 * 1024 * 1024 });
+  // input:'' closes stdin immediately (claude -p otherwise waits ~3s for piped stdin, and an
+  // open pipe under spawnSync surfaced as a spurious exit 1). shell:false — args are an array.
+  const r = spawnSync('claude', cliArgs, { cwd, input: '', encoding: 'utf8', timeout: task.timeout_ms || 120000, shell: false, maxBuffer: 20 * 1024 * 1024 });
   const wall_ms = Math.round(Number(process.hrtime.bigint() - start) / 1e6);
-  if (r.error || r.status !== 0) {
-    return { id: task.id, error: (r.error && r.error.message) || `exit ${r.status}: ${(r.stderr || '').slice(0, 200)}`, wall_ms };
-  }
+  // The CLI emits the result JSON (with usage/cost) even on a soft non-zero exit (e.g.
+  // error_max_turns), so parse stdout regardless and only hard-error when there's no JSON.
   let payload;
   try { payload = JSON.parse(r.stdout); } catch {
-    return { id: task.id, error: `unparseable JSON from claude: ${(r.stdout || '').slice(0, 200)}`, wall_ms };
+    return { id: task.id, error: (r.error && r.error.message) || `exit ${r.status}, no JSON: ${(r.stderr || r.stdout || '').slice(0, 200)}`, wall_ms };
+  }
+  if (payload.is_error) {
+    const u0 = payload.usage || {};
+    return { id: task.id, error: `claude ${payload.subtype || 'error'}`, wall_ms, out_tokens: u0.output_tokens ?? null, cost_usd: payload.total_cost_usd ?? null };
   }
   const result = payload.result ?? '';
   const structured = payload.structured_output;
@@ -175,17 +191,19 @@ if (flag('--dry-run')) {
 
 const sha = gitSha();
 fs.mkdirSync(RESULTS_DIR, { recursive: true });
+fs.mkdirSync(SANDBOX, { recursive: true });
 const records = [];
-console.log(`── running ${tasks.length} task(s) @ ${sha} ──`);
+console.log(`── running ${tasks.length} task(s) @ ${sha} · ctx=${CTX} (${CTX === 'engine' ? 'repo root, full engine context' : 'clean sandbox'}) ──`);
 for (const t of tasks) {
   process.stdout.write(`  ${t.id.padEnd(22)} … `);
   const rec = runTask(t);
   rec.sha = sha;
+  rec.ctx = CTX;
   records.push(rec);
   if (rec.error) console.log(`ERROR: ${rec.error.slice(0, 80)}`);
   else console.log(`${rec.pass ? '✓' : '✗'}  out=${rec.out_tokens}tok  $${(rec.cost_usd ?? 0).toFixed(4)}  ${rec.wall_ms}ms`);
 }
-const stamp = `${sha}-${records.length}`;
+const stamp = `${CTX}-${sha}-${records.length}`;
 const outFile = path.join(RESULTS_DIR, `run-${stamp}.jsonl`);
 fs.writeFileSync(outFile, records.map((r) => JSON.stringify(r)).join('\n') + '\n');
 const passed = records.filter((r) => r.pass).length;
