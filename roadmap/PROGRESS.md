@@ -1,3 +1,12 @@
+## 2026-06-15 — Model switching SHIPPED: per-tier builder agents (PR #87, F-MP2)
+
+The actual model switch, on the F-MP1 foundation — delivers the operator's "model switching" headline and triage §7's promised "(later) model selection".
+
+- **`builder-strong` (opus, mapped to the reasoning tier)** for Tier C builds (security/crypto/auth, irreversible, novel architecture, concurrency); **`builder` (sonnet)** de-fluffed and scoped to Tier A/B. `/work` BUILD (step 3) routes by tier. Harness-correct: the model is fixed by each agent's frontmatter (no per-invocation override in the CLI/Actions lanes) → switching = *which* builder the orchestrator spawns.
+- **`builder-strong` is strictly STRONGER, never an escape hatch:** stop-don't-guess on ambiguous security details, mandatory abuse/negative tests, and an explicit "your green verify is necessary-not-sufficient — the security-reviewer + operator approval gate still run." No invariant weakened: the evaluator stays mandatory on every tier; Tier C still gets the mandatory security-reviewer + approval gate.
+- **Consistency:** `/work` step 3, triage §2/§7, and `AI_OPERATIONS_PLAN §2.2` all agree. The F-MP1 drift gate ENFORCES `builder-strong`'s frontmatter == opus (6 bindings, 0 drift). +2 model-agnostic contract tests (306→**308**): the switch is real (Tier-C builder resolves to a *different* model than the default) + the mapping is correct. Evaluator PASS (all 5 criteria), verify.sh PASS, CI green.
+- **NEXT:** the `awaiting_approval` status + the Tier-C REQUIRE_APPROVAL merge gate (state-machine change in update-state.ts — critic ruling: build the status fully first), then the advisory cost governor. Optional future kaizen: a `builder-fast` (haiku) for Tier A if metrics ever justify a *downward* switch.
+
 ## 2026-06-15 — Model-switching foundation: model-policy.json made load-bearing (PR #86, F-MP1)
 
 Killed a dead-config hole the v2 audit flagged and the model-switching work re-exposed: `AI_OPERATIONS_PLAN §2.2` claimed "the hygiene routine syncs sub-agent frontmatter `model:` from policy" — but **no such routine existed**. Agents hardcoded `model:` (matching policy only by luck, unenforced); a `/research` model bump would have silently drifted every agent. Same smell as F-SM2's decorative schema.
