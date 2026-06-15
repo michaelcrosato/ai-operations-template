@@ -39,6 +39,19 @@ jobs:
           tar -C "$HOME/.local/bin" -xzf /tmp/actionlint.tar.gz actionlint
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
+      - name: Pre-fetch shellcheck binary (npm wrapper fetches it lazily; retry transient CDN 504s)
+        run: |
+          # The `shellcheck` npm wrapper downloads its binary on first run; a GitHub-CDN 504 on
+          # that fetch flaked verify.sh's shellcheck stage twice. Warm it here with retries so the
+          # binary is cached before verify runs — same pinned version (no skew), just resilient.
+          for i in 1 2 3 4 5; do
+            if npx --no-install shellcheck --version; then exit 0; fi
+            echo "shellcheck binary fetch attempt $i failed; retrying in 10s..."
+            sleep 10
+          done
+          echo "::error::shellcheck binary could not be fetched after 5 attempts (CDN outage?)"
+          exit 1
+
       - name: Verify (typecheck + lint + tests + static analysis + state validation + shield)
         run: bash scripts/verify.sh
 
