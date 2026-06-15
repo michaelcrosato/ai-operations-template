@@ -1,3 +1,12 @@
+## 2026-06-15 — Model-switching foundation: model-policy.json made load-bearing (PR #86, F-MP1)
+
+Killed a dead-config hole the v2 audit flagged and the model-switching work re-exposed: `AI_OPERATIONS_PLAN §2.2` claimed "the hygiene routine syncs sub-agent frontmatter `model:` from policy" — but **no such routine existed**. Agents hardcoded `model:` (matching policy only by luck, unenforced); a `/research` model bump would have silently drifted every agent. Same smell as F-SM2's decorative schema.
+
+- **Enforced now:** `.claude/model-policy.json` gains a machine-readable `agents`→tier map; `scripts/check-model-policy.ts --check` runs in verify.sh and FAILS the gate on any frontmatter↔policy drift; `--write` is the real hygiene routine (rewrites frontmatter from policy). Fail-closed on missing/invalid policy, missing `agents` map, unknown tier, missing agent file, an agent declaring an unmanaged `model:`, and (defense-in-depth) an unsafe agent name (no path traversal in `--write`).
+- **§2.2 reworded** to describe the enforced mechanism, not the vaporware claim.
+- **Review:** new gate script + verify.sh change → **security-reviewer APPROVE** (I preemptively added agent-name validation before the review; sole residual is a cosmetic TOCTOU that is already fail-closed → logged LOW). +8 contract tests (298→**306**). verify.sh PASS, CI green.
+- **NEXT (F-MP2 — the actual switch):** per-tier builder agents (add `builder-strong` = reasoning/opus for Tier C; keep `builder` = sonnet for A/B) + /work BUILD routes the builder by the feature's `tier` — delivers triage §7's promised "(later) model selection". Then the `awaiting_approval` status + Tier-C merge gate, then advisory cost.
+
 ## 2026-06-15 — Constitution de-fluff: CLAUDE.md §3 cleaned + JUDGE routing aligned (PR #84)
 
 Immediate follow-up to #82 — closed the contradiction that cleaning /work exposed. CLAUDE.md §3 was a jargon-laden prose duplicate of /work whose JUDGE line still said the pre-tier "sensitive paths also get security-reviewer", contradicting the freshly tier-routed /work + `TASK_AUTONOMY_TRIAGE.md §7`.
