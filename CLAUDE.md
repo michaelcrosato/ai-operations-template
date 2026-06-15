@@ -1,7 +1,7 @@
 # Agent Constitution: <REPO_NAME>
 
 ## 1. What this repo is
-A 100% AI-coded project. Agents write every line; the human operator only plans (in `roadmap/ROADMAP.md`) and does final QA. Pointer map: `README.md` = product architecture · `AI_OPERATIONS_PLAN.md` = how the factory works · `roadmap/` = all durable state · `.claude/model-policy.json` = the only place model names live.
+A 100% AI-coded project. Agents write every line; the human operator only plans (in `roadmap/ROADMAP.md`) and does final QA. Pointer map: `README.md` = product architecture · `AI_OPERATIONS_PLAN.md` = how the factory works · `TASK_AUTONOMY_TRIAGE.md` = how much autonomy a task gets + where a human is required (groom sets `tier`, /work routes on it) · `roadmap/` = all durable state · `.claude/model-policy.json` = the only place model names live.
 
 ## 2. Commands
 - Init dev env: `bash scripts/init.sh`
