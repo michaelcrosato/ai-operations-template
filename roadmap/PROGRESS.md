@@ -1,3 +1,12 @@
+## 2026-06-15 — Holistic audit + tier-system mechanical hardening (PR #91, F-TH1)
+
+Ran a two-agent adversarial audit of the whole adaptive layer (the operator's "constantly evaluate/steer"). It confirmed the state machine, model-policy gate, evidence gates, and cross-doc JUDGE routing are sound, and surfaced two REAL gaps where tier safety relied on orchestrator prose, not the state machine — now closed mechanically:
+
+- **No untiered feature:** `--add` now defaults a missing `tier` to `B` (supervised — the safe floor). Previously an untiered feature (groom slip) would route to the weak builder + skip the Tier-C gate. groom still sets tier explicitly; this is the fail-safe. (`{"tier":null}` is rejected by validate, not silently untiered.)
+- **Tier-C `done` only via `awaiting_approval`:** `--status done` on a Tier-C feature now REQUIRES the prior status to be `awaiting_approval` — turning the prose operator-sign-off gate into a state-machine gate. A Tier-C feature can no longer be recorded `done` straight from `in_progress`, skipping the human hold.
+- **Security-reviewer APPROVE:** all Tier-C done bypass paths closed (blocked/pending/in_progress→done all rejected; tier not settable via --status; born-awaiting_approval already blocked by F-AP1; case enforced by validate), works WITH (not instead of) done-requires-passes, legacy 33 null-tier features untouched, no stuck state. +4 contract tests (322→**326**). verify.sh PASS, real backlog validates 33/33, CI green.
+- **Audit also found doc-accuracy debt** (handled next, PR-2): `AI_OPERATIONS_PLAN §7.4` calls the path-guard "planned, not yet shipped" — FALSE (F-0007 is done + the guard is live); plus a Fable-5 transition-date inconsistency and minor cross-ref nits. The jargon sweep came back CLEAN; install-into.sh is complete (adopters get a working engine).
+
 ## 2026-06-15 — Advisory cost governor: cost/quality metrics (PR #90, F-CG1) — adaptive layer COMPLETE
 
 The last planned adaptive-layer piece, done honestly. The harness gives NO token telemetry at SubagentStop, so cost can't be a gate — the critic's hard ruling (never skip/down-tier a feature to save cost) is respected by making this pure OBSERVABILITY, not enforcement.
