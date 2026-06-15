@@ -6,24 +6,33 @@ function fail(msg) {
   process.exit(2);
 }
 
+// Convert a feature authorized_paths/forbidden_paths glob into a RegExp and test it
+// against an already-repo-relative file path.
+// Correctness note (F-0034): `**` is mapped through a sentinel BEFORE single `*` is
+// expanded, otherwise the `*`->[^/]* pass corrupts the `.*` produced for `**` into
+// `.[^/]*`, which can never cross a `/` — so `src/**` historically failed to match a
+// nested file like `src/forge/abSim.ts`. The sentinel keeps `**` = `.*` (crosses dirs).
 function matchGlob(filePath, glob) {
   const normPath = normalizePath(filePath);
   const normGlob = glob.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\.\//, '').replace(/\/$/, '').trim();
 
   if (normGlob === '**') return true;
 
-  let regexStr = normGlob
-    .replace(/[.+^${}()|[\]\\]/g, '\\$&') // escape regex chars
-    .replace(/\*\*\/\*/g, '.*')          // **/.* -> matches all subdirs and files
-    .replace(/\*\*\//g, '(?:.*/)?')      // **/ -> matches optional subdirectories
-    .replace(/\*\*/g, '.*')              // ** -> matches anything
-    .replace(/\*/g, '[^/]*')             // * -> matches any non-slash chars
-    .replace(/\?/g, '.');                // ? -> matches single char
-  
-  const regex = new RegExp('^' + regexStr + '$');
-  return regex.test(normPath);
+  const SENT = String.fromCharCode(0); // NUL sentinel — cannot occur in a path or glob
+  const regexStr = normGlob
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&') // escape regex specials (NOT * or ?)
+    .replace(/\*\*/g, SENT)               // ** -> sentinel (protect from the single-* pass)
+    .replace(/\*/g, '[^/]*')              // * -> any run of non-slash chars
+    .replace(new RegExp(SENT + '/', 'g'), '(?:.*/)?') // **/ -> optional directory segments
+    .replace(new RegExp(SENT, 'g'), '.*') // bare ** -> anything (crosses /)
+    .replace(/\?/g, '.');                 // ? -> single char
+
+  return new RegExp('^' + regexStr + '$').test(normPath);
 }
 
+// Canonicalize to a repo-relative POSIX path, resolving `..`/`.`/`//` and any
+// absolute/drive prefix. path.resolve collapses traversal so `src/../package.json`
+// becomes `package.json` (cannot escape an `src/**` scope).
 function normalizePath(p) {
   let relative = p;
   try {
@@ -61,69 +70,84 @@ function run() {
 
   const normFile = normalizePath(filePath);
 
-  // Load roadmap/features.json (needed for both derivation and authz lookup)
+  // Locate state file (may be absent or unparseable).
   const featuresPath = process.env.STATE_FILE
     ? path.resolve(process.env.STATE_FILE)
     : path.join(process.cwd(), 'roadmap', 'features.json');
-  if (!fs.existsSync(featuresPath)) {
-    process.exit(0);
+
+  let featuresData = null;
+  let stateReadable = false;
+  if (fs.existsSync(featuresPath)) {
+    try {
+      featuresData = JSON.parse(fs.readFileSync(featuresPath, 'utf8'));
+      stateReadable = true;
+    } catch (e) {
+      stateReadable = false;
+    }
   }
 
-  let featuresData;
-  try {
-    featuresData = JSON.parse(fs.readFileSync(featuresPath, 'utf8'));
-  } catch (e) {
-    process.exit(0);
-  }
-
-  // F-0022: Derive active feature mechanically if CLAUDE_ACTIVE_FEATURE not set.
-  // Precedence: env var > exactly-one-in_progress > (0 in_progress = permissive).
-  // F-0025: 2+ in_progress is anomalous (the single-in_progress invariant blocks it at
-  // the writer); if it occurs anyway (e.g. a hand-edit bypassing update-state) the guard
-  // FAILS CLOSED instead of going permissive, closing the self-bypass vector.
+  // Determine the active feature.
+  // Precedence: CLAUDE_ACTIVE_FEATURE env > exactly-one in_progress (mechanical
+  // derivation, F-0022) > none. With NO asserted active feature there is no scope to
+  // enforce, so editing is permissive (orchestrator/maintenance work).
   let activeFeature = process.env.CLAUDE_ACTIVE_FEATURE || '';
   if (!activeFeature) {
+    // Cannot derive without readable state, and nothing is asserted -> permissive.
+    if (!stateReadable) {
+      process.exit(0);
+    }
     const inProgress = (featuresData.features || []).filter(f => f && f.status === 'in_progress');
     if (inProgress.length === 1) {
       activeFeature = inProgress[0].id;
     } else if (inProgress.length > 1) {
-      fail(`Multiple features are in_progress (${inProgress.map(f => f.id).join(', ')}) — path authorization is ambiguous; refusing the edit (F-0025 fail-closed). Resolve to a single in_progress feature.`);
+      // F-0025: ambiguous — the single-in_progress invariant should prevent this; if a
+      // hand-edit produced it, FAIL CLOSED rather than guess.
+      fail(`Multiple features are in_progress (${inProgress.map(f => f.id).join(', ')}) — path authorization is ambiguous; refusing the edit (fail-closed). Resolve to a single in_progress feature.`);
+    } else {
+      process.exit(0); // zero in_progress -> no active feature -> permissive
     }
   }
 
-  if (!activeFeature) {
-    // Zero in_progress and no env override → permissive (no active feature is legitimate)
-    process.exit(0);
+  // F-0034: an active feature IS asserted (env or derived). From here we FAIL CLOSED on
+  // any inability to authorize — missing/unparseable state, unknown id, or duplicate id.
+  // (Previously an unknown id exited 0, waving every edit through — the documented bypass.)
+  if (!stateReadable) {
+    fail(`active feature "${activeFeature}" is asserted but the state file is missing/unparseable at ${featuresPath} (fail-closed).`);
   }
-
-  const feature = (featuresData.features || []).find(f => f.id === activeFeature);
-  if (!feature) {
-    // Unknown feature: path-guard.js keeps existing fail-open behavior for unknown ids
-    process.exit(0);
+  const matches = (featuresData.features || []).filter(f => f && f.id === activeFeature);
+  if (matches.length === 0) {
+    fail(`active feature "${activeFeature}" not found in state (fail-closed) — an unknown active-feature id no longer waves edits through.`);
   }
+  if (matches.length > 1) {
+    fail(`active feature "${activeFeature}" is duplicated in state (fail-closed).`);
+  }
+  const feature = matches[0];
 
   const authorized = feature.authorized_paths || [];
   const forbidden = feature.forbidden_paths || [];
 
-  // 1. Check forbidden paths first
+  // 1. Forbidden wins (block even if it would otherwise be authorized).
   for (const glob of forbidden) {
     if (matchGlob(normFile, glob)) {
       fail(`File "${filePath}" is in the forbidden_paths list of active feature "${activeFeature}" ("${glob}").`);
     }
   }
 
-  // 2. Check authorized paths
-  if (authorized.length > 0) {
-    let isAuthorized = false;
-    for (const glob of authorized) {
-      if (matchGlob(normFile, glob)) {
-        isAuthorized = true;
-        break;
-      }
+  // 2. Must be covered by at least one authorized_paths glob. An active feature with
+  //    EMPTY authorized_paths fails closed (matches verify-gate.sh — an in_progress
+  //    feature with no declared scope cannot edit anything).
+  if (authorized.length === 0) {
+    fail(`active feature "${activeFeature}" has empty authorized_paths (fail-closed).`);
+  }
+  let isAuthorized = false;
+  for (const glob of authorized) {
+    if (matchGlob(normFile, glob)) {
+      isAuthorized = true;
+      break;
     }
-    if (!isAuthorized) {
-      fail(`File "${filePath}" is not in the authorized_paths list of active feature "${activeFeature}".`);
-    }
+  }
+  if (!isAuthorized) {
+    fail(`File "${filePath}" is not in the authorized_paths list of active feature "${activeFeature}".`);
   }
 
   process.exit(0);
