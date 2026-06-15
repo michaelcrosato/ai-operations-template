@@ -61,6 +61,12 @@ Every feature is assigned a tier **A/B/C** at groom time, gated on **consequence
 
 The design philosophy (autonomy, decide-don't-ask, freshness, token efficiency, self-improvement) is documented in [`AI_OPERATIONS_PLAN.md`](AI_OPERATIONS_PLAN.md) and enforced by [`CLAUDE.md`](CLAUDE.md).
 
+## Measuring whether a change actually helps (`bench/`)
+
+The engine measures its own changes instead of guessing. [`bench/`](bench/README.md) is a golden-task harness that scores any change on **output quality** (graded vs an expected answer), **tokens**, **cost**, and **speed** — run it before and after a change and `--compare` the deltas. It uses `claude -p --output-format json` for per-task token/cost/latency, deterministic graders (including executing generated code against hidden assertions), and a free local micro-bench for pure-function + gate-latency regression. The daily `/kaizen` pass is wired to use it, so "this change is a 1% improvement" has to show up as a moved number, not a vibe.
+
+First measured baseline (develop): the 7-task suite passes **7/7**, and the engine's own loaded context (`CLAUDE.md` + hooks) was measured to cost **~$0.0094 per agent call** (a +14.5% tax with no quality benefit on the probes) — a concrete, dollar-denominated target for de-fluffing work.
+
 ---
 
 ## Honest limitations (the part most READMEs hide)

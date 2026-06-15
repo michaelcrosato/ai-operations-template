@@ -1,3 +1,12 @@
+## 2026-06-15 — Bench: ran the loop for real, measured the context tax, wired bench into /kaizen (PR #97)
+
+Operator follow-up: run the measure-loop, fold the discoveries into the docs/README, write the findings, push to develop, and make the engine's automation loop trigger the measure→improve cycle.
+
+- **Ran the full suite live (develop @ 8fa66bc):** `--ctx clean` 7/7 PASS, 1,028 out-tok, $0.4523; `--ctx engine` 7/7 PASS, 993 out-tok, $0.5179. **Measured context tax: +$0.0656 (+14.5%, ≈$0.0094/agent-call) + 0.3–4.3s/task latency, no quality benefit** — the de-fluff payoff target, now a real number. All engine-component probes pass (judge good+bad, injection-resist, rbac-reason, codegen-by-execution).
+- **Wired bench into `/kaizen`** (the "trigger it"): step 3 now requires a before/after bench reading for any change that could move quality/tokens/cost/speed (`micro.mjs` free; `run.mjs --compare`; `--ctx engine` for context changes) — "a change that doesn't move a measured number is churn"; quality regressions veto. Step 4 records the measured delta. The daily improvement loop now MEASURES its own effect.
+- **Docs folded:** README gains a "Measuring whether a change helps" section + the baseline numbers; AI_OPERATIONS_PLAN gains a `bench/` tree entry + a self-measurement paragraph; bench/README gains the measured-baseline table (so it's readable from GitHub/at work). Desktop findings report updated with the full-suite numbers.
+- Docs/skill, no guard surface → evaluator review. verify.sh PASS.
+
 ## 2026-06-15 — Benchmark/effect-measurement suite built (PR #96, bench/)
 
 Operator /goal (/deep-research): a suite of designed prompts with expected outputs to measure whether an engine change actually had an effect — output quality (same/better), tokens (down), speed (faster), task perf (up). NOT a code review.
