@@ -470,6 +470,30 @@ rm -rf "$AP"
 AP_ENUM="$(node -e 'const s=require("./roadmap/features.schema.json");process.stdout.write(s.properties.features.items.properties.status.enum.slice().sort().join(","))')"
 check "F-AP1: schema status enum matches the writer's STATUSES" "awaiting_approval,blocked,done,in_progress,pending" "$AP_ENUM"
 
+# ── F-TH1 (audit hardening): no untiered feature + Tier-C `done` only via awaiting_approval ──
+TH="$(mktemp -d)"
+# (1) --add with NO tier defaults to B — an untiered feature must never silently route to the weak
+# builder or skip the Tier-C gate (audit finding). groom still sets tier explicitly; this is the floor.
+printf '{ "features": [] }\n' > "$TH/add.json"
+US_WITH_STATE "$TH/add.json" --add '{"id":"F-9801","epic":"t","title":"t","spec_ref":"t","description":"t","acceptance":["a"],"authorized_paths":["src/**"],"forbidden_paths":[],"priority":1}' >/dev/null 2>&1
+check "F-TH1: --add defaults a missing tier to B" "yes" "$(grep -q '"tier": *"B"' "$TH/add.json" && echo yes || echo no)"
+# (2) A Tier-C feature CANNOT go in_progress -> done directly (must pass through awaiting_approval).
+cat > "$TH/tc-wip.json" <<'EOF'
+{ "features": [ { "id": "F-9802", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [], "priority": 1, "status": "in_progress", "passes": false, "evidence": ["roadmap/evidence/F-9802/v.log"], "attempts": 0, "blocked_reason": null, "tier": "C" } ] }
+EOF
+check "F-TH1: Tier-C feature CANNOT go in_progress -> done directly" 1 "$(US_WITH_STATE "$TH/tc-wip.json" --status F-9802 'done')"
+# (3) A Tier-C feature CAN go awaiting_approval -> done (the approved path; passes already true).
+cat > "$TH/tc-park.json" <<'EOF'
+{ "features": [ { "id": "F-9802", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [], "priority": 1, "status": "awaiting_approval", "passes": true, "evidence": ["roadmap/evidence/F-9802/v.log"], "attempts": 0, "blocked_reason": null, "tier": "C" } ] }
+EOF
+check "F-TH1: Tier-C feature CAN go awaiting_approval -> done" 0 "$(US_WITH_STATE "$TH/tc-park.json" --status F-9802 'done')"
+# (4) The gate is Tier-C-ONLY: a Tier-B feature still goes in_progress -> done normally.
+cat > "$TH/tb-wip.json" <<'EOF'
+{ "features": [ { "id": "F-9803", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [], "priority": 1, "status": "in_progress", "passes": true, "evidence": ["roadmap/evidence/F-9803/v.log"], "attempts": 0, "blocked_reason": null, "tier": "B" } ] }
+EOF
+check "F-TH1: Tier-B feature CAN go in_progress -> done (gate is C-only)" 0 "$(US_WITH_STATE "$TH/tb-wip.json" --status F-9803 'done')"
+rm -rf "$TH"
+
 # ── F-EC1 (security review): the captured-marker laundering vector is closed end-to-end ──
 # Evidence under a gitignored tmp/ dir (cwd-relative so collectEvidenceErrors finds it; not
 # roadmap/evidence so the F-DM1 hermeticity guard stays clean).

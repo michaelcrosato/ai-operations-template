@@ -275,8 +275,11 @@ switch (cmd) {
     let incoming: Partial<Feature>;
     try { incoming = JSON.parse(args[0]); } catch (e) { fail(`--add argument is not valid JSON: ${e}`); }
     const feature: Feature = {
+      // tier defaults to 'B' (supervised — the safe operating point): an untiered feature must
+      // never silently route to the weak builder / skip the Tier-C gate (audit finding). groom
+      // should still set tier explicitly per TASK_AUTONOMY_TRIAGE §1; this is the fail-safe floor.
       dependencies: [], status: 'pending', passes: false, evidence: [],
-      attempts: 0, blocked_reason: null,
+      attempts: 0, blocked_reason: null, tier: 'B',
       ...incoming,
       // F-SM2: the guardrail-surface forbidden_paths can NEVER be cleared by caller input.
       // Placed AFTER ...incoming and unioned, so a caller-supplied forbidden_paths can only
@@ -318,6 +321,13 @@ switch (cmd) {
     if (status === 'awaiting_approval') {
       if (f.status !== 'in_progress') fail(`cannot set ${id} awaiting_approval: only an in_progress feature can be parked for sign-off (current: ${f.status})`);
       if (f.evidence.length === 0) fail(`cannot set ${id} awaiting_approval: no evidence — build + verify before requesting operator sign-off`);
+    }
+    // F-TH1 (audit finding): a Tier-C feature can only reach `done` THROUGH the operator-approval
+    // hold — it must transition awaiting_approval → done, never in_progress → done directly. This
+    // turns the prose Tier-C merge gate into a state-machine gate: the state record cannot mark a
+    // Tier-C feature done without the awaiting_approval park having happened first.
+    if (status === 'done' && f.tier === 'C' && f.status !== 'awaiting_approval') {
+      fail(`cannot set Tier-C feature ${id} done directly (current: ${f.status}): it must pass through awaiting_approval (operator sign-off) first`);
     }
     f.status = status;
     f.blocked_reason = status === 'blocked' ? (reason.join(' ') || 'unspecified') : null;
