@@ -1,3 +1,11 @@
+## 2026-06-15 — Test-teeth: mutation-smoke extended to update-state + assertion-shield (PR #93, F-TC4b)
+
+First item of the test-teeth backlog (operator's new /goal). mutation-smoke only proved `rbac.ts`'s tests had teeth; now the two guard surfaces this program hardened most — the state writer and the assertion shield — get mutation coverage too.
+
+- **5 new in-tree mutants, all KILLED** by the existing contract tests: update-state (Tier-C done-gate F-TH1, single-in_progress F-0025, --add born-pending F-AP1, awaiting_approval-needs-evidence F-AP1); assertion-shield (deletion-detection gate). Killers are **fast + targeted** (inverted-polarity: green on clean code, fail on mutated — one ts-node / shield run each, ~7s total; the full 86s contract suite would be far too slow per-mutation). Multi-SUT backstop (cp-backup baselines, not HEAD, so WIP can't false-fail) + trap restore; tree byte-identical post-run.
+- **Security-reviewer APPROVE** (exhaustive 26-point pass): restoration safe (no path leaves a guard mutated), kill-soundness sound (baseline-green check catches a broken/typo'd killer so spurious "kills" can't pass), fixtures isolated (only the targeted guard rejects each input — no masking), no weakening of rbac coverage / --selftest, no injection, perf fine. verify.sh PASS (**9/9** mutants killed), 326 contract tests, CI green.
+- **NEXT test-teeth items:** anti-tautology / held-out tests; the rbac arbitrary-principal default-deny property test.
+
 ## 2026-06-15 — Doc-accuracy fixes from the audit (PR #92)
 
 Cleared the doc debt the holistic audit's debt-sweep flagged.
