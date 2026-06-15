@@ -10,14 +10,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const EV = path.resolve(__dirname, '../../roadmap/evidence/F-0020');
 
-// Top-level side-effect: ensure artifacts are (re)emitted whenever this test module loads.
-// Provides graph.json + Dockerfile + docker-compose.yml for AC smoke/evidence (like F-0019).
-const emitted = exportArtifacts();
-fs.mkdirSync(EV, { recursive: true });
-fs.writeFileSync(path.join(EV, 'graph.json'), `${JSON.stringify(emitted.graph, null, 2)}\n`);
-fs.writeFileSync(path.join(EV, 'Dockerfile'), emitted.dockerfile);
-fs.writeFileSync(path.join(EV, 'docker-compose.yml'), emitted.dockerCompose);
+// F-DM1: no evidence write at load time — committed roadmap/evidence/F-0020/ artifacts are
+// static golden snapshots. exportArtifacts() is pure; these tests assert on the committed
+// goldens (read-only) and on the function's return value, never (re)writing the tree.
 
+// NOTE: name kept for the assertion-shield (renaming a test() trips it); this now reads the
+// committed F-0020 goldens read-only — exportArtifacts() is pure and writes nothing.
 test('exportArtifacts writes graph.json + Dockerfile + docker-compose.yml with required strings', () => {
   const gPath = path.join(EV, 'graph.json');
   const dPath = path.join(EV, 'Dockerfile');

@@ -1103,6 +1103,15 @@ rm -rf "$F34E"
 
 rm -rf "$PG_FIX"
 
+# ── F-DM1: evidence hermeticity guard ──────────────────────────────────────────
+# The unit tests run earlier in verify.sh. roadmap/evidence/ is a committed golden
+# snapshot — a test or product write there dirties the tree and races under parallel
+# `node --test` (the flake the removed --test-concurrency=1 masked). Mechanism-agnostic:
+# assert the run left the evidence tree unchanged. Skips cleanly outside a git work tree.
+if git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  check "F-DM1: unit tests leave roadmap/evidence unchanged (hermeticity)" "" "$(git -C "$ROOT" status --porcelain -- roadmap/evidence)"
+fi
+
 # ── F-0026 known-bad corpus ────────────────────────────────────────────────────
 # Consolidated labeled corpus proving the MECHANICAL judges (assertion-shield,
 # verify-gate/path-guard, update-state, guard-bash) each DENY known-bad inputs.
