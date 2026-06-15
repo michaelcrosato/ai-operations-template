@@ -90,6 +90,10 @@
           },
           "blocked_reason": {
             "type": ["string", "null"]
+          },
+          "tier": {
+            "type": "string",
+            "enum": ["A", "B", "C"]
           }
         },
         "additionalProperties": false

@@ -30,14 +30,19 @@ const REQUIRED = [
 // field (e.g. a future `tier`) is a deliberate act — extend this AND features.schema.json
 // together; a cross-check contract test (test-hooks.sh) keeps the two in lockstep so the
 // schema is no longer decorative. An unknown key (typo or injection) is rejected by validate().
-const KNOWN_KEYS = new Set([...REQUIRED, 'dependencies']);
+const KNOWN_KEYS = new Set([...REQUIRED, 'dependencies', 'tier']);
+// Task-autonomy tier (TASK_AUTONOMY_TRIAGE.md): A=delegable / B=supervised / C=human-directed.
+// Optional (groom assigns it; legacy rows omit it); when present it must be one of these. The
+// /work loop switches review depth by tier (A=spot-check, B=mandatory evaluator, C=+security
+// reviewer +human-approval gate) — the loop-switching the operator asked for.
+const TIERS = ['A', 'B', 'C'];
 // forbidden_paths defaults that --add must never let a caller clear (guardrail surfaces).
 const SAFETY_FORBIDDEN = ['.claude/**', '.github/workflows/**'];
 
 interface Feature {
   id: string; epic: string; title: string; spec_ref: string; description: string;
   acceptance: string[]; authorized_paths: string[]; forbidden_paths: string[];
-  dependencies?: string[]; priority: number; status: string; passes: boolean;
+  dependencies?: string[]; tier?: string; priority: number; status: string; passes: boolean;
   evidence: string[]; attempts: number; blocked_reason: string | null;
 }
 
@@ -96,6 +101,9 @@ function validate(features: Feature[]): string[] {
     }
     if (!Number.isInteger(rec.attempts)) errors.push(`${idLabel}: "attempts" must be an integer`);
     if (!Number.isInteger(rec.priority)) errors.push(`${idLabel}: "priority" must be an integer`);
+    if (rec.tier !== undefined && !(typeof rec.tier === 'string' && TIERS.includes(rec.tier))) {
+      errors.push(`${idLabel}: "tier" must be one of ${TIERS.join('/')} when present`);
+    }
     // If a field the value checks below rely on has the wrong type, skip them for this
     // feature so a malformed hand-edit reports cleanly instead of throwing on CI.
     if (typeof rec.id !== 'string' || typeof rec.status !== 'string' || !Array.isArray(rec.evidence)
