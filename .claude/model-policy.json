@@ -1,5 +1,12 @@
 {
-  "_comment": "Single source of truth for tier→model mapping (AI_OPERATIONS_PLAN §2.2). Only /research may change a mapping, after verifying the official model catalog. The hygiene routine syncs agent frontmatter from this file. No other file may hardcode a model name.",
+  "_comment": "Single source of truth for sub-agent model assignment (AI_OPERATIONS_PLAN §2.2). `tiers` maps a capability tier to a model; `agents` maps each .claude/agents/*.md to a tier. `scripts/check-model-policy.ts` enforces this: --check (in verify.sh) fails if any agent's frontmatter `model:` drifts from policy; --write is the hygiene routine that rewrites frontmatter from here. Only /research may change a tier→model mapping, after verifying the official model catalog (stamp last_verified). No other file may hardcode a model name.",
+  "agents": {
+    "builder": "builder",
+    "db-engineer": "reasoning",
+    "evaluator": "reasoning",
+    "explorer": "fast",
+    "security-reviewer": "reasoning"
+  },
   "tiers": {
     "reasoning": {
       "model": "opus",
