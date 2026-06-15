@@ -409,9 +409,25 @@ check "F-SM2: --add cannot clear safety forbidden_paths (.github kept)"       "y
 # Schema is no longer decorative: its closed-shape property set must match the canonical key
 # list (drift guard) and additionalProperties must be false. Relative require => cwd is repo root.
 SM_SCHEMA_KEYS="$(node -e 'const s=require("./roadmap/features.schema.json");process.stdout.write(Object.keys(s.properties.features.items.properties).sort().join(","))' 2>/dev/null)"
-check "F-SM2: schema property set matches the closed-shape contract" "acceptance,attempts,authorized_paths,blocked_reason,dependencies,description,epic,evidence,forbidden_paths,id,passes,priority,spec_ref,status,title" "$SM_SCHEMA_KEYS"
+check "F-SM2: schema property set matches the closed-shape contract" "acceptance,attempts,authorized_paths,blocked_reason,dependencies,description,epic,evidence,forbidden_paths,id,passes,priority,spec_ref,status,tier,title" "$SM_SCHEMA_KEYS"
 SM_ADDL="$(node -e 'const s=require("./roadmap/features.schema.json");process.stdout.write(String(s.properties.features.items.additionalProperties))' 2>/dev/null)"
 check "F-SM2: schema items set additionalProperties:false" "false" "$SM_ADDL"
+
+# ── F-LP1: optional task-autonomy tier field (A/B/C) on the closed shape ──────────
+cat > "$FIX/tier-ok.json" <<'EOF'
+{ "features": [ { "id": "F-9301", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+  "acceptance": ["a"], "authorized_paths": ["src/**"], "forbidden_paths": [], "dependencies": [],
+  "priority": 1, "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null,
+  "tier": "C" } ] }
+EOF
+check "F-LP1: validate accepts a valid tier (A/B/C)" 0 "$(US_WITH_STATE "$FIX/tier-ok.json" --validate)"
+cat > "$FIX/tier-bad.json" <<'EOF'
+{ "features": [ { "id": "F-9301", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+  "acceptance": ["a"], "authorized_paths": ["src/**"], "forbidden_paths": [], "dependencies": [],
+  "priority": 1, "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null,
+  "tier": "Z" } ] }
+EOF
+check "F-LP1: validate rejects an invalid tier (not A/B/C)" 1 "$(US_WITH_STATE "$FIX/tier-bad.json" --validate)"
 
 # ── F-EC1 (security review): the captured-marker laundering vector is closed end-to-end ──
 # Evidence under a gitignored tmp/ dir (cwd-relative so collectEvidenceErrors finds it; not
