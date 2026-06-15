@@ -283,6 +283,11 @@ switch (cmd) {
       fail(`${feature.id} is in the reserved contract-test fixture range (F-9xxx); it cannot be added to the real backlog`);
     }
     if (feature.passes) fail('new features are born failing (default-FAIL contract); cannot --add with passes:true');
+    // F-AP1 (security review): a feature must be BORN `pending` — the lifecycle (in_progress →
+    // built+verified → awaiting_approval / done) runs only through --status, which enforces the
+    // transition guards. Without this, `...incoming` could override the pending default to birth a
+    // feature directly in in_progress/blocked/done/awaiting_approval, skipping every build gate.
+    if (feature.status !== 'pending') fail(`new features are born status:pending (the lifecycle runs via --status); cannot --add with status:"${feature.status}"`);
     data.features.push(feature);
     save(data);
     break;

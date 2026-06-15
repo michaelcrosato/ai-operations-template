@@ -448,6 +448,12 @@ printf '{ "features": [ %s ] }\n' "$(ap_feat F-9701 in_progress '[]')" > "$AP/wi
 check "F-AP1: --status REJECTS awaiting_approval without evidence"      1 "$(US_WITH_STATE "$AP/wip-noev.json" --status F-9701 awaiting_approval)"
 printf '{ "features": [ %s, %s ] }\n' "$(ap_feat F-9701 awaiting_approval '["roadmap/evidence/F-9701/verify.log"]')" "$(ap_feat F-9702 pending '[]')" > "$AP/parked.json"
 check "F-AP1: awaiting_approval does NOT block a new in_progress (loop keeps moving)" 0 "$(US_WITH_STATE "$AP/parked.json" --status F-9702 in_progress)"
+# Security-review (PR #88): --add must not let a feature be BORN in any non-pending status —
+# the only way into awaiting_approval (or in_progress/done) is the --status lifecycle.
+printf '{ "features": [] }\n' > "$AP/add-base.json"
+check "F-AP1: --add REJECTS a feature born awaiting_approval (must be pending)" 1 "$(US_WITH_STATE "$AP/add-base.json" --add "$(ap_feat F-9703 awaiting_approval '["x.log"]')")"
+check "F-AP1: --add REJECTS a feature born in_progress"                          1 "$(US_WITH_STATE "$AP/add-base.json" --add "$(ap_feat F-9703 in_progress '[]')")"
+check "F-AP1: --add REJECTS a feature born done"                                 1 "$(US_WITH_STATE "$AP/add-base.json" --add "$(ap_feat F-9703 'done' '["x.log"]')")"
 rm -rf "$AP"
 # Schema status enum must match the writer's STATUSES (no drift — like the F-SM2 key cross-check).
 AP_ENUM="$(node -e 'const s=require("./roadmap/features.schema.json");process.stdout.write(s.properties.features.items.properties.status.enum.slice().sort().join(","))')"
