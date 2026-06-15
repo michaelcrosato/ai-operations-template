@@ -330,6 +330,17 @@ printf '%s\n' '{"feature":"F-9101"}' > "$FIX/metrics-nodate.jsonl"
 check "validate rejects metrics missing date"   1 "$(METRICS_FILE="$FIX/metrics-nodate.jsonl" node "$TSNODE" scripts/update-state.ts --validate >/dev/null 2>&1; echo $?)"
 printf '{"date":"2026-06-10","feature":"F-9101","notes":"%s"}\n' "$(printf 'x%.0s' $(seq 1 600))" > "$FIX/metrics-long.jsonl"
 check "validate rejects oversized metrics record" 1 "$(METRICS_FILE="$FIX/metrics-long.jsonl" node "$TSNODE" scripts/update-state.ts --validate >/dev/null 2>&1; echo $?)"
+# F-CG1: optional cost/quality fields (tier/builder/attempts) must be well-formed when present
+# (legacy records without them still pass — see "accepts well-formed metrics" above).
+MV() { METRICS_FILE="$1" node "$TSNODE" scripts/update-state.ts --validate >/dev/null 2>&1; echo $?; }
+printf '%s\n' '{"date":"2026-06-10","feature":"F-9101","tier":"C","builder":"builder-strong","attempts":1}' > "$FIX/m-cost.jsonl"
+check "F-CG1: metrics accepts valid tier+builder+attempts"  0 "$(MV "$FIX/m-cost.jsonl")"
+printf '%s\n' '{"date":"2026-06-10","feature":"F-9101","tier":"Z"}' > "$FIX/m-tier.jsonl"
+check "F-CG1: metrics rejects an invalid tier (not A/B/C)"   1 "$(MV "$FIX/m-tier.jsonl")"
+printf '%s\n' '{"date":"2026-06-10","feature":"F-9101","builder":"gpt-4"}' > "$FIX/m-builder.jsonl"
+check "F-CG1: metrics rejects an unknown builder"            1 "$(MV "$FIX/m-builder.jsonl")"
+printf '%s\n' '{"date":"2026-06-10","feature":"F-9101","attempts":"two"}' > "$FIX/m-attempts.jsonl"
+check "F-CG1: metrics rejects non-integer attempts"         1 "$(MV "$FIX/m-attempts.jsonl")"
 check "add rejects malformed JSON"              1 "$(US --add 'not-json')"
 check "add rejects passes:true at birth"        1 "$(US --add '{"id":"F-9102","epic":"t","title":"t","spec_ref":"t","description":"t","acceptance":["a"],"authorized_paths":[],"priority":1,"status":"pending","passes":true,"evidence":["x"],"attempts":0,"blocked_reason":null}')"
 check "add rejects dangling dependency"         1 "$(US --add '{"id":"F-9103","epic":"t","title":"t","spec_ref":"t","description":"t","acceptance":["a"],"authorized_paths":[],"dependencies":["F-9999"],"priority":1,"status":"pending","passes":false,"evidence":[],"attempts":0,"blocked_reason":null}')"
