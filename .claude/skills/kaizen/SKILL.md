@@ -10,6 +10,7 @@ You are the manager walking the factory floor. Product features are NOT in scope
 ## Procedure
 1. **Gather signals** (15 min of reading, fan out explorers if useful):
    - `roadmap/metrics.jsonl` — the measurable feed: first-attempt pass rate (attempts==0 vs total), recurring NEEDS_WORK/BLOCK verdicts, findings_fixed trend. This is where "check that metric next kaizen" (step 4) reads from.
+   - **Cost/quality scan (advisory cost governor)** — from the same metrics feed, look at the cost dimension: the `tier` distribution and per-tier first-attempt rate (a tier with a poor rate usually means thin briefs, not a model problem); `builder` usage (a high `builder-strong`/opus share may mean features are over-tiered — re-check the groom tiering against `TASK_AUTONOMY_TRIAGE.md §1`'s consequences test); attempts clustering on a tier/epic. There is **no token telemetry** (the harness gives none at SubagentStop), so this is **strictly advisory**: propose a re-tiering, a sharper brief template, or a cheaper-agent default for a pattern — **never** skip, gate, or down-tier a feature to save cost, and **never** economize the evaluator (mandatory every tier) or the Tier-C security-reviewer (`TASK_AUTONOMY_TRIAGE.md §7` cost rule).
    - PROGRESS.md since the last kaizen entry: where did sessions lose time? What surprised agents?
    - Evaluator/security findings: any *category* that recurred?
    - CI history (`gh run list`): flaky steps, slow steps?

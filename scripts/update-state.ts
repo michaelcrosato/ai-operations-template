@@ -40,6 +40,9 @@ const KNOWN_KEYS = new Set([...REQUIRED, 'dependencies', 'tier']);
 // /work loop switches review depth by tier (A=spot-check, B=mandatory evaluator, C=+security
 // reviewer +human-approval gate) — the loop-switching the operator asked for.
 const TIERS = ['A', 'B', 'C'];
+// The build agents a metrics record may name (cost dimension). Keep in sync with the
+// builder entries in .claude/model-policy.json `agents`. Used to validate metrics.jsonl.
+const BUILDERS = ['builder', 'builder-strong'];
 // forbidden_paths defaults that --add must never let a caller clear (guardrail surfaces).
 const SAFETY_FORBIDDEN = ['.claude/**', '.github/workflows/**'];
 
@@ -252,6 +255,11 @@ switch (cmd) {
           const rec = JSON.parse(l);
           if (!/^\d{4}-\d{2}-\d{2}$/.test(rec.date ?? '')) errors.push(`metrics.jsonl line ${idx + 1}: missing/invalid "date" (YYYY-MM-DD)`);
           if (typeof rec.feature !== 'string' || !rec.feature) errors.push(`metrics.jsonl line ${idx + 1}: missing "feature"`);
+          // Cost/quality fields (F-CG1) are OPTIONAL (legacy records predate them) but must be
+          // well-formed WHEN PRESENT, so /kaizen's cost scan reads trustworthy data, not free-text.
+          if (rec.tier !== undefined && !(typeof rec.tier === 'string' && TIERS.includes(rec.tier))) errors.push(`metrics.jsonl line ${idx + 1}: "tier" must be one of ${TIERS.join('/')} when present`);
+          if (rec.builder !== undefined && !(typeof rec.builder === 'string' && BUILDERS.includes(rec.builder))) errors.push(`metrics.jsonl line ${idx + 1}: "builder" must be one of ${BUILDERS.join('/')} when present`);
+          if (rec.attempts !== undefined && !Number.isInteger(rec.attempts)) errors.push(`metrics.jsonl line ${idx + 1}: "attempts" must be an integer when present`);
         } catch {
           errors.push(`metrics.jsonl line ${idx + 1}: not valid JSON`);
         }
