@@ -1,3 +1,11 @@
+## 2026-06-15 — Tier-C human-approval merge gate WIRED (PR #89, F-AP2) — adaptive layer milestone
+
+Completes the human-in-the-loop gate (F-AP1 status + F-AP2 wiring). `/work` SHIP (step 6) now branches on tier: **A/B auto-merge on green** (unchanged); **Tier C / REQUIRE_APPROVAL** — after green CI + a passing evaluator + the mandatory security-reviewer APPROVE — records evidence, parks the feature `awaiting_approval`, writes a plain-English `QUESTIONS.md` sign-off request, leaves the PR open, and **keeps the loop moving**. Operator approval → merge → `--passes` → `done`. triage §3 REQUIRE_APPROVAL now references the park.
+
+- **Evaluator PASS (all 5 criteria):** step ordering matches the shipped state machine (`--evidence` before `--status awaiting_approval`; `--passes`/`done` deferred to post-approval); the loop never blocks (SELECT only picks `pending`, so a parked feature is never re-selected); the evaluator + security-reviewer stay mandatory (the gate fires *after* them, not instead); operator-facing is plain English; all docs (/work step 6, triage §2/§3/§7, CLAUDE.md §3) agree. verify.sh PASS, CI green.
+- **"Where a human is required" is now real end-to-end:** `/groom` sets `tier` → `/work` routes the review depth (loop-switching, #82/#84), the builder model (model-switching, #86/#87), AND the Tier-C merge gate (human approval, #88/#89). The three things `TASK_AUTONOMY_TRIAGE §7` says tier modulates — security-reviewer, model, human-approval gate — are all wired; the evaluator stays mandatory and unsampled throughout.
+- **NEXT:** the advisory cost governor (SubagentStop has no token telemetry → advisory only; can NEVER skip a Tier-C feature before review). That is the last planned adaptive-layer piece.
+
 ## 2026-06-15 — Human-approval hold: awaiting_approval status (PR #88, F-AP1)
 
 Built the *status* fully before wiring the Tier-C merge gate (critic ruling). `awaiting_approval` = a built+verified+reviewed feature whose irreversible/operator-visible merge is held for human sign-off (Tier C / REQUIRE_APPROVAL).
