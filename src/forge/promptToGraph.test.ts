@@ -1,22 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import fs from 'node:fs';
-
 import { promptToGraph } from './promptToGraph.ts';
 import { DEFAULT_MODEL } from './models.ts';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Top-level side-effect: ensure sample-graph.json is (re)emitted whenever this
-// test module is loaded by node --test (provides the evidence artifact for AC4/CLI smoke
-// even if CLI test case not the first run). Matches "can emit sample-graph.json".
-const emittedSample = promptToGraph('Research the topic then summarize the report');
-const evidenceDir = path.resolve(__dirname, '../../roadmap/evidence/F-0019');
-fs.mkdirSync(evidenceDir, { recursive: true });
-fs.writeFileSync(path.join(evidenceDir, 'sample-graph.json'), `${JSON.stringify(emittedSample, null, 2)}\n`);
+// F-DM1: no evidence write at load time — committed roadmap/evidence/F-0019/sample-graph.json
+// is a static golden snapshot. Tests assert on promptToGraph()'s returned value in-memory.
 
 test('promptToGraph(prompt) produces valid JSON (>=1 node + >=1 edge) with required keys id/type/label + source/target', () => {
   const g = promptToGraph('Research latest models and then summarize for operator');

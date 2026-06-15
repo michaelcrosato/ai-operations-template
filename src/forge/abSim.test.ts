@@ -1,41 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import fs from 'node:fs';
 import { abSim } from './abSim.ts';
 import { check } from './rbac.ts';
-import { minimalGraph, dockerfileContent, dockerComposeContent } from './exportArtifacts.ts';
 import { promptToGraph } from './promptToGraph.ts';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const EV = path.resolve(__dirname, '../../roadmap/evidence/F-0017');
-
-// Top-level side-effect: ensure sample-ab-logs.txt + unified samples (graph, Dockerfile, compose, exports.txt)
-// emitted to F-0017/ whenever test loads (provides AC2 evidence + ghost close unification).
-const emittedLogs = abSim();
-fs.mkdirSync(EV, { recursive: true });
-fs.writeFileSync(path.join(EV, 'sample-ab-logs.txt'), `${JSON.stringify(emittedLogs, null, 2)}\n`);
-// Unify the current-slice samples into F-0017/ for the F-0017 close. The F-0019/F-0020
-// artifacts are derived IN-PROCESS from the same pure (side-effect-free) functions their own
-// tests use — never read back from roadmap/evidence/F-0019|F-0020/* — so this emission is
-// independent of test file-write order and --test-concurrency. (Previously this copied sibling
-// tests' evidence files, which under parallel `node --test` could be mid-truncate-write, landing
-// an empty graph.json in F-0017/ and failing `update-state.ts --validate`; flaked CI on PR #42.)
-try {
-  // reproduces committed F-0017/sample-graph.json byte-for-byte: promptToGraph() with the prompt
-  // the promptToGraph.js CLI smoke uses (the value last written to F-0019/sample-graph.json).
-  const sampleGraph = promptToGraph('Research X and summarize');
-  fs.writeFileSync(path.join(EV, 'sample-graph.json'), `${JSON.stringify(sampleGraph, null, 2)}\n`);
-  // reproduces committed F-0017/{graph.json,Dockerfile,docker-compose.yml} byte-for-byte: the same
-  // pure functions exportArtifacts.test.js uses to write F-0020 (minimalGraph/dockerfile/compose).
-  fs.writeFileSync(path.join(EV, 'graph.json'), `${JSON.stringify(minimalGraph(), null, 2)}\n`);
-  fs.writeFileSync(path.join(EV, 'Dockerfile'), dockerfileContent());
-  fs.writeFileSync(path.join(EV, 'docker-compose.yml'), dockerComposeContent());
-  fs.writeFileSync(path.join(EV, 'sample-exports.txt'), 'unified: graph.json + Dockerfile + docker-compose.yml (from F-0020) + sample-ab-logs.txt\n');
-} catch (_) { /* best effort for unification */ }
+// F-DM1: this module no longer writes evidence at load time. abSim() and the forge pure
+// functions perform no disk I/O; the committed roadmap/evidence/F-0017/ artifacts are static
+// golden snapshots. Removing the side-effect eliminated the parallel-write race that the
+// --test-concurrency=1 band-aid masked (CI flake on PR #42). Tests assert on returned values.
 
 test('abSim executes two graph variants over synthetic inputs and emits real-time structured logs (AC2)', () => {
   const logs = abSim();
