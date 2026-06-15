@@ -71,7 +71,7 @@ underspecified task to L3 — "agents amplify bottlenecks" when the pipeline is 
   a one-sentence verifiable criterion; route it to `QUESTIONS.md` instead.
 - **BRIEF:** state the tier and the action gate (§3) in the immutable brief so the builder knows the
   merge constraint up front.
-- **JUDGE (`/work` step 6):** the fresh-context evaluator is **mandatory on every tier (never
+- **JUDGE (`/work` step 5):** the fresh-context evaluator is **mandatory on every tier (never
   sampled)** — tier modulates the security-reviewer, the human-approval gate, and (later) model
   selection, NEVER the evaluator. A/B = evaluator (+ security-reviewer on sensitive paths), merge on
   green; C = evaluator + **mandatory** security-reviewer (tier-driven, not just path) + the
