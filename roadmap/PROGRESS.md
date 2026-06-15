@@ -1,3 +1,12 @@
+## 2026-06-15 — Human-approval hold: awaiting_approval status (PR #88, F-AP1)
+
+Built the *status* fully before wiring the Tier-C merge gate (critic ruling). `awaiting_approval` = a built+verified+reviewed feature whose irreversible/operator-visible merge is held for human sign-off (Tier C / REQUIRE_APPROVAL).
+
+- **State machine (update-state.ts):** STATUSES + the schema enum gain `awaiting_approval` (a new contract test fails the gate if the two ever drift). validate(): awaiting_approval REQUIRES evidence (can't park an *unbuilt* feature in human-gated limbo). `--status` transition guard: the only forward path in is from an `in_progress` feature that already has evidence. **PARKED, not active:** excluded from the single-in_progress invariant, so the loop keeps moving on other features (the gate never blocks the loop).
+- **Security-reviewer BLOCK→fix→APPROVE:** caught a real HIGH (F1) — `--add` spread `...incoming` over the `status:'pending'` default, so a feature could be BORN `awaiting_approval` (or in_progress/done), skipping the entire build lifecycle. Fixed: `--add` now requires `status:pending` — closing the awaiting_approval birth vector AND the broader born-in-any-status hole in one guard. Fresh re-review APPROVE.
+- +10 contract tests (308→**318**). verify.sh PASS, CI green.
+- **NEXT (F-AP2):** wire `/work` SHIP — a Tier-C feature with a green build + passing reviews sets `awaiting_approval` + a QUESTIONS.md sign-off request *instead of* merging; on operator approval → merge → `--passes true` → `done`. Then the advisory cost governor.
+
 ## 2026-06-15 — Model switching SHIPPED: per-tier builder agents (PR #87, F-MP2)
 
 The actual model switch, on the F-MP1 foundation — delivers the operator's "model switching" headline and triage §7's promised "(later) model selection".
