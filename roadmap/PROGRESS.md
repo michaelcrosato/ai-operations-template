@@ -1,3 +1,12 @@
+## 2026-06-15 — Benchmark/effect-measurement suite built (PR #96, bench/)
+
+Operator /goal (/deep-research): a suite of designed prompts with expected outputs to measure whether an engine change actually had an effect — output quality (same/better), tokens (down), speed (faster), task perf (up). NOT a code review.
+
+- **Web-verified (RULE 4 + deep-research workflow):** measurement bridge = `claude -p --output-format json` → `usage`(tokens) + `total_cost_usd` + `duration_ms` (caveat: cost is a client-side estimate; authoritative = Anthropic Usage/Cost API). Live-loop telemetry = built-in OpenTelemetry (`CLAUDE_CODE_ENABLE_TELEMETRY=1`). Field tools (active repos): **promptfoo** (22.2k★, wraps claude -p, A/B + CI gating — the recommended framework layer), Inspect AI, DeepEval; **SWE-bench Verified / Terminal-Bench / Aider polyglot** (objective, test-based, Docker-local) for builder task-perf.
+- **Built `bench/`:** `run.mjs` (claude -p runner; captures quality/tokens/cost/speed; deterministic graders incl. **exec-the-codegen**; `--ctx clean|engine`, `--compare`, `--baseline`, `--dry-run`); `micro.mjs` (local no-API: rbac.check 33 ns/op, promptToGraph 120 ns/op, update-state --validate 214 ms — REAL numbers); 7 self-contained golden tasks (extract / summarize / reason / codegen / injection-resist / judge good+bad) across haiku/sonnet/opus.
+- **Live-proven:** ran `extract-roles` end-to-end → ✓ 383 out-tok, $0.0327, 7.4s. **Key finding:** the engine's own project context (CLAUDE.md+hooks) costs ≈14k tokens/~$0.01 per agent call (clean ~21k vs engine ~35k cached) — a dollar-denominated test of de-fluff changes.
+- **Report (Desktop):** `AI-Operations-Engine-Benchmark-Suite-2026-06-15.md` — strategy, what's built, inspiration (hype-vs-real), and the **NEEDS-HELP/access/MCP** table (ANTHROPIC_API_KEY for hermetic `--bare` CI; Docker for SWE-bench; Playwright MCP for UI benchmarks; OTel collector for live telemetry; Usage API for authoritative cost; promptfoo for the framework layer; bigger labeled judge sets). Budget note: `claude -p` bills the separate Agent SDK credit pool (effective today).
+
 ## 2026-06-15 — Doctor's-report review pass: web-verified the engine, fixed a freshness violation, rewrote README (PR #95)
 
 Operator /goal: brutal senior review grounded in CURRENT web reality (RULE 4), run tests, full report card, fix critical/easy, rewrite README, push.
