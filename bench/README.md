@@ -11,6 +11,17 @@ It measures four dimensions per golden task:
 | **Cost (USD)** | `total_cost_usd` (⚠️ client-side *estimate* — see caveats) | same |
 | **Speed** | wall-clock (`process.hrtime`) + the run's `duration_ms`/`duration_api_ms` | runner + JSON |
 
+## First measured baseline (2026-06-15, develop @ 8fa66bc)
+Ran the full suite live in both context modes — real numbers, not estimates:
+
+| | quality | out-tokens | cost | note |
+|---|---|---|---|---|
+| `--ctx clean` (sandbox) | **7/7 ✓** | 1,028 | $0.4523 | every engine-component probe passes (judge-good ✓, judge-bad ✓ caught the fail-open, injection-resist ✓, rbac-reason ✓ "deny", codegen ✓) |
+| `--ctx engine` (repo root) | **7/7 ✓** | 993 | $0.5179 | same quality |
+| **delta (the context tax)** | no change | −3.4% (noise) | **+$0.0656 (+14.5%)** | **≈ $0.0094 per agent call** for the engine's own CLAUDE.md+hooks context, plus +0.3–4.3s latency/task |
+
+**Reading:** the engine's loaded context costs ~1¢/call and some latency with **no quality benefit on these probes** — exactly the kind of overhead de-fluffing should shrink. Re-run `--ctx engine` after any context change and watch this number; that's the measurable payoff. (Local micro-bench, no API: `rbac.check` 33 ns/op, `promptToGraph` 120 ns/op, `update-state --validate` 214 ms.)
+
 ## The measurement bridge
 `claude -p "<prompt>" --output-format json` returns a JSON object with `result`, `structured_output` (when `--json-schema` is passed), `usage` (token counts incl. cache), `total_cost_usd`, a per-model cost breakdown, `duration_ms`, `num_turns`, and `session_id`. That single call is the whole bridge for task-level measurement. (Verified against `code.claude.com/docs/en/headless`, 2026-06-15.)
 

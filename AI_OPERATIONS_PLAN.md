@@ -139,8 +139,11 @@ Phase 0 (§10) builds exactly this tree. One-line purpose per entry; detailed sp
 │       ├── e2e.yml               # E2E test runs against preview deployments
 │       └── claude.yml            # claude-code-action: @claude mentions + CI-failure autofix
 │
+├── bench/ ...                    # Effect-measurement harness: golden tasks scored on quality/tokens/cost/speed (bench/README.md); wired into /kaizen
 └── src/ ...                      # Product source code (organized by components)
 ```
+
+**Self-measurement (`bench/`).** The engine measures whether its own changes help rather than guessing: `bench/run.mjs` scores a fixed set of golden tasks on output quality (deterministic graders, incl. executing generated code), token consumption, cost, and speed via `claude -p --output-format json`, with a free local micro-bench for pure-function/gate-latency regression. `/kaizen` runs it before/after a change so a "1% improvement" must show up as a moved number. Authoritative cost reconciles against the Anthropic Usage/Cost API; live-loop telemetry is available via `CLAUDE_CODE_ENABLE_TELEMETRY=1` (OpenTelemetry). Measured baseline (2026-06-15): suite passes 7/7; the engine's loaded context costs ≈$0.0094/agent-call (the de-fluff payoff target).
 
 **Always-loaded context is tiny by design:** `CLAUDE.md` (≤150 lines) plus whichever single `rules/*.md` file matches the files being touched. Everything else — including this plan — is read on demand.
 

@@ -22,7 +22,8 @@ You are the manager walking the factory floor. Product features are NOT in scope
    - Remove a recurring failure cause permanently (lint rule, hook pattern, CI cache).
    - Tighten a gate that let something mediocre through; loosen one producing only false alarms.
 3. **Ship it** through the normal loop: branch, implement, verify, PR → develop. Small is fine — 1% compounds to ~37× in a year; 0% compounds to nothing.
-4. **Record** in PROGRESS.md under a `### kaizen` heading: the signal, the change, and the metric you expect to move (and check that metric next kaizen).
+   - **Measure the effect, don't assume it (`bench/`).** If the change could move output quality, tokens, cost, or speed — a prompt/agent edit, a `CLAUDE.md`/context change, a model-policy or loop change — take a bench reading BEFORE and AFTER: `node bench/micro.mjs` (free, local) for speed/throughput, and `node bench/run.mjs --baseline` then `--compare` for token/cost/quality. For a context (CLAUDE.md/hooks) change, run `--ctx engine` both times — the delta is the context-tax change. **A change that doesn't move a measured number (and isn't a pure correctness fix) is not a 1% improvement — it's churn.** Quality regressions (✓→✗) veto the change regardless of token/speed wins.
+4. **Record** in PROGRESS.md under a `### kaizen` heading: the signal, the change, the **measured before→after delta** (from `bench/`, where applicable), and the metric you expect to keep moving (check it next kaizen).
 
 ## Guardrails
 - One improvement per day — no improvement sprees that starve the roadmap.
