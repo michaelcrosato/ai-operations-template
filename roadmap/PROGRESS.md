@@ -1,3 +1,13 @@
+## 2026-06-15 — Doctor's-report review pass: web-verified the engine, fixed a freshness violation, rewrote README (PR #95)
+
+Operator /goal: brutal senior review grounded in CURRENT web reality (RULE 4), run tests, full report card, fix critical/easy, rewrite README, push.
+
+- **Web-verified (RULE 4):** model lineup (Fable 5 / Opus 4.8 / Sonnet 4.6 / Haiku 4.5) is ACCURATE & current; the architecture (evidence-outside-self-assessment, scoped HITL, deterministic hooks, auditable state) MATCHES the 2026 best-practice frontier; the Ralph loop is now mainstream (OpenAI shipped a built-in `/goal`); SubagentStop carries no token telemetry (F-CG1 advisory design is correct).
+- **CRITICAL freshness violation found + fixed:** F-MP2 (this session) justified the two-builder design on a FALSE premise — "no per-invocation subagent model override in the CLI". The official docs say the opposite (resolution: env → per-invocation param → frontmatter → main). The engine's own §5 freshness rule should have caught it. The mechanism still works (builder-strong frontmatter is honored), but the rationale was rotten. Corrected `/work` step 3 + triage §7 to the honest justification (builder-strong = stricter Tier-C **system prompt**, not a routing workaround) + corrected the wrong memory.
+- **Tests run:** verify.sh PASS; 326 contract tests; mutation-smoke 10/10; rbac 17/17; 33/33 features validate.
+- **Report card (Desktop):** `AI-Operations-Engine-Doctor-Report-2026-06-15.md` — overall **B** (core A-, dinged by the freshness violation + duplication debt). Demo = B+ (honest mockup, not a liability). Logged debt (NOT fixed — redesign/security-surface): two-builder duplication + the Option-A alternative (one builder + per-invocation model); BUILDERS hardcoded in update-state.ts AND model-policy.json; glob-matching parity test; test-hooks.sh 1,400-line monolith; no e2e "orchestrator spawns the right-tier builder" test.
+- **README rewritten** to the current engine (adaptive layer, tier system, 326 tests + mutation-smoke, corrected model-routing fact), keeping the honest "engine is the asset / ForgeOps is a mockup" framing + adding the freshness-lapse as a documented scar.
+
 ## 2026-06-15 — Test-teeth: rbac default-deny property test + its mutation (PR #94, F-TC4c) — backlog cleared
 
 Test-teeth backlog item #2/#3 (the audit + F-TC4 both flagged the missing rbac default-deny property; "held-out + anti-tautology tests" is satisfied by the same work).
