@@ -1,0 +1,10 @@
+{
+  "id": "summarize-bounded",
+  "category": "summarize",
+  "tier": "fast",
+  "model": "haiku",
+  "max_turns": 1,
+  "prompt": "Summarize the following in 20 words or fewer. Text: 'The engine gates every change behind an evidence file on disk and a fresh-context reviewer, so a feature is only marked done when proof exists and CI is green.' Output only the summary.",
+  "grader": { "type": "word_max", "max": 20, "must_include": "evidence|review|gate|proof|done" },
+  "notes": "Instruction-following under a hard length budget + key-term retention. Measures conciseness; a verbose regression shows as output-token inflation AND a quality fail (over 20 words)."
+}

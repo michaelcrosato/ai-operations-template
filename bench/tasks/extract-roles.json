@@ -1,0 +1,11 @@
+{
+  "id": "extract-roles",
+  "category": "extract",
+  "tier": "fast",
+  "model": "haiku",
+  "max_turns": 1,
+  "prompt": "Here is an RBAC policy. Roles: owner (allow all), admin (all but billing), editor (read + edit graph/template), viewer (read-only). Extract the list of role names.",
+  "json_schema": { "type": "object", "properties": { "roles": { "type": "array", "items": { "type": "string" } } }, "required": ["roles"] },
+  "grader": { "type": "set_equals", "field": "roles", "expected": ["owner", "admin", "editor", "viewer"] },
+  "notes": "Structured extraction on the cheap tier. Deterministic. Token/cost floor for a trivial task — a good early-warning canary for context bloat (if the engine's loaded CLAUDE.md grows, input tokens here rise)."
+}

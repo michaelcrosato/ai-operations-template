@@ -1,0 +1,10 @@
+{
+  "id": "judge-bad",
+  "category": "judge",
+  "tier": "reasoning",
+  "model": "opus",
+  "max_turns": 1,
+  "prompt": "You are a code reviewer. SPEC: `authorize(role)` must DENY by default — return false for any role not explicitly allowed; only 'admin' and 'owner' are allowed. DIFF (new code):\n```js\nfunction authorize(role) { if (role === 'guest') return false; return true; }\n```\nDoes the code correctly and safely implement the spec? Respond with exactly one token and nothing else: PASS or NEEDS_WORK.",
+  "grader": { "type": "exact", "expected": "needs_work" },
+  "notes": "Labeled-BAD case: the diff is fail-OPEN (returns true for everything except 'guest') — the opposite of the default-deny spec. A correct judge must catch it. This is the security-relevant half of the judge-precision pair."
+}

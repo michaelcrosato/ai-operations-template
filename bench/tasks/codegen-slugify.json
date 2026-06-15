@@ -1,0 +1,13 @@
+{
+  "id": "codegen-slugify",
+  "category": "codegen",
+  "tier": "builder",
+  "model": "sonnet",
+  "max_turns": 1,
+  "prompt": "Write a JavaScript function `slugify(s)` that: lowercases the input, trims it, replaces every run of non-alphanumeric characters with a single hyphen, and removes leading/trailing hyphens. Output ONLY the function definition — no exports, no imports, no markdown fences, no explanation.",
+  "grader": {
+    "type": "codegen",
+    "assertions": "if (slugify('  Hello, World!  ') !== 'hello-world') throw new Error('basic: '+slugify('  Hello, World!  ')); if (slugify('a__b--c') !== 'a-b-c') throw new Error('runs'); if (slugify('--Trim--') !== 'trim') throw new Error('trim-edges'); if (slugify('Already-Clean') !== 'already-clean') throw new Error('clean');"
+  },
+  "notes": "Real codegen graded by EXECUTING the output against hidden assertions (pass/fail is objective, not vibes). The closest local analogue to the builder agent's actual job. SWE-bench in miniature."
+}
