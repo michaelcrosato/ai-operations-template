@@ -1,3 +1,12 @@
+## 2026-06-15 — Test-teeth: rbac default-deny property test + its mutation (PR #94, F-TC4c) — backlog cleared
+
+Test-teeth backlog item #2/#3 (the audit + F-TC4 both flagged the missing rbac default-deny property; "held-out + anti-tautology tests" is satisfied by the same work).
+
+- **Two held-out property tests** on `rbac.ts` (encode the spec independently of the impl, over a broad DETERMINISTIC seeded space — no Math.random): (1) ~230 arbitrary/attacker-flavored principals (filtered to exclude anything normalizing to a real role — the filter uses the same lowercase+trim as `check()`) × resources × actions all return `deny` (**30,160 checks**, with an `assert.ok(checked > 5000)` anti-tautology guard so an emptied input set fails loudly); (2) org/billing resources owner-only — every non-owner denied on every action, plus the owner-allowed positive side so the deny assertions aren't vacuous.
+- **Teeth proven:** a new mutation-smoke mutant flips the fall-through `return 'deny'` (uniquely `^  return 'deny';$`) to `allow`; the arbitrary-principal test KILLS it → the gate now kills **10/10** mutants.
+- **Evaluator PASS** (test-quality, 5 criteria): filter normalization matches `check()` exactly (drops only `owner\n`), non-vacuous, org/billing correct, deterministic/CI-stable, mutation uniquely targeted + lethal. Caught + fixed a biome `noAssignInExpressions` on the LCG before review. verify.sh PASS, rbac 17/17, CI green.
+- **TEST-TEETH BACKLOG CLEARED:** #93 (mutation-smoke → update-state + assertion-shield) + #94 (rbac held-out property + anti-tautology guards + the default-deny mutant). The engine's safety-critical tests are now proven non-vacuous across rbac, the state writer, and the assertion shield.
+
 ## 2026-06-15 — Test-teeth: mutation-smoke extended to update-state + assertion-shield (PR #93, F-TC4b)
 
 First item of the test-teeth backlog (operator's new /goal). mutation-smoke only proved `rbac.ts`'s tests had teeth; now the two guard surfaces this program hardened most — the state writer and the assertion shield — get mutation coverage too.
