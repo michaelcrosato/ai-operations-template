@@ -51,8 +51,8 @@ Roles bind to **capability tiers**, not to specific model names. The live mappin
 
 | Tier | Used by | Current mapping (2026-06-09) | Notes |
 |---|---|---|---|
-| `reasoning` | Orchestrator, planner (`/groom`), evaluator, security-reviewer, db-engineer | Claude Code default Opus tier (Opus 4.8), `high`/`xhigh` effort | Long-horizon autonomous execution; review quality is the last line of defense — never economize here. **Fable 5** (released 2026-06-09, Mythos-class) is a valid mapping for the hardest planning/evaluation passes: included on subscription plans through Jun 22, 2026, then usage credits at $10/$50 per MTok (2× Opus) — the cost line in STATUS.md flags this transition (§8.2). |
-| `builder` | Builder sub-agent (routine implementation) | Sonnet 4.6, `high` effort | Best speed/intelligence balance for well-specified single features, at exactly 60% of Opus per-token price ($3/$15 vs $5/$25 per MTok). |
+| `reasoning` | Orchestrator, planner (`/groom`), evaluator, security-reviewer, db-engineer, **builder-strong** (Tier C builds) | Claude Code default Opus tier (Opus 4.8), `high`/`xhigh` effort | Long-horizon autonomous execution; review quality is the last line of defense — never economize here. **Fable 5** (released 2026-06-09, Mythos-class) is a valid mapping for the hardest planning/evaluation passes: included on subscription plans through Jun 22, 2026, then usage credits at $10/$50 per MTok (2× Opus) — the cost line in STATUS.md flags this transition (§8.2). |
+| `builder` | Builder sub-agent (Tier A/B routine implementation) | Sonnet 4.6, `high` effort | Best speed/intelligence balance for well-specified single features, at exactly 60% of Opus per-token price ($3/$15 vs $5/$25 per MTok). |
 | `fast` | Explorer / search / triage sub-agents | Haiku 4.5, `low`/`medium` effort | Cheap fan-out for "find where X lives" work; returns conclusions, not file dumps. |
 
 Per current model guidance, more effort up front on planning typically *reduces* total tokens by cutting retry loops.
