@@ -413,6 +413,38 @@ check "F-SM2: schema property set matches the closed-shape contract" "acceptance
 SM_ADDL="$(node -e 'const s=require("./roadmap/features.schema.json");process.stdout.write(String(s.properties.features.items.additionalProperties))' 2>/dev/null)"
 check "F-SM2: schema items set additionalProperties:false" "false" "$SM_ADDL"
 
+# ── F-EC1 (security review): the captured-marker laundering vector is closed end-to-end ──
+# Evidence under a gitignored tmp/ dir (cwd-relative so collectEvidenceErrors finds it; not
+# roadmap/evidence so the F-DM1 hermeticity guard stays clean).
+rm -rf tmp/ec-launder tmp/ec-launder2 tmp/ec-green
+# (b) End-to-end: a FAILING command that echoes the PASS marker, captured, must NOT satisfy --passes.
+EVIDENCE_ROOT="tmp/ec-launder" bash "$ROOT/scripts/capture.sh" F-9102 verify -- node -e "console.log('VERIFY: PASS (exit 0)'); process.exit(1)" >/dev/null 2>&1
+cat > "$FIX/ec-launder.json" <<'EOF'
+{ "features": [ { "id": "F-9102", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+  "acceptance": ["a"], "authorized_paths": ["src/**"], "forbidden_paths": [], "dependencies": [],
+  "priority": 1, "status": "pending", "passes": false, "evidence": ["tmp/ec-launder/F-9102/verify.log"], "attempts": 0, "blocked_reason": null } ] }
+EOF
+check "F-EC1: --passes REJECTS evidence from a failing capture (no red->green)" 1 "$(US_WITH_STATE "$FIX/ec-launder.json" --passes F-9102 true)"
+# (c) Gate-side in isolation: a hand-crafted CAPTURED-BY log with a CLEAN marker but CAPTURE-EXIT!=0 is rejected.
+mkdir -p tmp/ec-launder2/F-9103
+printf 'CAPTURED-BY: scripts/capture.mjs\nCAPTURE-EXIT: 1\nVERIFY: PASS (exit 0)\n' > tmp/ec-launder2/F-9103/verify.log
+cat > "$FIX/ec-launder2.json" <<'EOF'
+{ "features": [ { "id": "F-9103", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+  "acceptance": ["a"], "authorized_paths": ["src/**"], "forbidden_paths": [], "dependencies": [],
+  "priority": 1, "status": "pending", "passes": false, "evidence": ["tmp/ec-launder2/F-9103/verify.log"], "attempts": 0, "blocked_reason": null } ] }
+EOF
+check "F-EC1: --passes REJECTS a captured-by log with clean marker but CAPTURE-EXIT!=0" 1 "$(US_WITH_STATE "$FIX/ec-launder2.json" --passes F-9103 true)"
+# (d) Positive: a captured GREEN log (CAPTURE-EXIT: 0 + marker) is still accepted (fix doesn't over-block).
+mkdir -p tmp/ec-green/F-9104
+printf 'CAPTURED-BY: scripts/capture.mjs\nCAPTURE-EXIT: 0\nVERIFY: PASS (exit 0)\n' > tmp/ec-green/F-9104/verify.log
+cat > "$FIX/ec-green.json" <<'EOF'
+{ "features": [ { "id": "F-9104", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+  "acceptance": ["a"], "authorized_paths": ["src/**"], "forbidden_paths": [], "dependencies": [],
+  "priority": 1, "status": "pending", "passes": false, "evidence": ["tmp/ec-green/F-9104/verify.log"], "attempts": 0, "blocked_reason": null } ] }
+EOF
+check "F-EC1: --passes ACCEPTS a captured green log (CAPTURE-EXIT: 0 + marker)" 0 "$(US_WITH_STATE "$FIX/ec-green.json" --passes F-9104 true)"
+rm -rf tmp/ec-launder tmp/ec-launder2 tmp/ec-green
+
 unset STATE_FILE
 rm -rf "$FIX"
 
@@ -1134,6 +1166,21 @@ check "F-0034: empty authorized_paths fails closed (path-guard)" 2 "$(printf '{"
 rm -rf "$F34E"
 
 rm -rf "$PG_FIX"
+
+# ── F-EC1: sandbox-safe evidence capture tool ────────────────────────────────────
+# capture.sh runs a command via a node child process (no shell redirection) and tees its
+# output to roadmap/evidence/<F>/<name>.log with provenance, propagating the real exit code
+# so a failing command cannot be laundered into a green log. EVIDENCE_ROOT (a test seam) keeps
+# these probes out of the real roadmap/evidence so the F-DM1 guard below stays clean.
+ECAP="$(mktemp -d)"
+ec_exit() { EVIDENCE_ROOT="$1" bash "$ROOT/scripts/capture.sh" "${@:2}" >/dev/null 2>&1; echo $?; }
+check "F-EC1: capture of a passing command exits 0" 0 "$(ec_exit "$ECAP" F-9901 ok -- node -e "process.exit(0)")"
+check "F-EC1: capture wrote a provenance-stamped log" "yes" "$([ -f "$ECAP/F-9901/ok.log" ] && grep -q '^CAPTURED-BY: scripts/capture.mjs' "$ECAP/F-9901/ok.log" && grep -q '^CAPTURE-EXIT: 0' "$ECAP/F-9901/ok.log" && echo yes || echo no)"
+check "F-EC1: capture propagates the command's non-zero exit (no red->green laundering)" 7 "$(ec_exit "$ECAP" F-9901 bad -- node -e "process.exit(7)")"
+check "F-EC1: failing capture records CAPTURE-EXIT: 7" "yes" "$([ -f "$ECAP/F-9901/bad.log" ] && grep -q '^CAPTURE-EXIT: 7' "$ECAP/F-9901/bad.log" && echo yes || echo no)"
+check "F-EC1: rejects a non-F-XXXX feature id" 2 "$(ec_exit "$ECAP" NOPE x -- node -e "process.exit(0)")"
+check "F-EC1: rejects a name with a path separator" 2 "$(ec_exit "$ECAP" F-9901 'sub/evil' -- node -e "process.exit(0)")"
+rm -rf "$ECAP"
 
 # ── F-DM1: evidence hermeticity guard ──────────────────────────────────────────
 # The unit tests run earlier in verify.sh. roadmap/evidence/ is a committed golden

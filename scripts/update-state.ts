@@ -168,11 +168,17 @@ function collectEvidenceErrors(f: Feature): string[] {
     const stat = fs.statSync(p);
     if (stat.isFile() && stat.size === 0) errors.push(`${f.id}: evidence file is empty: ${rel}`);
     if (/verify.*\.log$/i.test(rel)) {
-      const content = fs.readFileSync(p, 'utf8');
+      const lines = fs.readFileSync(p, 'utf8').split(/\r?\n/);
       // Exact-line match, not substring: a failed run's log QUOTES the marker
       // inside this very audit's error message, which once self-satisfied the
       // check (found via PR #14). A quoted occurrence is never a whole line.
-      if (content.split(/\r?\n/).some((l) => l.trim() === 'VERIFY: PASS (exit 0)')) hasGreenVerifyLog = true;
+      const hasMarker = lines.some((l) => l.trim() === 'VERIFY: PASS (exit 0)');
+      // F-EC1 (security review): if this log was produced by scripts/capture.mjs, the
+      // captured command's REAL exit code is authoritative — a PASS marker merely echoed
+      // by a FAILING command must NOT count as green. The CAPTURE-EXIT header is the truth.
+      const fromCapture = lines.some((l) => l.trim() === 'CAPTURED-BY: scripts/capture.mjs');
+      const captureGreen = lines.some((l) => l.trim() === 'CAPTURE-EXIT: 0');
+      if (hasMarker && (!fromCapture || captureGreen)) hasGreenVerifyLog = true;
     }
   }
   if (!hasGreenVerifyLog) {
