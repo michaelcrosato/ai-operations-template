@@ -1,3 +1,10 @@
+## 2026-06-15 — Doc-accuracy fixes from the audit (PR #92)
+
+Cleared the doc debt the holistic audit's debt-sweep flagged.
+- **AI_OPERATIONS_PLAN** (hook mechanics §): corrected a FALSE claim that the PreToolUse path-guard is "planned, not yet shipped" — F-0007 is **done** and the guard is **live** (`path-guard.js` fails closed on an unknown/duplicate active-feature id and canonicalizes `..`; the "which feature is active" question is resolved by the single-in_progress invariant (F-0025) + `CLAUDE_ACTIVE_FEATURE` (F-0022); hardened by F-0034). The corrected claim is directly backed by the F-0034 contract corpus that runs in `verify.sh` (verified the behaviors before editing).
+- Standardized the Fable-5 credit-transition wording ("from June 23, 2026") to match model-policy.json + §5.2.
+- Doc-only; verify.sh PASS. **Intentionally NOT changed** (audit over-flags): the `(F-0034)` ref in triage §6 is correct (F-0034 = the path-authz consolidation PR id, not a features.json row); the `[[…]]` links in DECISIONS are the append-only-log's memory-link convention. Logged low-pri kaizen: list `mutation-smoke.sh` in the plan's verify.sh description.
+
 ## 2026-06-15 — Holistic audit + tier-system mechanical hardening (PR #91, F-TH1)
 
 Ran a two-agent adversarial audit of the whole adaptive layer (the operator's "constantly evaluate/steer"). It confirmed the state machine, model-policy gate, evidence gates, and cross-doc JUDGE routing are sound, and surfaced two REAL gaps where tier safety relied on orchestrator prose, not the state machine — now closed mechanically:
