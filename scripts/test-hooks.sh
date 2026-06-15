@@ -1023,16 +1023,83 @@ check "pg: active feature blocks forbidden path" 2 "$(run_pg 'src/api/auth/login
 check "pg: active feature blocks forbidden subpath" 2 "$(run_pg 'roadmap/features.json' 'F-9501')"
 check "pg: active feature handles backslashes in authorized path" 0 "$(run_pg 'src\\health.js' 'F-9501')"
 check "pg: active feature resolves relative traversal in authorized path" 0 "$(run_pg 'src/api/auth/../../health.js' 'F-9501')"
-check "pg: non-existent active feature allows everything" 0 "$(run_pg 'scripts/verify.sh' 'F-9999')"
+check "pg: non-existent active feature fails closed (F-0034)" 2 "$(run_pg 'scripts/verify.sh' 'F-9999')"
 
 # --- F-0022: mechanical derivation (no env var, exactly one in_progress in fixture) ---
 check "pg F-0022: derived feature blocks out-of-scope edit (no env)" 2 "$(run_pg_s 'scripts/verify.sh' "$PG_STATE")"
 check "pg F-0022: derived feature allows in-scope edit (no env)"     0 "$(run_pg_s 'src/health.js' "$PG_STATE")"
 check "pg F-0022: derived feature blocks forbidden path (no env)"    2 "$(run_pg_s 'src/api/auth/login.ts' "$PG_STATE")"
 # env var overrides derived feature — explicit env takes precedence
-check "pg F-0022: env var overrides derivation (F-9999 allows everything)" 0 "$(run_pg 'scripts/verify.sh' 'F-9999')"
+# env override to an UNKNOWN id now fails closed (F-0034: was the allow-everything bypass)
+check "pg F-0034: env override to unknown id fails closed (was allow-all)" 2 "$(run_pg 'scripts/verify.sh' 'F-9999')"
 # F-0025: multiple in_progress → FAIL CLOSED (was permissive under F-0022; now blocks)
 check "pg F-0025: multiple in_progress (no env) → fail-closed (blocks any file)" 2 "$(run_pg_s 'roadmap/ROADMAP.md' "$PG_STATE_MULTI")"
+
+# ── F-0034: path-authz consolidation (traversal escape, ** glob, fail-closed parity) ──
+# Self-contained fixture: ONE in_progress feature scoped to src/** only. Tests BOTH the
+# node path-guard and the bash verify-gate so the two enforcers cannot diverge.
+F34="$(mktemp -d)"
+cat > "$F34/features.json" << 'EOF'
+{
+  "features": [
+    { "id": "F-9701", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+      "acceptance": ["a"], "authorized_paths": ["src/**"], "forbidden_paths": ["roadmap/features.json"],
+      "priority": 1, "status": "in_progress", "passes": false, "evidence": [], "attempts": 0,
+      "blocked_reason": null }
+  ]
+}
+EOF
+pg34() { printf '{"tool_input":{"file_path":"%s"}}' "$1" | STATE_FILE="$F34/features.json" bash "$HOOKS/path-guard.sh" >/dev/null 2>&1; echo $?; }
+vg34() { printf '{"tool_input":{"file_path":"%s"}}' "$1" | STATE_FILE="$F34/features.json" bash "$HOOKS/verify-gate.sh" >/dev/null 2>&1; echo $?; }
+# Traversal escape: src/../package.json resolves to package.json (outside src/**) → BLOCKED by BOTH.
+check "F-0034: traversal src/../package.json blocked (path-guard)"  2 "$(pg34 'src/../package.json')"
+check "F-0034: traversal src/../package.json blocked (verify-gate)" 2 "$(vg34 'src/../package.json')"
+check "F-0034: deeper traversal src/a/../../package.json blocked (path-guard)"  2 "$(pg34 'src/a/../../package.json')"
+check "F-0034: deeper traversal src/a/../../package.json blocked (verify-gate)" 2 "$(vg34 'src/a/../../package.json')"
+# ** glob fix: a NESTED file under src/** is allowed by BOTH (regression for the .[^/]* corruption).
+check "F-0034: src/** matches nested src/forge/abSim.ts (path-guard)"  0 "$(pg34 'src/forge/abSim.ts')"
+check "F-0034: src/** matches nested src/forge/abSim.ts (verify-gate)" 0 "$(vg34 'src/forge/abSim.ts')"
+check "F-0034: src/** matches deeply nested src/a/b/c.ts (path-guard)" 0 "$(pg34 'src/a/b/c.ts')"
+# In-scope traversal that lands back inside src/ is still allowed.
+check "F-0034: src/x/../y.ts resolves inside scope → allowed (path-guard)" 0 "$(pg34 'src/x/../y.ts')"
+# Anti-divergence (security review #1): a `src` segment ELSEWHERE is OUT of an `src/**`
+# scope in BOTH guards — verify-gate no longer over-matches by segment containment.
+check "F-0034: foo/src/secret.ts out-of-scope blocked (path-guard)"  2 "$(pg34 'foo/src/secret.ts')"
+check "F-0034: foo/src/secret.ts out-of-scope blocked (verify-gate)" 2 "$(vg34 'foo/src/secret.ts')"
+check "F-0034: a/src/x.ts out-of-scope blocked (verify-gate)"        2 "$(vg34 'a/src/x.ts')"
+check "F-0034: lib/src out-of-scope blocked (verify-gate)"           2 "$(vg34 'lib/src')"
+rm -rf "$F34"
+# Unknown active id → fail closed (parity with verify-gate).
+check "F-0034: unknown active id fails closed (path-guard)" 2 "$(run_pg 'src/health.js' 'F-9999')"
+# Duplicate active id → fail closed (find() would silently target the first row otherwise).
+F34D="$(mktemp -d)"
+cat > "$F34D/features.json" << 'EOF'
+{
+  "features": [
+    { "id": "F-9801", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"],
+      "authorized_paths": ["src/**"], "forbidden_paths": [], "priority": 1, "status": "pending",
+      "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null },
+    { "id": "F-9801", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"],
+      "authorized_paths": ["src/**"], "forbidden_paths": [], "priority": 1, "status": "pending",
+      "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null }
+  ]
+}
+EOF
+check "F-0034: duplicate active id fails closed (path-guard)" 2 "$(printf '{"tool_input":{"file_path":"src/x.ts"}}' | CLAUDE_ACTIVE_FEATURE=F-9801 STATE_FILE="$F34D/features.json" bash "$HOOKS/path-guard.sh" >/dev/null 2>&1; echo $?)"
+rm -rf "$F34D"
+# Empty authorized_paths on an asserted (in_progress) feature → fail closed (parity with verify-gate).
+F34E="$(mktemp -d)"
+cat > "$F34E/features.json" << 'EOF'
+{
+  "features": [
+    { "id": "F-9802", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"],
+      "authorized_paths": [], "forbidden_paths": [], "priority": 1, "status": "in_progress",
+      "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null }
+  ]
+}
+EOF
+check "F-0034: empty authorized_paths fails closed (path-guard)" 2 "$(printf '{"tool_input":{"file_path":"src/x.ts"}}' | STATE_FILE="$F34E/features.json" bash "$HOOKS/path-guard.sh" >/dev/null 2>&1; echo $?)"
+rm -rf "$F34E"
 
 rm -rf "$PG_FIX"
 

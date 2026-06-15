@@ -23,8 +23,16 @@ else
   FILE="$(printf '%s' "$INPUT" | grep -o '"file_path"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*:[[:space:]]*"\(.*\)"$/\1/')"
 fi
 
-# Normalize before matching (security review: roadmap/./features.json and
-# roadmap//features.json resolve to the gated file but dodge substring globs).
+# Normalize before matching. Resolve backslashes, //, /./ AND /../ traversal so an
+# authz glob cannot be escaped via roadmap/./features.json OR src/../package.json
+# (F-0034: the prior bash collapse never resolved ../, so src/../package.json
+# text-matched an `src/**` scope). node is a hard dependency here and resolves ../
+# correctly (including refusing to over-collapse leading ../); the bash collapse below
+# is a floor for the (unreached) no-node case and still handles //,/./.
+if command -v node >/dev/null 2>&1; then
+  FILE_NORM="$(printf '%s' "$FILE" | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{const p=require("path");let f=d.replace(/\\/g,"/");f=p.posix.normalize(f).replace(/^([A-Za-z]:)?\/+/,"").replace(/^\.\//,"");process.stdout.write(f);})' 2>/dev/null)"
+  [ -n "$FILE_NORM" ] && FILE="$FILE_NORM"
+fi
 FILE="${FILE//\\//}"                       # backslashes → slashes
 while case "$FILE" in *//*|*/./*) true ;; *) false ;; esac; do
   FILE="${FILE//\/\///}"                   # // → /
@@ -135,13 +143,14 @@ let pats=[];try{pats=JSON.parse(process.argv[1]||"[]")}catch{process.exit(2)}
 let fp=(process.argv[2]||"").replace(/\\/g,"/").replace(/\/+/g,"/").replace(/^[A-Za-z]:/,"").replace(/^\/+/,"").replace(/^\.\//,"");
 for(let p0 of pats){
   let p=p0.replace(/\\/g,"/").replace(/\/+/g,"/").replace(/^[A-Za-z]:/,"").replace(/^\/+/,"").replace(/^\.\//,"");
-  if(p===fp||fp===p||fp.endsWith("/"+p)||p.endsWith("/"+fp)){process.exit(0);}
-  if(p==="**"){process.exit(0);}
+  // F-0034: ANCHORED matching only, mirroring path-guard.js. The prior segment-
+  // containment and trailing-segment suffix clauses over-matched (an src/** scope
+  // wrongly allowed foo/src/secret.ts), diverging from the anchored node guard.
+  if(p===fp){process.exit(0);}                 // exact match
+  if(p==="**"){process.exit(0);}               // whole-tree scope
   if(p.endsWith("/**")){
     let pre=p.slice(0,-3);if(pre.endsWith("/"))pre=pre.slice(0,-1);
-    if(!pre||fp===pre||fp.startsWith(pre+"/")){process.exit(0);}
-    if(("/"+fp+"/").indexOf("/"+pre+"/")>=0){process.exit(0);}
-    if(fp.endsWith("/"+pre)){process.exit(0);}
+    if(!pre||fp===pre||fp.startsWith(pre+"/")){process.exit(0);} // anchored dir prefix
   }
 }
 process.exit(1);
