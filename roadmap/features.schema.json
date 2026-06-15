@@ -91,7 +91,8 @@
           "blocked_reason": {
             "type": ["string", "null"]
           }
-        }
+        },
+        "additionalProperties": false
       }
     }
   }

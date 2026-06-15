@@ -26,6 +26,13 @@ const REQUIRED = [
   'authorized_paths', 'forbidden_paths', 'priority', 'status', 'passes',
   'evidence', 'attempts', 'blocked_reason'
 ];
+// Closed-shape allow-list (F-SM2): the only keys a feature row may carry. Adding a new
+// field (e.g. a future `tier`) is a deliberate act — extend this AND features.schema.json
+// together; a cross-check contract test (test-hooks.sh) keeps the two in lockstep so the
+// schema is no longer decorative. An unknown key (typo or injection) is rejected by validate().
+const KNOWN_KEYS = new Set([...REQUIRED, 'dependencies']);
+// forbidden_paths defaults that --add must never let a caller clear (guardrail surfaces).
+const SAFETY_FORBIDDEN = ['.claude/**', '.github/workflows/**'];
 
 interface Feature {
   id: string; epic: string; title: string; spec_ref: string; description: string;
@@ -61,8 +68,39 @@ function validate(features: Feature[]): string[] {
   const errors: string[] = [];
   const ids = new Set<string>();
   for (const f of features) {
+    const rec = f as unknown as Record<string, unknown>;
+    if (typeof f !== 'object' || f === null) { errors.push('a feature entry is not an object'); continue; }
+    const idLabel = typeof rec.id === 'string' ? rec.id : '?';
+    // Required-key presence.
     for (const key of REQUIRED) {
-      if (!(key in (f as unknown as Record<string, unknown>))) errors.push(`${f.id ?? '?'}: missing field "${key}"`);
+      if (!(key in rec)) errors.push(`${idLabel}: missing field "${key}"`);
+    }
+    // Closed shape (F-SM2): reject any field outside KNOWN_KEYS so a typo (e.g. "passe")
+    // or an injected key cannot silently survive and corrupt a later reader's decision.
+    for (const key of Object.keys(rec)) {
+      if (!KNOWN_KEYS.has(key)) errors.push(`${idLabel}: unknown field "${key}" — add it to features.schema.json + KNOWN_KEYS deliberately`);
+    }
+    // Per-field type guards (F-SM2): reject malformed-but-present fields the presence check
+    // alone passes, and prevent type-confusion crashes in the value checks below.
+    if (typeof rec.id !== 'string') errors.push('feature id must be a string');
+    for (const k of ['epic', 'title', 'spec_ref', 'description', 'status'] as const) {
+      if (typeof rec[k] !== 'string') errors.push(`${idLabel}: "${k}" must be a string`);
+    }
+    if (typeof rec.passes !== 'boolean') errors.push(`${idLabel}: "passes" must be a boolean`);
+    if (!(typeof rec.blocked_reason === 'string' || rec.blocked_reason === null)) errors.push(`${idLabel}: "blocked_reason" must be a string or null`);
+    for (const k of ['acceptance', 'authorized_paths', 'forbidden_paths', 'evidence'] as const) {
+      if (!Array.isArray(rec[k]) || (rec[k] as unknown[]).some((x) => typeof x !== 'string')) errors.push(`${idLabel}: "${k}" must be an array of strings`);
+    }
+    if (rec.dependencies !== undefined && (!Array.isArray(rec.dependencies) || (rec.dependencies as unknown[]).some((x) => typeof x !== 'string'))) {
+      errors.push(`${idLabel}: "dependencies" must be an array of strings`);
+    }
+    if (!Number.isInteger(rec.attempts)) errors.push(`${idLabel}: "attempts" must be an integer`);
+    if (!Number.isInteger(rec.priority)) errors.push(`${idLabel}: "priority" must be an integer`);
+    // If a field the value checks below rely on has the wrong type, skip them for this
+    // feature so a malformed hand-edit reports cleanly instead of throwing on CI.
+    if (typeof rec.id !== 'string' || typeof rec.status !== 'string' || !Array.isArray(rec.evidence)
+      || !Array.isArray(rec.acceptance) || !Number.isInteger(rec.attempts) || !Number.isInteger(rec.priority)) {
+      continue;
     }
     if (!/^F-\d{4}$/.test(f.id)) errors.push(`invalid id "${f.id}" (want F-XXXX)`);
     if (ids.has(f.id)) errors.push(`duplicate id ${f.id}`);
@@ -85,13 +123,13 @@ function validate(features: Feature[]): string[] {
     }
   }
   for (const f of features) {
-    for (const dep of f.dependencies ?? []) {
+    for (const dep of (Array.isArray(f.dependencies) ? f.dependencies : [])) {
       if (!ids.has(dep)) errors.push(`${f.id}: dependency ${dep} does not exist`);
       if (dep === f.id) errors.push(`${f.id}: depends on itself`);
     }
   }
   // Dependency cycle detection (DFS with three colors)
-  const deps = new Map(features.map((f) => [f.id, f.dependencies ?? []]));
+  const deps = new Map(features.map((f) => [f.id, Array.isArray(f.dependencies) ? f.dependencies : []]));
   const state = new Map<string, 'visiting' | 'done'>();
   const walk = (id: string, trail: string[]): void => {
     if (state.get(id) === 'done') return;
@@ -209,8 +247,12 @@ switch (cmd) {
     try { incoming = JSON.parse(args[0]); } catch (e) { fail(`--add argument is not valid JSON: ${e}`); }
     const feature: Feature = {
       dependencies: [], status: 'pending', passes: false, evidence: [],
-      attempts: 0, blocked_reason: null, forbidden_paths: ['.claude/**', '.github/workflows/**'],
-      ...incoming
+      attempts: 0, blocked_reason: null,
+      ...incoming,
+      // F-SM2: the guardrail-surface forbidden_paths can NEVER be cleared by caller input.
+      // Placed AFTER ...incoming and unioned, so a caller-supplied forbidden_paths can only
+      // ADD entries, never drop .claude/** or .github/workflows/**.
+      forbidden_paths: Array.from(new Set([...SAFETY_FORBIDDEN, ...(Array.isArray(incoming.forbidden_paths) ? incoming.forbidden_paths : [])])),
     } as Feature;
     // Reserved fixture range (kaizen 2026-06-11): contract tests use F-9xxx ids,
     // so a writer call that escapes its STATE_FILE fixture fails loudly here

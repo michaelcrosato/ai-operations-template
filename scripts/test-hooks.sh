@@ -381,6 +381,38 @@ cat > "$STATE_FILE.corrupt" <<'EOF'
 { "features": [ { "id": "BAD", "status": "nope" } ] }
 EOF
 check "validate rejects corrupt backlog" 1 "$(US_WITH_STATE "$FIX/features.json.corrupt" --validate)"
+
+# ── F-SM2: closed shape + type guards + non-clearable forbidden_paths ─────────────
+# Unknown field (here a "passe" typo of "passes") must be REJECTED — the open shape used
+# to let typo'd/injected keys survive every gate and mislead a later reader.
+cat > "$FIX/sm-unknown.json" <<'EOF'
+{ "features": [ { "id": "F-9301", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+  "acceptance": ["a"], "authorized_paths": ["src/**"], "forbidden_paths": [], "dependencies": [],
+  "priority": 1, "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null,
+  "passe": true } ] }
+EOF
+check "F-SM2: validate rejects an unknown field (closed shape)" 1 "$(US_WITH_STATE "$FIX/sm-unknown.json" --validate)"
+# Type errors: attempts as a string, evidence as a non-array → rejected (was type-confusion).
+cat > "$FIX/sm-types.json" <<'EOF'
+{ "features": [ { "id": "F-9301", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+  "acceptance": ["a"], "authorized_paths": ["src/**"], "forbidden_paths": [], "dependencies": [],
+  "priority": 1, "status": "pending", "passes": false, "evidence": "not-an-array", "attempts": "0", "blocked_reason": null } ] }
+EOF
+check "F-SM2: validate rejects type errors (string attempts / non-array evidence)" 1 "$(US_WITH_STATE "$FIX/sm-types.json" --validate)"
+# --add must UNION the guardrail forbidden_paths even when the caller passes forbidden_paths:[].
+printf '{ "features": [] }\n' > "$FIX/sm-add.json"
+US_WITH_STATE "$FIX/sm-add.json" --add '{"id":"F-9302","epic":"t","title":"t","spec_ref":"t","description":"t","acceptance":["a"],"authorized_paths":["src/**"],"forbidden_paths":[],"priority":1}' >/dev/null 2>&1
+# Grep the saved fixture (cross-platform): the unioned guardrail globs must be present even
+# though the caller passed forbidden_paths:[].
+check "F-SM2: --add cannot clear safety forbidden_paths (.claude/** kept)"    "yes" "$(grep -q '\.claude' "$FIX/sm-add.json" && echo yes || echo no)"
+check "F-SM2: --add cannot clear safety forbidden_paths (.github kept)"       "yes" "$(grep -q '\.github/workflows' "$FIX/sm-add.json" && echo yes || echo no)"
+# Schema is no longer decorative: its closed-shape property set must match the canonical key
+# list (drift guard) and additionalProperties must be false. Relative require => cwd is repo root.
+SM_SCHEMA_KEYS="$(node -e 'const s=require("./roadmap/features.schema.json");process.stdout.write(Object.keys(s.properties.features.items.properties).sort().join(","))' 2>/dev/null)"
+check "F-SM2: schema property set matches the closed-shape contract" "acceptance,attempts,authorized_paths,blocked_reason,dependencies,description,epic,evidence,forbidden_paths,id,passes,priority,spec_ref,status,title" "$SM_SCHEMA_KEYS"
+SM_ADDL="$(node -e 'const s=require("./roadmap/features.schema.json");process.stdout.write(String(s.properties.features.items.additionalProperties))' 2>/dev/null)"
+check "F-SM2: schema items set additionalProperties:false" "false" "$SM_ADDL"
+
 unset STATE_FILE
 rm -rf "$FIX"
 
