@@ -1307,6 +1307,36 @@ check "F-0026 corpus: PS Get-Content .env BLOCKED by guard-bash" 2 \
 
 echo "── F-0026 known-bad corpus complete"
 
+# ── F-MP1: model-policy.json is load-bearing (check-model-policy.ts) ───────────
+# §2.2's "single source of truth" must be ENFORCED, not decorative: agent frontmatter
+# `model:` is derived from the policy, and a drift fails the gate. MODEL_POLICY_ROOT
+# points the script at a throwaway fixture so the real .claude config is never touched.
+echo "── check-model-policy.ts (model-policy ↔ agent frontmatter)"
+CMP="$ROOT/scripts/check-model-policy.ts"
+MP="$(mktemp -d)"
+mkdir -p "$MP/agents"
+cat > "$MP/model-policy.json" <<'EOF'
+{ "agents": { "builder": "builder", "explorer": "fast" },
+  "tiers": { "builder": { "model": "sonnet" }, "fast": { "model": "haiku" } } }
+EOF
+mk_agent() { printf -- '---\nname: %s\ntools: Read\nmodel: %s\n---\nbody\n' "$1" "$2" > "$MP/agents/$1.md"; }
+mk_agent builder sonnet
+mk_agent explorer haiku
+check "F-MP1: --check passes when frontmatter matches policy" 0 "$(MODEL_POLICY_ROOT="$MP" node "$TSNODE" "$CMP" --check >/dev/null 2>&1; echo $?)"
+mk_agent explorer opus  # drift: policy(fast)=haiku
+check "F-MP1: --check FAILS on frontmatter drift" 1 "$(MODEL_POLICY_ROOT="$MP" node "$TSNODE" "$CMP" --check >/dev/null 2>&1; echo $?)"
+MODEL_POLICY_ROOT="$MP" node "$TSNODE" "$CMP" --write >/dev/null 2>&1  # hygiene routine resyncs
+check "F-MP1: --check passes again after --write" 0 "$(MODEL_POLICY_ROOT="$MP" node "$TSNODE" "$CMP" --check >/dev/null 2>&1; echo $?)"
+check "F-MP1: --write wrote the policy model into the agent file" "yes" "$(grep -q '^model: haiku$' "$MP/agents/explorer.md" && echo yes || echo no)"
+mk_agent rogue opus  # an agent declaring a model: but absent from policy.agents
+check "F-MP1: --check FAILS on an unmanaged agent model (fail-closed)" 1 "$(MODEL_POLICY_ROOT="$MP" node "$TSNODE" "$CMP" --check >/dev/null 2>&1; echo $?)"
+rm -f "$MP/agents/rogue.md"
+printf '%s\n' '{ "tiers": { "builder": { "model": "sonnet" } } }' > "$MP/model-policy.json"
+check "F-MP1: --check FAILS when policy.agents map is missing" 1 "$(MODEL_POLICY_ROOT="$MP" node "$TSNODE" "$CMP" --check >/dev/null 2>&1; echo $?)"
+rm -rf "$MP"
+# The REAL shipped config must be internally consistent (the invariant verify.sh enforces).
+check "F-MP1: real .claude config has no model-policy drift" 0 "$(node "$TSNODE" "$CMP" --check >/dev/null 2>&1; echo $?)"
+
 echo ""
 echo "hook contract tests: $PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] || exit 1

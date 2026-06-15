@@ -102,6 +102,7 @@ fi
 
 # ---- engine meta-gates (always) ----
 step "features.json schema + invariants" npx ts-node scripts/update-state.ts --validate
+step "model-policy ↔ agent frontmatter (no drift)" npx ts-node scripts/check-model-policy.ts --check
 step "assertion shield" npx ts-node scripts/assertion-shield.ts
 
 # Static analysis on the guardrail layer itself (F-0008): the hooks and gate
