@@ -86,7 +86,9 @@ async function run() {
     const cid = create.json?.id;
     const read = await http(base, 'GET', `/contacts/${cid}`, { role: 'viewer' });
     add('primary', 'GET /contacts/:id round-trips the created contact', read.status === 200 && read.json?.name === 'Ada');
-    const upd = await http(base, 'PUT', `/contacts/${cid}`, { role: 'editor', body: { name: 'Ada Lovelace' } });
+    // PUT sends the FULL contact (name + email): unambiguous under both full-replace and
+    // partial-update readings of "same validation" — see DECISIONS (L4 PUT task-validity fix).
+    const upd = await http(base, 'PUT', `/contacts/${cid}`, { role: 'editor', body: { name: 'Ada Lovelace', email: 'ada@example.com' } });
     add('primary', 'editor PUT /contacts/:id updates', upd.status === 200 && upd.json?.name === 'Ada Lovelace');
     const deal = await http(base, 'POST', '/deals', { role: 'owner', body: { contactId: cid, stage: 'open', amount: 100 } });
     add('primary', 'owner POST /deals → 201', deal.status === 201 && deal.json?.id);

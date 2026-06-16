@@ -10,7 +10,7 @@ Endpoints:
 - `GET /health` → 200 `{ "ok": true }`.
 - `POST /contacts` → create a contact. **Validate:** `name` non-empty (else **400**), `email` looks like an email (else **400**). Returns **201** with the created contact (including an `id`).
 - `GET /contacts` → 200 list. `GET /contacts/:id` → 200 the contact, or **404**.
-- `PUT /contacts/:id` → update name/email (same validation); **404** if missing.
+- `PUT /contacts/:id` → replace the contact: send **both** `name` and `email` (same validation as create — `name` non-empty, `email` valid, else **400**); **404** if missing. Returns **200** with the updated contact.
 - `DELETE /contacts/:id` → **404** if missing; **409** if any deal references this contact (referential integrity); otherwise delete (**204**).
 - `POST /deals` → create a deal. **Validate:** `stage` non-empty (else **400**); **409** if `contactId` does not reference an existing contact.
 - `GET /deals?stage=X` → 200 deals, filtered by `stage` when the query param is present.
