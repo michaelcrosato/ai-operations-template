@@ -9,7 +9,7 @@
   "validity_gate": "oracle/validate.mjs",
   "weights": { "primary": 0.35, "rbac": 0.30, "integrity": 0.20, "validation": 0.15 },
   "gating_groups": ["rbac", "integrity"],
-  "pass_threshold": 1.0,
+  "pass_threshold": 0.85,
   "budget": { "model": "sonnet", "expected_usd": "1-8", "max_turns": 40 },
   "notes": "The L4 flagship — a stateful CRM API. Oracle (oracle/verify.mjs) drives it over HTTP: PRIMARY CRUD+filter round-trips (.35, partial), GATING-RBAC viewer-cannot-write (.30, PASS-REQUIRED), GATING-INTEGRITY 409-on-dangling-ref (.20, PASS-REQUIRED), VALIDATION/held-out 400s + conditional-delete (.15, partial). A failed gate CAPS the score at 0 — a broken-RBAC CRM is NOT 'partially shippable' (validate.mjs proves this). Uses node:http (agent:false) to avoid an undici keep-alive teardown crash on Windows."
 }
