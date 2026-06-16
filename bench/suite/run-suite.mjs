@@ -6,7 +6,8 @@
 //
 // Usage:
 //   node bench/suite/run-suite.mjs L3-mcp-calc-search            # one clean build (no engine context)
-//   node bench/suite/run-suite.mjs L3-mcp-calc-search --ctx engine
+//   node bench/suite/run-suite.mjs L3-mcp-calc-search --ctx engine   # A1 engine-effect arm: injects the
+//                                                                     # engine's distilled discipline (ENGINE-EFFECT-PLAN.md)
 //   node bench/suite/run-suite.mjs L1-parse-duration --repeat 5  # N independent builds → pass^k reliability
 //
 // A SINGLE run is an anecdote, not a measurement (testing-suite-plan.md §6.5). --repeat runs the
@@ -35,6 +36,10 @@ if (!fs.existsSync(TASK)) { console.error(`task not found: ${TASK}`); process.ex
 const meta = JSON.parse(fs.readFileSync(path.join(TASK, 'meta.json'), 'utf8'));
 const prompt = fs.readFileSync(path.join(TASK, 'task.md'), 'utf8');
 const passThreshold = meta.pass_threshold ?? 1.0;
+// Engine-effect A1 arm (bench/ENGINE-EFFECT-PLAN.md): ctx=engine injects the engine's distilled
+// build discipline via --append-system-prompt. Both arms run in an isolated tmpdir, so the ONLY
+// clean-vs-engine delta is this prompt (model pinned) — a fair test of the instruction dimension.
+const ENGINE_CONTEXT = fs.readFileSync(path.join(HERE, 'lib', 'engine-context.md'), 'utf8');
 const sha = spawnSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).stdout?.trim() || 'nogit';
 const RESULTS = path.join(ROOT, 'bench', 'results');
 fs.mkdirSync(RESULTS, { recursive: true });
@@ -42,7 +47,7 @@ const jsonl = path.join(RESULTS, `suite-${taskId}-${ctx}-${sha}.jsonl`);
 
 // One independent build+score. Returns the telemetry record.
 function runOnce(runIdx) {
-  const base = ctx === 'engine' ? path.join(ROOT, 'tmp') : os.tmpdir();
+  const base = os.tmpdir(); // both arms run isolated → the only clean-vs-engine delta is the injected prompt
   fs.mkdirSync(base, { recursive: true });
   const workdir = fs.mkdtempSync(path.join(base, `bench-${taskId}-`));
   // Fixtures may be nested (e.g. a monorepo: packages/auth/config.mjs) — mkdir -p the parent so
@@ -57,6 +62,7 @@ function runOnce(runIdx) {
   const cli = ['-p', prompt, '--output-format', 'json', '--model', meta.budget?.model || 'sonnet',
     '--allowedTools', 'Write,Edit,Read,Bash', '--permission-mode', 'acceptEdits',
     '--max-turns', String(meta.budget?.max_turns || 30)];
+  if (ctx === 'engine') cli.push('--append-system-prompt', ENGINE_CONTEXT); // A1 engine-effect arm
   const r = spawnSync('claude', cli, { cwd: workdir, input: '', encoding: 'utf8', timeout: 600000, maxBuffer: 64 * 1024 * 1024 });
   const wall_ms = Math.round(Number(process.hrtime.bigint() - start) / 1e6);
   let payload = {};

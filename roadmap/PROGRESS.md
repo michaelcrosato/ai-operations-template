@@ -1,3 +1,13 @@
+## 2026-06-16 (phase 5, cycle 4) — Engine-effect comparison: scoped + the model-pinned harness/A1 arm built
+
+Operator /goal: take on the highest-value XL item (the engine-effect comparison) and scope it properly. Did both — a design doc + the first real arm.
+
+- **`bench/ENGINE-EFFECT-PLAN.md`** (the scoping): the model-pinned comparison, with arms that each isolate ONE engine dimension — A0 baseline (bare model, = current run-suite) · A1 context (distilled engine discipline injected) · A2 gate-retry · A3 review-fix (the signature adversarial-review loop) · A4 full `/work` loop. Methodology (model-pinned, isolated tmpdir, pass^k), the §6.5 statistical reality (only CATEGORICAL signals are reliable at affordable N — not small continuous deltas), the **ceiling problem** (every current task is baseline ~1.0 → no headroom → a "headroom task" where a bare build categorically fails is the prerequisite for any A2–A4 signal), validity threats, and a phased plan.
+- **Verified the headless mechanics first, skeptically:** a claude-code-guide agent claimed `--output-format json` has no `num_turns` — FALSE (run-suite reads it), so I confirmed the real flags via `claude --help` (`--append-system-prompt`, `--bare` exist). The clean baseline needs no `--bare` — run-suite's `os.tmpdir` is already context-free.
+- **Built the A1 arm + harness:** `--ctx engine` was a no-op workdir toggle (the misnomer the explore pass flagged); it now injects `bench/suite/lib/engine-context.md` — a faithful DISTILLATION of the builder/CLAUDE discipline, stripped of repo-plumbing that would confound a temp-dir build — via `--append-system-prompt`. Both arms now run in an isolated tmpdir, so the only delta is the prompt (model pinned).
+- **First data point (smoke A/B on G1):** A0 clean 1.0 / 3t / $0.19 vs A1 engine 1.0 / 3t / $0.20 — identical at the ceiling, exactly as §4 predicts. The harness works; the *signal* awaits a Phase-B headroom task. Honest sequencing over a premature "we're X% better."
+- bench dev-tooling; verify.sh untouched. 7/7 validity gates green.
+
 ## 2026-06-16 (phase 5, cycle 3) — Bench measurement integrity: a timed-out build can no longer count as a pass
 
 Cycle 3 (continue-working goal). A real correctness bug in the self-benchmark's reliability accounting — the "a broken measurement is worse than no measurement" flaw the suite exists to prevent, found in the suite's own runner.
