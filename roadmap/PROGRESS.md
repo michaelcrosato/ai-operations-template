@@ -1,3 +1,13 @@
+## 2026-06-15 — Phase-1 BUILT: first MCP-server benchmark task + blueprint verification step, proven end-to-end (PR #100)
+
+Operator /goal: build the first MCP-server (no approval needed) + integrate the Desktop `project-blueprint.md` verification step.
+
+- **Built `bench/suite/L3-mcp-calc-search/`:** `task.md` (build-an-MCP-server prompt), a reference MCP stdio server (`solution/server.mjs`), and the **oracle** (`oracle/verify.mjs`) = the blueprint's *uncheatable verification*: a minimal MCP-over-stdio JSON-RPC client that scores the **handshake** + **tools/list discovery** (primary) + tool-call behaviors + a **HELD-OUT altered-parameter suite** (kills hardcoding) + an **ANTI-CHEAT corpus-diff** (DQ if tampered), weighted per the MCP category (.20/.25/.30/.25).
+- **Oracle validity PROVEN** (`oracle/validate.mjs`, mutation-smoke-style): the oracle scores the reference **1.0** AND catches off-by-one, **hardcoded/overfit** (via held-out), missing-tool, crash, and corpus-tamper (DQ). A broken oracle is worse than no benchmark — so this gate is the admission requirement.
+- **End-to-end PROVEN** (`run-suite.mjs`): a real **Sonnet agent build** (`claude -p`, Write/Edit tools) produced a working server → the oracle scored it **1.0** (held-out 4/4) in **3 turns / $0.13 / 31s**. Telemetry per the blueprint dashboard: score, token burn, cost, wall-clock, **iterations (`num_turns`)**.
+- **Blueprint folded into the plan (§0.5):** held-out altered-param suite + anti-cheat-DQ (both implemented), iteration/intervention metrics, the task-category weighting matrix, the 4-layer stress gauntlet (incl. **L4 torture** — broken env → the engine must hit its circuit-breaker and exit cleanly, not runaway), and the daily human **1.0/0.0** multiplier. **Phase 1 marked DONE.**
+- bench/ dev-tooling, no guard surface. verify.sh PASS; validity gate green. NEXT: the L4 **CRM** flagship + the L4-torture/circuit-breaker task.
+
 ## 2026-06-15 — README: added a "Direction (where this is headed)" section (PR #99)
 
 Operator asked whether the README reflects the current state + direction. It was current on STATE (rewritten in #95, bench section added in #97) but had no roadmap/direction and didn't reference the testing-suite plan. Added a concise **Direction** section anchored to `bench/testing-suite-plan.md`: the next major effort is the real oracle-first benchmark (without it, no change is verifiable), with the roadmap (prove one MCP oracle → CRM flagship → hard tiers), distinct from the product fork. Docs-only. verify.sh PASS.

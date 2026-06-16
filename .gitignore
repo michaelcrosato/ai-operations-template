@@ -52,3 +52,7 @@ playwright-report/
 # bench harness — committed: harness + tasks; local-only: run artifacts + scratch cwd
 bench/results/
 bench/sandbox/
+
+# bench/suite oracle temp run dirs (cleaned up automatically; ignore if interrupted)
+bench/suite/**/.refrun-*/
+bench/suite/**/.val-*/
