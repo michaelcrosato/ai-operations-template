@@ -596,6 +596,85 @@ check "shield rename-detection: rename+deleted assertion blocked (exit 1)" 1 "$(
 check "shield rename-detection: in-place deletion still blocked (exit 1)" 1 "$(cd "$AS" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
 ( cd "$AS" && git reset -q --hard base )
 
+# ── shield diff-prefix hardening (fix/guard-assertion-shield-prefix) ──────────
+# A user gitconfig diff.noprefix=true (or diff.mnemonicPrefix=true) drops the
+# "a/"/"b/" path prefixes the parser keys on (lines '--- a/' / '+++ b/'). Without
+# forced prefixes a gutted test would fall through to the "--- " (newly-added)
+# branch, blank currentFile, and the deletion scan would never run → PASS (a
+# silent fail-open of the primary anti-coverage-erosion gate). The shield now
+# forces --src-prefix=a/ --dst-prefix=b/ (and --no-ext-diff) on every diff, so it
+# BLOCKS regardless of the user's diff.* config.
+( cd "$AS" && git config diff.noprefix true && printf 'test("a", () => {\n});\n' > tests/a.test.js && git add -A )
+check "shield prefix-config: diff.noprefix=true still blocks gutted assertion (exit 1)" 1 "$(cd "$AS" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+( cd "$AS" && git config --unset diff.noprefix && git reset -q --hard base )
+( cd "$AS" && git config diff.mnemonicPrefix true && printf 'test("a", () => {\n});\n' > tests/a.test.js && git add -A )
+check "shield prefix-config: diff.mnemonicPrefix=true still blocks gutted assertion (exit 1)" 1 "$(cd "$AS" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+( cd "$AS" && git config --unset diff.mnemonicPrefix && git reset -q --hard base )
+# Non-ASCII test filename: with core.quotepath=true (git default) the path is octal-quoted
+# ("a/caf\303\251.test.js"), so "--- a/" no longer matches → fail-open. The shield forces
+# core.quotepath=false, keeping the path literal, so a gutted unicode-named test still BLOCKS.
+ASU="$(mktemp -d)"
+(
+  cd "$ASU" && git init -q && git config user.email t@t && git config user.name t
+  mkdir tests
+  printf 'test("u", () => {\n  expect(1).toBe(1);\n});\n' > "tests/café.test.js"
+  git add -A && git commit -qm base && git branch base
+)
+( cd "$ASU" && printf 'test("u", () => {\n});\n' > "tests/café.test.js" && git add -A )
+check "shield quotepath: non-ASCII test filename still blocks gutted assertion (exit 1)" 1 "$(cd "$ASU" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+rm -rf "$ASU"
+# color.ui=always injects ANSI escapes before "--- a/" (git honors it even on a non-TTY pipe),
+# defeating the prefix match → fail-open. The shield forces --no-color, so it still BLOCKS.
+ASC="$(mktemp -d)"
+(
+  cd "$ASC" && git init -q && git config user.email t@t && git config user.name t && git config color.ui always
+  mkdir tests
+  printf 'test("c", () => {\n  expect(1).toBe(1);\n});\n' > tests/c.test.js
+  git add -A && git commit -qm base && git branch base
+)
+( cd "$ASC" && printf 'test("c", () => {\n});\n' > tests/c.test.js && git add -A )
+check "shield color.ui=always still blocks gutted assertion (exit 1)" 1 "$(cd "$ASC" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+rm -rf "$ASC"
+# A test path containing a SPACE makes git append a literal TAB to the "--- a/<path>\t" header;
+# without stripping it the $-anchored testFileRegex fails to match → fail-open. The shield strips
+# the trailing tab on extraction, so it still BLOCKS.
+ASS="$(mktemp -d)"
+(
+  cd "$ASS" && git init -q && git config user.email t@t && git config user.name t
+  mkdir tests
+  printf 'test("s", () => {\n  expect(1).toBe(1);\n});\n' > "tests/a b.test.js"
+  git add -A && git commit -qm base && git branch base
+)
+( cd "$ASS" && printf 'test("s", () => {\n});\n' > "tests/a b.test.js" && git add -A )
+check "shield space-in-path still blocks gutted assertion (exit 1)" 1 "$(cd "$ASS" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+rm -rf "$ASS"
+# .gitattributes "-diff" makes git emit "Binary files ... differ" with no "-" content lines →
+# fail-open. The shield forces --text, so the diff stays textual and the deletion still BLOCKS.
+ASB="$(mktemp -d)"
+(
+  cd "$ASB" && git init -q && git config user.email t@t && git config user.name t
+  mkdir tests
+  printf 'tests/*.test.js -diff\n' > .gitattributes
+  printf 'test("b", () => {\n  expect(1).toBe(1);\n});\n' > tests/b.test.js
+  git add -A && git commit -qm base && git branch base
+)
+( cd "$ASB" && printf 'test("b", () => {\n});\n' > tests/b.test.js && git add -A )
+check "shield .gitattributes -diff still blocks gutted assertion (exit 1)" 1 "$(cd "$ASB" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+rm -rf "$ASB"
+# diff.srcPrefix/diff.dstPrefix rename the a/ b/ prefixes (e.g. c/ w/) — same fail-open class as
+# diff.noprefix. --src-prefix=a/ --dst-prefix=b/ override them, so the gut still BLOCKS.
+ASP="$(mktemp -d)"
+(
+  cd "$ASP" && git init -q && git config user.email t@t && git config user.name t
+  git config diff.srcPrefix c/ && git config diff.dstPrefix w/
+  mkdir tests
+  printf 'test("p", () => {\n  expect(1).toBe(1);\n});\n' > tests/p.test.js
+  git add -A && git commit -qm base && git branch base
+)
+( cd "$ASP" && printf 'test("p", () => {\n});\n' > tests/p.test.js && git add -A )
+check "shield diff.srcPrefix/dstPrefix still blocks gutted assertion (exit 1)" 1 "$(cd "$ASP" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+rm -rf "$ASP"
+
 # ── shield module-decl FP (fix/shield-module-decl-fp) ─────────────────────────
 # Proves that CJS→ESM migration boilerplate is NOT flagged as assertion deletion.
 #
