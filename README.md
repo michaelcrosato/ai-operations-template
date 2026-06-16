@@ -69,6 +69,16 @@ First measured baseline (develop): the 7-task suite passes **7/7**, and the engi
 
 ---
 
+## Direction (where this is headed)
+
+The engine's foundation (determinism, evidence gates, guardrails) and adaptive layer (risk tiers driving review depth, model, and a human-approval gate) are **built, audited, and shipped.** The next major effort is the one thing that makes all of it falsifiable:
+
+> **A real, measurable benchmark — because without one, no change can be verified.** Today's `bench/` is a smoke test (atomic probes). The plan in [`bench/testing-suite-plan.md`](bench/testing-suite-plan.md) lays out a layered, **oracle-first** suite of *end-to-end* build tasks ("build a CRM", "build an MCP server") laddered easy→very-hard, each with an **objective pass/fail oracle** — modeled on how SWE-bench Verified, SWE-Lancer, Commit0, Terminal-Bench, and tau-bench actually verify success. The hard part is the oracle (a broken one is worse than no benchmark), so the roadmap is: prove the machinery on **one** task (an MCP server, with the official MCP conformance suite as the oracle) → the **CRM** flagship → the hard tiers (reliability/`pass^k`, concurrency, security-by-abuse-tests, and an ambiguity "trap" task that tests the engine's judgment, not just the model's).
+
+Once that exists, the loop closes: change the engine → the benchmark says, with numbers, whether it helped. The separate **product** question (harden-and-sell the factory vs. build ForgeOps for real) is below under *Where the value actually is*.
+
+---
+
 ## Honest limitations (the part most READMEs hide)
 
 - **No product, no users, no revenue.** ForgeOps is a self-test demo. No backend, database, auth, payment, or agent runtime. Selling it as a SaaS today would be misrepresentation.
