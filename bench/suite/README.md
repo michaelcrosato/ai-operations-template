@@ -27,6 +27,9 @@ node bench/suite/run-suite.mjs L3-mcp-calc-search [--ctx clean|engine]
 
 # 4. Harness self-test (free, no API) — proves the runner's own pass/reliability logic is correct:
 node --test bench/suite/lib/reliability.test.mjs
+
+# 5. Engine-effect A/B (bench/ENGINE-EFFECT-PLAN.md): baseline (A0) vs review-fix (A3), model PINNED:
+node bench/suite/run-effect.mjs H1-notes-ownership --repeat 3 [--model haiku|sonnet|opus]
 ```
 
 ## Telemetry captured (per the blueprint dashboard)
@@ -42,6 +45,7 @@ node --test bench/suite/lib/reliability.test.mjs
 | `G2-context-trace` | G2 | gauntlet · long-context | source-only TTL patch + **live behavioral probe through the real module graph** (held-out timestamps) + **GATING integrity** (two peripherals byte-identical→else score 0) + trace-report hop naming | **proven** — validity gate green (peripheral damage→gated 0; reverted/hardcoded patch + bad trace caught); dogfood **pass^2** (1/1/1, 8 turns, $0.14/run) |
 | `G3-dag-pipeline` | G3 | gauntlet · tool-sequencing | import-the-module + held-out: PLAN.md DAG-proxy (plan) + worked example (primary) + **7 unseen cases** incl. case-dedup/precedence/status (held-out = anti-cheat) | **proven** — validity gate green (no-plan→plan<1; naive/all-or-nothing/hardcoded→held-out<1); dogfood **pass^2** (1/1/1, 12 turns, $0.32/run) |
 | `G4-circuit-breaker` | G4 | gauntlet · circuit-breaker | unresolvable-env: `BLOCKED.md` present+complete (blocked) + correct root-cause (rootcause); **DQ on faking the dep / removing it / stubbing the immutable `verify.mjs`**; clean-abort-vs-runaway rides runner telemetry | **proven** — validity gate green (cheats→DQ 0; missing/wrong-cause caught); dogfood **pass^2** (1/1/1, ~9.5 turns, $0.20/run) |
+| `H1-notes-ownership` | H1 | headroom (engine-effect) | import-the-module: create/validate/read/owner-CRUD (primary) + **owner-only modify/delete = IDOR gating** (a non-owner editing/deleting → `forbidden`) | **validity-gated** (reference 1.0; IDOR build → gated 0; over-block caught). **No headroom yet:** the bare baseline is ceiling **1.0 at sonnet AND haiku** — modern models don't drop a clearly-stated rule (see [`../ENGINE-EFFECT-PLAN.md`](../ENGINE-EFFECT-PLAN.md) §8). The A0-vs-A3 harness target. |
 
 ### Measured results (the proof)
 - **`L1-parse-duration`** — a clean Sonnet build scored **1.0** (primary 5/5 · held-out 7/7) in **3 turns / $0.14 / 33s**. A **third oracle type** (import-the-module + hidden unit tests, the Aider-polyglot pattern) on top of L3's protocol oracle and L4's gated-HTTP oracle — the machinery generalizes across deliverable shapes. The validity gate proves a server that *hardcodes the four primary answers* scores **0.64, not 1.0**: the held-out set is what makes the score mean something.

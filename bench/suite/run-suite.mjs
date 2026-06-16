@@ -31,6 +31,7 @@ const flag = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] 
 const taskId = argv.find((a) => !a.startsWith('--')) || 'L3-mcp-calc-search';
 const ctx = flag('--ctx', 'clean');
 const repeat = Math.max(1, Number(flag('--repeat', '1')) || 1);
+const modelOverride = flag('--model', ''); // pin a specific model (engine-effect methodology / weak-baseline amplifier)
 const TASK = path.join(HERE, taskId);
 if (!fs.existsSync(TASK)) { console.error(`task not found: ${TASK}`); process.exit(1); }
 const meta = JSON.parse(fs.readFileSync(path.join(TASK, 'meta.json'), 'utf8'));
@@ -59,7 +60,7 @@ function runOnce(runIdx) {
   }
 
   const start = process.hrtime.bigint();
-  const cli = ['-p', prompt, '--output-format', 'json', '--model', meta.budget?.model || 'sonnet',
+  const cli = ['-p', prompt, '--output-format', 'json', '--model', modelOverride || meta.budget?.model || 'sonnet',
     '--allowedTools', 'Write,Edit,Read,Bash', '--permission-mode', 'acceptEdits',
     '--max-turns', String(meta.budget?.max_turns || 30)];
   if (ctx === 'engine') cli.push('--append-system-prompt', ENGINE_CONTEXT); // A1 engine-effect arm
@@ -78,7 +79,7 @@ function runOnce(runIdx) {
   }
 
   const record = {
-    ts: new Date().toISOString(), task: taskId, ctx, sha, run: runIdx, model: meta.budget?.model,
+    ts: new Date().toISOString(), task: taskId, ctx, sha, run: runIdx, model: modelOverride || meta.budget?.model,
     oracle_score: oracle.score, dq: !!oracle.dq, groups: oracle.groups, gated_fail: oracle.gated_fail ?? null,
     finished: !payload.is_error && r.status === 0, built,
     in_tokens: u.input_tokens ?? null, out_tokens: u.output_tokens ?? null,
@@ -95,7 +96,7 @@ function runOnce(runIdx) {
 
 const records = [];
 for (let i = 1; i <= repeat; i++) {
-  console.log(`── building ${taskId} (ctx=${ctx}, model=${meta.budget?.model}) — run ${i}/${repeat} ──`);
+  console.log(`── building ${taskId} (ctx=${ctx}, model=${modelOverride || meta.budget?.model}) — run ${i}/${repeat} ──`);
   const rec = runOnce(i);
   records.push(rec);
   console.log(`   run ${i}: score ${rec.oracle_score}${rec.dq ? ' ⚠DQ' : ''}${isPass(rec, passThreshold) ? ' ✓pass' : ' ✗fail'}  · ${rec.iterations} turns · $${(rec.cost_usd ?? 0).toFixed(4)} · ${rec.wall_ms}ms · ${JSON.stringify(rec.groups)}`);
