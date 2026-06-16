@@ -1,3 +1,13 @@
+## 2026-06-16 (phase 4, cycle 1) — Guardrail hardening: closed 7 assertion-shield diff-header fail-opens (BLOCK→fix→re-review)
+
+Operator /goal: run several improvement cycles — explore→plan→implement→test→decide-ship→self-improve, "see if the system actually works." A read-only explore workflow ranked a backlog; cycle 1 took the highest-value pick. **The engine caught its own incomplete fix and forced a complete one — the system works.**
+
+- **The hole:** `assertion-shield.ts` (verify.sh's primary anti-coverage-erosion gate) parses diffs on the literal `--- a/` / `+++ b/` prefixes. ANY gitconfig/attribute that mutates the diff-header shape blanks `currentFile` → the deleted-assertion scan never runs → **a gutted test passes the shield** (silent fail-open), invisible to the default-prefix fixtures.
+- **Closed seven config-reachable header mutations**, each with a teeth-test proven to fail-open before the fix: `diff.noprefix`, `diff.mnemonicPrefix`, `diff.srcPrefix`/`dstPrefix`, `core.quotepath` (non-ASCII), `color.ui=always` (ANSI), `diff.external`, and `.gitattributes -diff`/binary — plus git's trailing-TAB on space-containing paths. Fix = `git -c core.quotepath=false diff -M --no-ext-diff --no-color --text --src-prefix=a/ --dst-prefix=b/` + strip the trailing TAB on path extraction.
+- **Dogfooded the JUDGE step:** a fresh-context security reviewer **BLOCKED** the first fix (it closed only 4 of 7 — it caught color.ui/space-path/-diff empirically), I fixed comprehensively, a second fresh reviewer **APPROVED** (reproduced all closures, tested ~25 configs, no regressions). Contract tests 326→333.
+- **Accepted residual (documented):** a filename containing a literal tab/newline/quote/backslash makes git quote the whole header → fail-open; NOT one-line-config-reachable and illegal on Windows NTFS → out of threat model (DECISIONS).
+- verify.sh PASS (333 hook tests, mutation smoke 10/10); 7/7 suite validity gates green.
+
 ## 2026-06-16 (phase 3) — Repo review + README rewrite (benchmark now reflected) + STATUS regen; metrics-gap recorded
 
 Operator /goal: review the repo, rewrite/update README.md, fix what's pressing, test, push. Ran a read-only audit (parallel agents: README claim-accuracy · repo pressing-issues · benchmark-state), then acted on the findings. Engine found mechanically healthy (`--validate` green, 326 hook tests, 10/10 mutants, links resolve); the real drift was in operator-facing artifacts + a stale benchmark story.

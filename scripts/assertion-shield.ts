@@ -22,6 +22,16 @@ function refExists(ref: string): boolean {
 function getGitDiff(): string {
   // execFileSync with arg arrays: BASE_BRANCH is env-supplied, so it must
   // never pass through a shell (security-guidance plugin finding).
+  // --src-prefix=a/ --dst-prefix=b/ FORCE the "a/"/"b/" path prefixes the parser
+  // keys on (scanDiffForWeakening matches "--- a/" / "+++ b/"). A user gitconfig
+  // diff.noprefix=true or diff.mnemonicPrefix=true would otherwise drop/rename those
+  // prefixes, blanking currentFile so a gutted assertion slips through — a silent
+  // fail-open of this gate. Each diff option neutralizes a different gitconfig/attribute that
+  // mutates the header shape: -c core.quotepath=false (non-ASCII octal-quoting), --no-color
+  // (color.ui=always injects ANSI before "--- a/", honored even on a non-TTY pipe), --no-ext-diff
+  // + --text (external diff drivers and .gitattributes "-diff"/binary emit no "-" content lines).
+  // The parser additionally strips git's trailing TAB on space-containing paths. (test-hooks.sh
+  // covers noprefix, mnemonicPrefix, non-ASCII, color, space-in-path, and -diff.)
   const diffs: string[] = [];
   if (refExists(BASE_BRANCH)) {
     // Committed work on this branch vs base.
@@ -34,14 +44,14 @@ function getGitDiff(): string {
     // (whether in a rename hunk or a plain deletion). A deletion too dissimilar to
     // pair as a rename is shown as a full file delete (all assertions flagged).
     try {
-      diffs.push(execFileSync('git', ['diff', '-M', `${BASE_BRANCH}...HEAD`], { encoding: 'utf8' }));
+      diffs.push(execFileSync('git', ['-c', 'core.quotepath=false', 'diff', '-M', '--no-ext-diff', '--no-color', '--text', '--src-prefix=a/', '--dst-prefix=b/',`${BASE_BRANCH}...HEAD`], { encoding: 'utf8' }));
     } catch {
       // base resolved but the range diff failed — fall through to staged check
     }
   } else if (refExists('HEAD~1')) {
     // base not fetched/available but prior history exists — diff the last commit
     try {
-      diffs.push(execFileSync('git', ['diff', '-M', 'HEAD~1'], { encoding: 'utf8' }));
+      diffs.push(execFileSync('git', ['-c', 'core.quotepath=false', 'diff', '-M', '--no-ext-diff', '--no-color', '--text', '--src-prefix=a/', '--dst-prefix=b/','HEAD~1'], { encoding: 'utf8' }));
     } catch {
       // no usable history — staged check below may still apply
     }
@@ -53,7 +63,7 @@ function getGitDiff(): string {
   try {
     // Staged-but-uncommitted changes — what a pre-commit hook is actually
     // gating. Without --cached the hook only ever saw prior commits.
-    diffs.push(execFileSync('git', ['diff', '-M', '--cached'], { encoding: 'utf8' }));
+    diffs.push(execFileSync('git', ['-c', 'core.quotepath=false', 'diff', '-M', '--no-ext-diff', '--no-color', '--text', '--src-prefix=a/', '--dst-prefix=b/','--cached'], { encoding: 'utf8' }));
   } catch {
     console.log('Not in a git repository. Skipping assertion check.');
   }
@@ -117,7 +127,7 @@ function scanDiffForWeakening(diffText: string): Violation[] {
     // alone made wholesale test-file deletions invisible: a deleted file's
     // new side is "+++ /dev/null", so the old path was never tracked.
     if (line.startsWith('--- a/')) {
-      currentFile = line.substring(6);
+      currentFile = line.substring(6).replace(/\t.*$/, ''); // strip git's trailing TAB for space-paths
       continue;
     }
     if (line.startsWith('--- ')) {
@@ -125,7 +135,7 @@ function scanDiffForWeakening(diffText: string): Violation[] {
       continue;
     }
     if (line.startsWith('+++ b/')) {
-      currentNewFile = line.substring(6);
+      currentNewFile = line.substring(6).replace(/\t.*$/, ''); // strip git's trailing TAB for space-paths
       continue;
     }
     if (line.startsWith('+++ ')) {
