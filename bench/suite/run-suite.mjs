@@ -44,7 +44,13 @@ function runOnce(runIdx) {
   const base = ctx === 'engine' ? path.join(ROOT, 'tmp') : os.tmpdir();
   fs.mkdirSync(base, { recursive: true });
   const workdir = fs.mkdtempSync(path.join(base, `bench-${taskId}-`));
-  for (const f of meta.fixtures || []) fs.copyFileSync(path.join(TASK, 'fixtures', f), path.join(workdir, f));
+  // Fixtures may be nested (e.g. a monorepo: packages/auth/config.mjs) — mkdir -p the parent so
+  // the copy preserves the relative tree. Flat fixtures still work (dirname === workdir).
+  for (const f of meta.fixtures || []) {
+    const dest = path.join(workdir, f);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.copyFileSync(path.join(TASK, 'fixtures', f), dest);
+  }
 
   const start = process.hrtime.bigint();
   const cli = ['-p', prompt, '--output-format', 'json', '--model', meta.budget?.model || 'sonnet',

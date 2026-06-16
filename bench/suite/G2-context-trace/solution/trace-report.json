@@ -1,0 +1,5 @@
+[
+  { "file": "packages/auth/config.mjs", "symbol": "TOKEN_TTL_SECONDS", "role": "source constant" },
+  { "file": "packages/auth/session.mjs", "symbol": "isExpired", "role": "consumes TOKEN_TTL_SECONDS to decide token expiry" },
+  { "file": "packages/gateway/checkout.mjs", "symbol": "canCheckout", "role": "runtime gate: allows checkout only while the session is not expired" }
+]
