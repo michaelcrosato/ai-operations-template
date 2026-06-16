@@ -92,3 +92,29 @@ Phase B (a headroom task) and Phase C (the A0-vs-A3 harness) are built. The firs
 - **The real finding:** the "stated-rule-omission" hypothesis is wrong for current models on a small, clearly-specified task — they don't drop stated requirements, so that failure mode yields **no headroom**, and a weaker pinned model doesn't change it. A genuine headroom task must instead target a **hard correctness goal models reliably get wrong** — cross-call idempotency, a subtle stateful invariant, a spec that fights a strong prior, or a larger multi-file task where mistakes compound — with a more complex (still deterministic) oracle. That is real research, not a quick task tweak.
 - **Phase C harness (`run-effect.mjs`) works end-to-end** (paired build → A0-score → independent spec-review → fix → A3-score; model pinned via `--model`). Validating it caught and fixed a real pass-evaluation bug (`score` vs `oracle_score`). On H1 (ceiling) it correctly reports **A0 2/2, A3 2/2, 0 flips, "A0 at ceiling — no signal possible."** Ready to run the moment a true headroom task exists.
 - **Honest status:** the engine-effect **mechanism is built and proven**; the **signal is not yet obtainable** because the models are already at the ceiling on H1. We deliberately did NOT manufacture a number by hunting tasks until one failed. Next (Phase B'): design a hard-correctness headroom task per §4, then point `run-effect.mjs` at it.
+
+## 9. Second attempt (2026-06-16) — a *larger* task is also ceiling; redirect away from greenfield
+`H2-shared-docs` widened the surface to **8 rules across 6 functions** with four gated access-control
+cruxes (view≠edit, owner-only-delete, owner-only-share, `listDocs` no-leak). Result: a bare sonnet
+one-shot scored **4/4 = 1.0**, every crux correct; the A3 review correctly found nothing to fix; **0
+flips**. So across **three configs** (H1/sonnet, H1/haiku, H2/sonnet) the bare baseline is at the
+ceiling. **Conclusion: the categorical engine-effect signal does not appear on _greenfield
+build-to-spec_ tasks at this scale — strong models simply don't make the attention-lapse mistakes the
+review-fix loop exists to recover.** (This is itself a real answer to "does the engine help here?":
+not measurably, because the model doesn't need it.)
+
+Where the signal realistically lives instead (do NOT keep enlarging greenfield tasks):
+- **(a) Refactoring / regression tasks** — given *working* code + a behaviour contract, "restructure
+  X" where a naive edit breaks a subtle existing behaviour. Strong models *do* reliably break
+  something mid-refactor, and a behaviour-diff review catches it. **Cheapest + most likely to flip —
+  the recommended next attempt.**
+- **(b) SWE-bench-scale multi-file long-horizon tasks** — attention lapses compound across files
+  (needs Docker + the contamination caveats in §6.5 / testing-suite-plan §3.2).
+- **(c) Process/behaviour-flag metrics, not oracle score** — did the engine tier correctly, fire the
+  security-reviewer, park `awaiting_approval`, stay in `authorized_paths`? (testing-suite-plan §1's
+  "engine-behaviour flags".) A greenfield oracle can't see these; they may be where the engine's real
+  value is measurable even when raw build quality is at ceiling.
+
+`H2-shared-docs` remains a valid, validity-gated access-control task (a useful capability/regression
+guard — it confirms strong models handle multi-rule access control one-shot); it is simply not a
+headroom task. The `run-effect.mjs` harness is proven and waits for a route-(a) task.

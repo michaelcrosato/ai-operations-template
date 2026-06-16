@@ -1,3 +1,13 @@
+## 2026-06-16 (phase 5, cycle 6) — Larger headroom task (H2): also baseline-ceiling → redirect off greenfield
+
+Operator /goal: build one larger headroom task to surface a real engine-effect signal. Built it (H2-shared-docs); the result is a consistent, clarifying negative.
+
+- **`H2-shared-docs`** — a bigger task: 6 functions / ~8 stated rules with FOUR gated access-control cruxes (view-shared ≠ edit-shared; owner-only delete; owner-only share; `listDocs` must not leak inaccessible docs). Validity-gated (reference 1.0; each dropped crux → gated 0; primary-miss partial).
+- **A0-vs-A3 result (run-effect ×4, sonnet pinned): A0 4/4 = 1.0, A3 4/4, 0 flips.** Even the larger multi-rule task is baseline ceiling — sonnet one-shot got all four subtle access cruxes right; the review correctly found nothing to fix.
+- **Finding (now across 3 configs — H1/sonnet, H1/haiku, H2/sonnet): strong models are at the ceiling on greenfield build-to-spec at this scale; they don't make the attention-lapse mistakes the review-fix loop exists to recover.** The categorical engine-effect signal does not live on greenfield build tasks of this size.
+- **Redirect (ENGINE-EFFECT-PLAN §9):** the realistic routes to a signal are (a) **refactoring/regression** tasks (preserve behaviour while restructuring — strong models DO reliably break something; a behaviour-diff review catches it; cheapest + most likely to flip — recommended next), (b) SWE-bench-scale multi-file (attention lapses compound; needs Docker), (c) process/behaviour-flag metrics (tiering / security-review-fired / awaiting_approval) a greenfield oracle can't see. Did NOT keep enlarging greenfield tasks.
+- H2 stays a valid validity-gated access-control task (capability/regression guard). bench dev-tooling; verify.sh untouched; all suite validity gates green.
+
 ## 2026-06-16 (phase 5, cycle 5) — Engine-effect Phase B+C: harness built, signal not yet there (baseline at ceiling)
 
 Operator /goal: build Phase B+C (a headroom task + the review-fix arm) to get the first real engine-effect signal. Built both; the honest first result is that the baseline is already at the ceiling — a real finding, not a manufactured number.
