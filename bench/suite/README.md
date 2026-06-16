@@ -24,10 +24,13 @@ node bench/suite/L3-mcp-calc-search/oracle/verify.mjs
 
 # 3. End-to-end: an agent builds it, then the oracle scores it (bills the Agent SDK credit pool):
 node bench/suite/run-suite.mjs L3-mcp-calc-search [--ctx clean|engine]
+
+# 4. Harness self-test (free, no API) — proves the runner's own pass/reliability logic is correct:
+node --test bench/suite/lib/reliability.test.mjs
 ```
 
 ## Telemetry captured (per the blueprint dashboard)
-`oracle_score` (+ per-group breakdown) · `dq` (anti-cheat) · `built`/`finished` · token burn (in/out/cache) · `cost_usd` · `wall_ms` · **`iterations`** (= `num_turns`, the loop-count / architectural-stability metric). Records → `bench/results/suite-<task>-<ctx>-<sha>.jsonl` (gitignored).
+`oracle_score` (+ per-group breakdown) · `dq` (anti-cheat) · `built`/`finished` · token burn (in/out/cache) · `cost_usd` · `wall_ms` · **`iterations`** (= `num_turns`, the loop-count / architectural-stability metric). Records → `bench/results/suite-<task>-<ctx>-<sha>.jsonl` (gitignored). A run counts as a **pass** (for `pass^k`) only if it **`finished`** cleanly **∧** not `dq` **∧** `oracle_score ≥ pass_threshold` — a timed-out / errored build that left a scoreable artifact is never a pass (logic in `lib/reliability.mjs`, unit-tested).
 
 ## Tasks
 | id | tier | category | oracle | status |
