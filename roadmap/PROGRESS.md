@@ -1,3 +1,11 @@
+## 2026-06-16 (phase 5, cycle 1) — Reviewer-feedback response: CI hardening (E2E on UI paths + npm-audit gate)
+
+Operator /goal: triage a 3-reviewer feedback file (Desktop `feedback-20260616.md`), fix the meaningful items (3-source first), update README, add patch notes. A verification workflow checked every item against the actual repo + 2026 norms — most were praise, already-mitigated, or out-of-scope (atomic features.json writes exist; mutation-smoke covers the shield-coverage gap; benchmark artifacts ARE documented; install-into already excludes the demo; the sandbox limitation is already disclosed). Cycle 1 took the two real-actionable CI gaps:
+
+- **[2-source] E2E now auto-triggers on UI changes:** `.github/workflows/e2e.yml` only fired on `src/**`, so a pure change to the ~2,100-line `app/`/`components/` demo never ran E2E. Added `app/**` + `components/**` to the path filter. (Left `verify.sh --e2e` as the local opt-in — teaching verify.sh the changed set is the wrong layer; CI path filters are the right one.)
+- **[1-source, high-value] dependency-vulnerability gate:** `ci.yml` now runs `npm audit --omit=dev --audit-level=high` (baseline 0 vulns → gating, not advisory) — closes the "no dependency scanning" gap.
+- verify.sh PASS; 7/7 suite validity gates green. CI's actionlint validates the workflow YAML on the PR. Doc-honesty additions + CHANGELOG land in cycle 2.
+
 ## 2026-06-16 (phase 4, cycle 3) — Metrics-completeness WARN in --validate (the pre-groomed kaizen, now built)
 
 Cycle 3. Closes the metrics-drift blind spot flagged in the phase-3 README pass + DECISIONS 2026-06-12: `update-state.ts --validate` checked metrics RECORD FORMAT but not COMPLETENESS, so 15 of 33 done features silently lacked records and /kaizen + /status sampled only a subset.

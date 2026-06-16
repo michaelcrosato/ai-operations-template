@@ -31,6 +31,12 @@ jobs:
       - name: Install
         run: npm ci --no-audit --no-fund
 
+      - name: Dependency vulnerability audit (prod deps; fail on high/critical)
+        # Closes the "no dependency scanning" review gap. --omit=dev scopes to shipped deps
+        # (dev-only tooling like the shellcheck wrapper doesn't ship); --audit-level=high keeps
+        # it high-signal. Baseline is 0 vulnerabilities, so this is gating (not advisory).
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Install actionlint (pinned v1.7.12, checksum-verified)
         run: |
           mkdir -p "$HOME/.local/bin"
