@@ -7,6 +7,13 @@ extends the per-*decision* rule in `CLAUDE.md §4` (decide-and-document) to whol
 This **never blocks the loop** (P2). "Human required" means gate the irreversible *merge/action*
 behind operator approval and keep building behind a flag/branch — never stop and wait.
 
+> **Status (2026-06-16):** the tier field and its routing machinery — the `builder-strong` agent, the
+> `check-model-policy.ts` gate, the `tier` field in `features.schema.json`, and the lifecycle
+> transitions in `update-state.ts` — are **built and covered by the hook-contract + mutation gates.**
+> But the 33 features shipped so far predate this and are recorded **untiered**; tiers bind features
+> groomed from here forward. The capability is real and tested — **not yet exercised end-to-end on a
+> production feature.**
+
 ## 1. The gate principle — consequences, not difficulty
 Route a human by **irreversibility × blast radius**, NOT by how hard the task is. A hard-but-
 reversible refactor can run autonomously; a trivial-but-irreversible `DROP COLUMN`, prod deploy,

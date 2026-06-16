@@ -1,6 +1,8 @@
-# Operator Guide: How to run ForgeOps
+# Operator Guide — running the AI factory
 
 Welcome to your AI-coded repository! You do not need to run commands or read code. The AI workforce handles the execution, and you act as the planner and the final release authority.
+
+> **What's wired in *this* repo today vs. the template target.** This guide describes the factory's full intended operating model. In *this* template repo the GitHub and Claude Code surfaces and the `@claude` PR-fix lane are live, but a **staging/preview deployment** (Vercel/Netlify/etc.) and **scheduled nightly Routines** are **not yet configured** — they are one-time operator setup steps in `AI_OPERATIONS_PLAN.md` §11. Wherever this guide says "click the staging link" or "nightly Routines run," read it as *once you have wired those surfaces.*
 
 ---
 
@@ -54,7 +56,7 @@ If staging gets into a messy state and you want to restore the last known workin
    The agents will revert the bad change, get staging green again, and reply with a plain-English summary.
 2. **One-click revert (do it yourself):** open the pull request that introduced the problem (the newest one on the "Pull requests → Closed" list), and click GitHub's **Revert** button at the bottom. That opens a ready-made undo PR — merge it and staging rolls back.
 
-Either way, the agents detect the rollback automatically and put the reverted work back into the backlog as "needs another attempt."
+Either way, the next agent session treats the rollback as a signal (its state-drift check notices the reverted feature) and puts that work back into the backlog as "needs another attempt."
 
 ---
 

@@ -4,6 +4,16 @@
 
 If you only remember one sentence: **the engineering that's real is the "how we build" layer; the "ForgeOps product" is a UI shell.**
 
+**Operational status — last verified 2026-06-16 (`develop`):**
+
+| Layer | Status |
+|---|---|
+| Engine — state machine, gates, `.claude/hooks/`, **350+** hook-contract tests, mutation gate, CI | ✅ **Working** |
+| Risk-tier adaptive layer (A/B/C → builder model, review depth, approval gate) | ✅ Machinery built & gate-tested · ⏳ **not yet exercised** on a real feature (all 33 shipped features predate it) |
+| ForgeOps demo | ❌ **Simulated** browser mockup — no backend, no agents, no money |
+| Benchmark (`bench/`) | ✅ Built & validity-gated — atomic **7/7**; `L1 pass^5`, `L4/G1–G4 pass^2` dogfooded |
+| Engine-effect measurement | ⏳ Harness built; **no signal yet** — greenfield tasks already score 1.0, so the next move is refactoring/regression tasks, not bigger greenfield |
+
 ---
 
 ## The one-paragraph truth (for a skeptical reader)
@@ -19,7 +29,7 @@ A working harness lets Claude-based agents take a plain-English backlog item, bu
 | **The AI operations factory** (orchestrator + sub-agents + gates + hooks + state machine + tier-driven adaptive layer) | ✅ **Real and working.** ~3,900 lines of scripts/hooks + a detailed ops design. Mechanical guardrails actually block. This is the IP. |
 | **Evidence-gated delivery** (nothing is "done" without proof on disk; `features.json` writable only by one audited script) | ✅ **Real, mechanically enforced.** Hand-editing state is blocked by a hook; faking a pass requires editing the hook itself, which CI re-runs. |
 | **Adversarial review** (a fresh-context evaluator + a security reviewer grade each change before merge) | ✅ **Real, and it has caught real bugs** — a privilege-escalation in the demo's permission code, a bypass hole in a guardrail fix, and a state-machine birth-status hole, all rejected before merge. |
-| **Tests have teeth** (mutation gate proves the safety-critical tests aren't vacuous) | ✅ **Real.** 326 hook-contract tests + a mutation-smoke gate that kills 10/10 known mutants across the state writer, the permission logic, and the assertion shield. |
+| **Tests have teeth** (mutation gate proves the safety-critical tests aren't vacuous) | ✅ **Real.** 350+ hook-contract tests + a mutation-smoke gate that kills 10/10 known mutants across the state writer, the permission logic, and the assertion shield. |
 | **"ForgeOps" — visually orchestrate multi-agent swarms** | ❌ **Mockup.** Canvas nodes are JSON objects. No agents are spawned, nothing executes. |
 | **"Monitor every token and dollar in real time"** | ❌ **Simulated.** A browser timer mutates an in-memory object and appends fake log lines. No API, no token counting, no bill. |
 | **"Export production-grade self-hosted agents"** | ❌ **Stub files.** The exporter writes a templated Dockerfile/compose with comments saying the real runnable code would go here. |
@@ -50,6 +60,8 @@ Every feature is assigned a tier **A/B/C** at groom time, gated on **consequence
 - **Model-switching:** A/B build with `builder` (Sonnet); **C builds with `builder-strong` (Opus)** — a separate agent carrying a stricter contract for reasoning-critical work (stop-don't-guess on ambiguity, mandatory abuse-case tests). Model names live **only** in [`.claude/model-policy.json`](.claude/model-policy.json); a gate (`scripts/check-model-policy.ts`) fails the build if any agent's frontmatter model drifts from the policy.
 - **Human-in-the-loop gate:** a Tier-C / irreversible merge is **held for operator sign-off** — the feature parks in `awaiting_approval`, and the state writer *mechanically refuses* to mark it `done` without that park — while the loop keeps building other features. The gate never stalls the loop.
 - **Advisory cost:** per-feature tier / builder / attempts are recorded to metrics; `/kaizen` scans them for over-tiering and thin-brief signals. **Advisory only** — the platform exposes no per-subagent token telemetry, so cost is never a hard gate.
+
+> **Status (be honest):** this tier machinery — the `builder-strong` agent, the `check-model-policy.ts` gate, the `tier` schema field, and the lifecycle transitions in `update-state.ts` — is built and covered by the hook-contract + mutation gates. But the 33 features shipped so far predate it and are recorded untiered; tiers bind features groomed from here forward. The capability is real and tested; it has **not yet been exercised end-to-end on a production feature.**
 
 ## The guardrails that make it trustworthy (`.claude/hooks/`, `scripts/`)
 
@@ -97,7 +109,7 @@ The loop is closing: change the engine → the suite says, with numbers, whether
 - **Guardrails are deterrents + mechanical catches, not sandboxing.** A builder agent technically has shell/edit access; the hooks *catch* out-of-scope behavior rather than *prevent* it at the OS level. Good for a trusted single-operator setup; not a substitute for real isolation in a hostile multi-tenant context.
 - **The "independent" evaluator is the same model family.** A fresh session reduces context-bias, but correlated blind spots (subtle logic/crypto/concurrency bugs) can carry forward. External multi-source review has found real issues the automated gates missed — the system is useful *and* fallible.
 - **Even this engine can ship on a stale assumption.** A model-switching feature was once justified by a now-false claim about the Claude Code platform (that a subagent's model can't be overridden per-invocation — it can). The freshness rule (`CLAUDE.md §5`) exists precisely to catch this; the lapse was caught in review, corrected, and recorded as a scar. Re-verify AI-tooling facts against live docs.
-- **Test depth is uneven by design.** The guardrail/state layer has 326 contract tests + a mutation gate + property tests; the pure-function demo logic is well-tested; the ~2,100-line demo UI has **one** happy-path browser test. "33/33 features passing" means *evidence exists on disk and CI ran green*, not "market-validated."
+- **Test depth is uneven by design.** The guardrail/state layer has 350+ contract tests + a mutation gate + property tests; the pure-function demo logic is well-tested; the ~2,100-line demo UI has **one** happy-path browser test. "33/33 features passing" means *evidence exists on disk and CI ran green*, not "market-validated."
 - **Heavy AI / key-operator dependency.** Built and maintained by the AI orchestrator. Whether a human team can maintain it cold, at speed, is unproven; the ops plan + constitution are real onboarding cost.
 - **Cross-platform fragility.** Hooks are bash; on Windows they need Git Bash (WSL bash misbehaves). CI does not test Windows builds.
 - **Code formatting is not enforced.** Biome *lint* gates every PR, but auto-format is intentionally off — the engine spends its gate budget on correctness (typecheck, lint, tests, mutation-smoke) over style. A non-writing `biome format --check` is a cheap future add if style drift ever shows up.
@@ -123,6 +135,37 @@ This repo is a **template**. Adopters take the factory and replace this README w
 5. Seed the backlog: tell the orchestrator to run `/groom` against your product spec.
 6. Follow the one-time human checklist in `AI_OPERATIONS_PLAN.md` §11.
 7. The ForgeOps demo (`app/`, `src/forge/`, `lib/seed.ts`) is browser-only scaffolding, **not** a backend reference — keep it as an example or rip it out; it carries no load for the engine.
+
+## Documentation map
+
+New here? Read in this order: **README** (this file) → **OPERATOR_GUIDE.md** (if you're the operator) → **AI_OPERATIONS_PLAN.md** + **CLAUDE.md** (if you're an agent or maintainer). Agents should load only what the current task needs — everything else is reachable by path. `<PLACEHOLDER>` tokens in the docs are **intentional** adopter-substitution markers (you replace them at install time per `install-into.sh` step 1), not unfinished text.
+
+| Doc | What it is | Why it exists | Status |
+|---|---|---|---|
+| `README.md` | What the repo is + honest status | Entry point and reality check | ✅ Current |
+| `OPERATOR_GUIDE.md` | The non-technical operator's daily loop | Human-facing; agents skip it | ✅ Current |
+| `AI_OPERATIONS_PLAN.md` | The full factory blueprint (adopter-generic) | Deep design + one-time setup (§11) | ✅ Current — blueprint, uses `<PLACEHOLDER>`s |
+| `CLAUDE.md` | The enforceable agent constitution (≤150 lines) | Auto-loaded rules every agent obeys | ✅ Current |
+| `TASK_AUTONOMY_TRIAGE.md` | Risk-tier (A/B/C) routing | How much autonomy a task gets | ✅ Machinery built · ⏳ not yet exercised |
+| `AGENTS.md` | Pointer stub for non-Claude CLIs | Cross-tool entry; everything lives in CLAUDE.md | ✅ Stub (by design) |
+| `CHANGELOG.md` | Engine/template change log | Adopter-facing "what changed" | ✅ Current |
+| `SECURITY.md` · `CONTRIBUTING.md` · `CODE_OF_CONDUCT.md` | Community-standards files | Public-repo standards | ✅ Boilerplate |
+| `.claude/model-policy.json` | The only place model names live | Single source of truth for agent→model | ✅ Enforced by gate |
+| `.claude/agents/` · `skills/` · `rules/` · `hooks/` | Sub-agents, slash-command loops, path rules, mechanical guards | The runnable engine | ✅ Operational |
+| `scripts/verify.sh` | The single quality gate | One command, identical for agents and CI | ✅ Operational |
+| `bench/README.md` | Atomic golden-task probes | Fast quality/token/cost/speed measurement | ✅ Current |
+| `bench/suite/README.md` | As-built end-to-end oracle suite | The real capability + gauntlet benchmark | ✅ Current |
+| `bench/HARNESS-RESEARCH.md` | Verified 2026 citations | Grounds the gauntlet design | ✅ Current |
+| `bench/testing-suite-plan.md` · `bench/ENGINE-EFFECT-PLAN.md` | Design records (executed) | Rationale + the honest engine-effect result | ✅ Kept as record |
+| `docs/optional-modules.md` | Deferred-modules catalog + triggers | What activates when — never silently | ✅ Current |
+| `roadmap/ROADMAP.md` | Operator priorities | Plain-English backlog intent | ✅ Operator-owned |
+| `roadmap/STATUS.md` | Auto-generated business status | The operator's weekly read | ✅ Auto (`/status`) |
+| `roadmap/QUESTIONS.md` | Open operator questions | Non-blocking escalation channel | ✅ Current |
+| `roadmap/PROGRESS.md` · `DECISIONS.md` | Session log / judgment ledger | Append-only history (large — agents read only the head) | ✅ Operational state |
+| `roadmap/features.json` | The machine backlog | Source of truth for work state (writer: `update-state.ts` only) | ✅ Gate-protected |
+| `roadmap/briefs/` · `roadmap/evidence/` | Per-feature briefs + proof-on-disk | Inputs/outputs of the loop | ✅ Operational state |
+| `tests/judges/README.md` | The LLM-judge eval lane | Documented, not wired | ⏳ Deferred |
+| `docs/archive/` | Historical review/research artifacts | Receipts — **do not load into agent context** | 🗄️ Archived |
 
 ## Requirements
 
