@@ -1,3 +1,13 @@
+## 2026-06-15 — L4 CRM flagship benchmark task built + dogfooded (PR #102)
+
+Operator: keep working on the test suite + use the engine's own loop to test it on itself. Built the L4 flagship and ran a real agent build through it.
+
+- **`bench/suite/L4-crm-api/`** — the "build a CRM REST API" task: a zero-dep reference CRM (HTTP, in-memory, RBAC via X-Role, validation, referential integrity) + an **HTTP acceptance oracle** with **GATING criteria**: PRIMARY CRUD+filter round-trips (.35, partial), **GATING-RBAC** viewer-can't-write (.30, pass-required), **GATING-INTEGRITY** 409-on-dangling-ref (.20, pass-required), VALIDATION/held-out (.15, partial). A failed gate **caps the score at 0** — a broken-RBAC CRM is NOT "65% shippable".
+- **Validity gate PROVEN** (`oracle/validate.mjs`): reference scores 1.0; **broken RBAC → GATED FAIL score 0** (the key security-gating proof, not a deceptive partial); broken integrity → 0; a non-gating miss (filter/validation) → partial credit (proves gating ≠ everything-or-nothing); crash → low.
+- **Dogfooded end-to-end** (`run-suite.mjs`): a live Sonnet agent built the CRM → oracle scored **0.93** (primary 4/5, **rbac 4/4, integrity 2/2 — gates passed**, validation 4/4) in 2 turns / $0.11 / 28s. A real, partial-credit measurement of a near-complete-but-imperfect build, with the security gates holding.
+- **Two oracle bugs found by RUNNING it** (the hard part is the oracle): a Windows undici/`fetch` teardown crash (libuv assert, exit 127) → switched the client to raw `node:http` (`agent:false`); and a launch-detection brittleness (scraping a `LISTENING` stdout line false-failed a working server, scoring it 0) → switched to **health-polling a known PORT**. Both are exactly the kind of homegrown-oracle flaw ABC warns of.
+- bench/ dev-tooling, no guard surface. verify.sh PASS; both task validity gates green. NEXT: L1 rung + the L5 hard tier (torture/circuit-breaker, security-abuse, ambiguity trap).
+
 ## 2026-06-15 — Review pass: fixed a CRLF root-cause + brought the README current (PR #101)
 
 Operator: review the repo, fix anything, confirm README reflects current state + direction.
