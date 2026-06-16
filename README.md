@@ -63,19 +63,24 @@ The design philosophy (autonomy, decide-don't-ask, freshness, token efficiency, 
 
 ## Measuring whether a change actually helps (`bench/`)
 
-The engine measures its own changes instead of guessing. [`bench/`](bench/README.md) is a golden-task harness that scores any change on **output quality** (graded vs an expected answer), **tokens**, **cost**, and **speed** — run it before and after a change and `--compare` the deltas. It uses `claude -p --output-format json` for per-task token/cost/latency, deterministic graders (including executing generated code against hidden assertions), and a free local micro-bench for pure-function + gate-latency regression. The daily `/kaizen` pass is wired to use it, so "this change is a 1% improvement" has to show up as a moved number, not a vibe.
+The engine measures its own changes instead of guessing, on **two layers**:
 
-First measured baseline (develop): the 7-task suite passes **7/7**, and the engine's own loaded context (`CLAUDE.md` + hooks) was measured to cost **~$0.0094 per agent call** (a +14.5% tax with no quality benefit on the probes) — a concrete, dollar-denominated target for de-fluffing work.
+- **Atomic probes** ([`bench/`](bench/README.md)) — a fast golden-task smoke test scoring any change on **output quality** (graded vs an expected answer), **tokens**, **cost**, and **speed**; run it before/after a change and `--compare` the deltas. Uses `claude -p --output-format json` for per-task token/cost/latency, deterministic graders (incl. executing generated code against hidden assertions), and a free local micro-bench for pure-function + gate-latency regression.
+- **Oracle-first end-to-end suite** ([`bench/suite/`](bench/suite/README.md)) — agents *build a real deliverable*, then a deterministic **oracle** scores it: primary checks + **held-out altered-parameter** checks (kills hardcoded answers) + an **anti-cheat diff** (DQs a tampered build). Two axes: a **capability ladder** (`L1`/`L3`/`L4`, incl. the security-gated CRM flagship) and a four-task **harness-property gauntlet** (`G1`–`G4`) that stresses the orchestration loop itself (output discipline, long-context retention, DAG trajectory, circuit-breaker halt). Every task is **validity-gated** — the oracle must score the reference 1.0 *and* catch every cheat before it's trusted, because a broken oracle is worse than no benchmark — and grounded in real 2026 eval literature ([`bench/HARNESS-RESEARCH.md`](bench/HARNESS-RESEARCH.md)).
+
+The daily `/kaizen` pass is wired to the probes, so "this change is a 1% improvement" has to show up as a moved number, not a vibe. Measured baselines: the atomic suite passes **7/7**, and the engine's own loaded context (`CLAUDE.md` + hooks) costs **~$0.0094 per agent call** (a +14.5% tax with no quality benefit on the probes) — a concrete de-fluffing target. On the end-to-end suite, every oracle's validity gate is green and live Sonnet dogfood builds score 1.0: **L1 `pass^5`**; **L4 / G1 / G2 / G3 / G4 `pass^2`** (L4's security/integrity gates held every run); **L3 a single clean 1.0**.
 
 ---
 
 ## Direction (where this is headed)
 
-The engine's foundation (determinism, evidence gates, guardrails) and adaptive layer (risk tiers driving review depth, model, and a human-approval gate) are **built, audited, and shipped.** The next major effort is the one thing that makes all of it falsifiable:
+The engine's foundation (determinism, evidence gates, guardrails), its adaptive layer (risk tiers driving review depth, model, and a human-approval gate), **and the measurable benchmark that makes engine changes falsifiable** are all **built, audited, and shipped.**
 
-> **A real, measurable benchmark — because without one, no change can be verified.** Two layers exist: the cheap atomic probes (`bench/`, a smoke test) and now the real one — `bench/suite/`, **oracle-first** *end-to-end* build tasks ("build a CRM", "build an MCP server") laddered easy→very-hard, each scored by an **objective oracle** (modeled on SWE-bench Verified, SWE-Lancer, Commit0, Terminal-Bench, tau-bench). Each task's oracle runs a primary suite + **held-out altered-parameter checks** (kills hardcoded answers) + an **anti-cheat diff** (disqualifies a tampered build), and must pass a validity gate (score the reference 1.0, catch every cheat) before it's trusted — because a broken oracle is worse than no benchmark.
+The benchmark is **oracle-first** and now spans both axes (full detail in [`bench/testing-suite-plan.md`](bench/testing-suite-plan.md)):
+- **Capability ladder** — `L1-parse-duration` (module), `L3-mcp-calc-search` (MCP server), `L4-crm-api` (the security/integrity-**gated** CRM flagship): "can a fresh builder complete task X?", laddered by deliverable shape.
+- **Harness-property gauntlet** (`G1`–`G4`) — the "engine effect" axis (a "3DMark for orchestration"): output discipline, long-context cross-cutting trace, a mandated Read→Plan→Write→Validate DAG, and an unresolvable-environment **circuit-breaker** where the *winning* move is a clean `BLOCKED.md` halt, not a runaway loop. Built from the operator's blueprint + a four-assistant convergence, and grounded in real 2026 eval literature ([`bench/HARNESS-RESEARCH.md`](bench/HARNESS-RESEARCH.md): Harness-Bench, "Stop Comparing LLM Agents Without Disclosing the Harness", ImpossibleBench, tau-bench `pass^k`).
 
-**Phase 1 is built and proven:** [`bench/suite/L3-mcp-calc-search/`](bench/suite/) — a "build an MCP server" task whose oracle is validity-gated and on which a live Sonnet build scored **1.0** (held-out 4/4) in 3 turns / $0.13 / 31s. The roadmap from here (full detail in [`bench/testing-suite-plan.md`](bench/testing-suite-plan.md)): the **CRM** flagship (with security/integrity *gating* criteria) → the hard tiers (reliability/`pass^k`, concurrency, security-by-abuse-tests, an ambiguity **trap** task, and a **torture** task that checks the engine hits its circuit-breaker instead of a runaway loop).
+All seven tasks are validity-gated and dogfooded (live Sonnet builds score 1.0; L1 `pass^5`, L4/G1–G4 `pass^2`). **Still planned:** an adopted SWE-bench-Verified slice (needs Docker), the L5 hard tier (concurrency, security-by-abuse, an ambiguity **trap**), and the payoff this all enables — the **engine-effect comparison**: run the full `/work` loop vs a bare baseline on the same tasks, *model pinned*, and report the delta in quality / `pass^k` / cost. That last step is what turns "we improved the engine" from a claim into a number.
 
 The loop is closing: change the engine → the suite says, with numbers, whether it helped. The separate **product** question (harden-and-sell the factory vs. build ForgeOps for real) is below under *Where the value actually is*.
 
@@ -117,7 +122,7 @@ This repo is a **template**. Adopters take the factory and replace this README w
 ## Requirements
 
 - **A Claude subscription** (Pro/Max). No API keys required — sessions and the `@claude` PR-fix lane run on subscription credits. An API key is an optional alternative.
-- Node.js ≥ 20 (engine tooling; your product stack is your choice). The demo runs on Next.js 16 / React 19.
+- Node.js ≥ 20 (engine tooling; your product stack is your choice). **CI builds and tests on Node 24** — the version the engine is actually exercised against. The demo runs on Next.js 16 / React 19.
 - Git + bash (on Windows: **Git Bash**, not WSL bash — see below).
 - A GitHub repo with the Claude GitHub App installed (for cloud sessions / `@claude` fixes).
 
