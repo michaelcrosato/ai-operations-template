@@ -21,6 +21,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isPass } from './lib/reliability.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..');
@@ -83,14 +84,15 @@ function runOnce(runIdx) {
   return record;
 }
 
-function isPass(rec) { return !rec.dq && (rec.oracle_score ?? 0) >= passThreshold; }
+// isPass(rec, passThreshold) lives in ./lib/reliability.mjs (unit-tested). A run passes ONLY if it
+// FINISHED cleanly (no errored/timed-out build counted as a pass), was not DQ'd, and met threshold.
 
 const records = [];
 for (let i = 1; i <= repeat; i++) {
   console.log(`── building ${taskId} (ctx=${ctx}, model=${meta.budget?.model}) — run ${i}/${repeat} ──`);
   const rec = runOnce(i);
   records.push(rec);
-  console.log(`   run ${i}: score ${rec.oracle_score}${rec.dq ? ' ⚠DQ' : ''}${isPass(rec) ? ' ✓pass' : ' ✗fail'}  · ${rec.iterations} turns · $${(rec.cost_usd ?? 0).toFixed(4)} · ${rec.wall_ms}ms · ${JSON.stringify(rec.groups)}`);
+  console.log(`   run ${i}: score ${rec.oracle_score}${rec.dq ? ' ⚠DQ' : ''}${isPass(rec, passThreshold) ? ' ✓pass' : ' ✗fail'}  · ${rec.iterations} turns · $${(rec.cost_usd ?? 0).toFixed(4)} · ${rec.wall_ms}ms · ${JSON.stringify(rec.groups)}`);
 }
 
 const mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
@@ -106,7 +108,7 @@ if (repeat === 1) {
   console.log(`  wall-clock ......... ${rec.wall_ms} ms`);
   console.log(`  iterations (turns) . ${rec.iterations}`);
 } else {
-  const passes = records.filter(isPass).length;
+  const passes = records.filter((r) => isPass(r, passThreshold)).length;
   const scores = records.map((r) => r.oracle_score ?? 0);
   console.log(`\n── reliability over ${repeat} runs (pass = score ≥ ${passThreshold}, not DQ) ──`);
   console.log(`  pass-rate .......... ${passes}/${repeat} (${r2(passes / repeat)})${passes === repeat ? '  — pass^' + repeat + ' clean' : ''}`);

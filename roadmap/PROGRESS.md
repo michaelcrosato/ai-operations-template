@@ -1,3 +1,13 @@
+## 2026-06-16 (phase 5, cycle 3) — Bench measurement integrity: a timed-out build can no longer count as a pass
+
+Cycle 3 (continue-working goal). A real correctness bug in the self-benchmark's reliability accounting — the "a broken measurement is worse than no measurement" flaw the suite exists to prevent, found in the suite's own runner.
+
+- **The bug:** `run-suite.mjs`'s `isPass` checked `¬dq ∧ score ≥ threshold` but ignored `finished` (recorded yet unused). A build that ERRORED or TIMED OUT (`claude -p` non-zero / `is_error`) yet happened to leave a scoreable entrypoint was counted as a clean `pass^k` — inflating the reliability numbers the engine uses to judge itself.
+- **The fix:** a run passes only if `finished === true ∧ ¬dq ∧ score ≥ pass_threshold`. Extracted the pure logic into `bench/suite/lib/reliability.mjs` (run-suite executes a suite on import, so its internals weren't importable for testing) + added `lib/reliability.test.mjs` — a 6-case `node --test` (the bench self-test pattern, sibling to the oracle `validate.mjs` files) covering the finished-gating fix plus the DQ / threshold / missing-score / missing-finished cases.
+- **Verified end-to-end:** a live G1 dogfood ×2 after the refactor still scored **pass^2** (finished builds → ✓pass) — the gating doesn't break legit passes; and no prior recorded result changes (all were `finished:true`).
+- bench/README documents the self-test + the precise pass definition. bench stays isolated dev-tooling; verify.sh untouched.
+- verify.sh PASS; 7/7 suite validity gates green.
+
 ## 2026-06-16 (phase 5, cycle 2) — Reviewer-feedback response: demo honesty labeling + README + CHANGELOG (patch notes)
 
 Cycle 2 — the 3-source landing-page item + doc honesty + the operator's "do we have patch notes?" (we didn't; created one).
