@@ -341,6 +341,18 @@ printf '%s\n' '{"date":"2026-06-10","feature":"F-9101","builder":"gpt-4"}' > "$F
 check "F-CG1: metrics rejects an unknown builder"            1 "$(MV "$FIX/m-builder.jsonl")"
 printf '%s\n' '{"date":"2026-06-10","feature":"F-9101","attempts":"two"}' > "$FIX/m-attempts.jsonl"
 check "F-CG1: metrics rejects non-integer attempts"         1 "$(MV "$FIX/m-attempts.jsonl")"
+# Metrics completeness (kaizen, DECISIONS 2026-06-12): --validate WARNs (never fails) when a done
+# feature has NO metrics.jsonl record — surfacing the /kaizen + /status sampling gap, not silencing
+# it. A green verify.log under gitignored tmp/ satisfies the done-feature evidence contract.
+mkdir -p tmp/mc-evidence
+printf 'VERIFY: PASS (exit 0)\n' > tmp/mc-evidence/verify.log
+printf '{ "features": [ { "id": "F-9101", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [], "priority": 1, "status": "done", "passes": true, "evidence": ["tmp/mc-evidence/verify.log"], "attempts": 0, "blocked_reason": null } ] }\n' > "$FIX/mc-state.json"
+printf '%s\n' '{"date":"2026-06-10","feature":"F-9999"}' > "$FIX/mc-missing.jsonl"
+check "metrics completeness: WARNs when a done feature lacks a record"     "yes" "$(STATE_FILE="$FIX/mc-state.json" METRICS_FILE="$FIX/mc-missing.jsonl" node "$TSNODE" scripts/update-state.ts --validate 2>&1 | grep -q 'no metrics.jsonl record (F-9101)' && echo yes || echo no)"
+check "metrics completeness: the WARN is non-fatal (exit 0)"               0 "$(STATE_FILE="$FIX/mc-state.json" METRICS_FILE="$FIX/mc-missing.jsonl" node "$TSNODE" scripts/update-state.ts --validate >/dev/null 2>&1; echo $?)"
+printf '%s\n' '{"date":"2026-06-10","feature":"F-9101"}' > "$FIX/mc-complete.jsonl"
+check "metrics completeness: no WARN when every done feature has a record" "no"  "$(STATE_FILE="$FIX/mc-state.json" METRICS_FILE="$FIX/mc-complete.jsonl" node "$TSNODE" scripts/update-state.ts --validate 2>&1 | grep -q 'no metrics.jsonl record' && echo yes || echo no)"
+rm -rf tmp/mc-evidence
 check "add rejects malformed JSON"              1 "$(US --add 'not-json')"
 check "add rejects passes:true at birth"        1 "$(US --add '{"id":"F-9102","epic":"t","title":"t","spec_ref":"t","description":"t","acceptance":["a"],"authorized_paths":[],"priority":1,"status":"pending","passes":true,"evidence":["x"],"attempts":0,"blocked_reason":null}')"
 check "add rejects dangling dependency"         1 "$(US --add '{"id":"F-9103","epic":"t","title":"t","spec_ref":"t","description":"t","acceptance":["a"],"authorized_paths":[],"dependencies":["F-9999"],"priority":1,"status":"pending","passes":false,"evidence":[],"attempts":0,"blocked_reason":null}')"
