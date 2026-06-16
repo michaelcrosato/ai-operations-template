@@ -53,7 +53,9 @@ const hc = scoreCandidate(hardcoded);
 expect('hardcoded/overfit server is caught by held-out cases', hc.score < 1, `scored ${hc.score}`);
 
 // 4. missing a tool → discovery fails
-const missingTool = scoreCandidate(REF.replace(/\{\s*name: 'get_record',[\s\S]*?\},\n/, ''));
+// CRLF-robust: match the trailing comma+newline as \r?\n so the mutation works regardless of
+// the source's line endings (a CRLF checkout silently no-op'd this once — the bug this guards).
+const missingTool = scoreCandidate(REF.replace(/\{\s*name: 'get_record',[\s\S]*?\},\r?\n/, ''));
 expect('missing tool is caught (discovery)', missingTool.score < 1, `scored ${missingTool.score}`);
 
 // 5. server that crashes on startup → low score, not a pass
