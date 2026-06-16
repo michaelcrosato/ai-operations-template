@@ -34,5 +34,5 @@ This is a rolling template; only the latest `develop` (and the most recent tag, 
 ## Our own safeguards
 
 - Secrets are never committed; `.env*` is unreadable to agents by policy and by hook.
-- CI runs a secret-shaped-string scan and a trust-widening tripwire on every PR.
+- CI runs a dependency vulnerability audit (`npm audit --omit=dev --audit-level=high`), a secret-shaped-string scan, and a trust-widening tripwire on every PR.
 - Dependabot alerts, Dependabot security updates, secret scanning, and push protection are enabled on this repository.
