@@ -1,6 +1,7 @@
 # Changelog
 
-All notable changes to the **ai-operations-engine** template, newest first. This is the
+All notable changes to the **ai-operations-engine** template, newest first. **Scope: engine/template
+changes only — *not* per-feature product delivery** (that history lives in `roadmap/PROGRESS.md`). This is the
 human-readable companion to `roadmap/PROGRESS.md` (narrative) and `roadmap/DECISIONS.md` (one entry
 per judgment call) — it summarizes what an adopter or operator would care about. Format follows
 [Keep a Changelog](https://keepachangelog.com/). The template is rolling (latest `develop` + tag

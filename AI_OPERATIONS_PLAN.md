@@ -6,6 +6,10 @@
 
 > All tooling claims below were verified against official Anthropic documentation and engineering publications on **2026-06-09**. Sources are listed in [§13](#13-sources-verified-2026-06-09). Pre-2026 patterns (e.g., hand-rolled cron + bash agent loops, prompt-stuffed mega-contexts, "autonomous mode" via unsupervised `--dangerously-skip-permissions` on a laptop) were evaluated and rejected in favor of the current first-party primitives.
 
+> **How to read this (status & scope).** This is the **adopter blueprint** for the engine, written to be generic across stacks — so it deliberately carries `<PLACEHOLDER>` tokens (`<REPOSITORY_NAME>`, `<DATABASE_SERVICE>`, `<QA_DEPLOYMENT_SURFACE>`, `<E2E_TEST_FRAMEWORK>`, …) that an adopter replaces at install time (`install-into.sh` step 1). They are **substitution markers, not unfinished work** — do not "fill them in" in the template itself.
+>
+> **Built vs. planned in *this* repo:** the engine layer (§3–§8 — state machine, gates, hooks, agents, skills, CI) is **built and enforced** — that is "Phase 0" in §10, and it is done. The product-build ladder in **§10 Phases 1–5 is the generic adopter path, not this repo's as-built state**: this repo's only product is the intentionally backend-less **ForgeOps** browser demo (see `README.md`), so it has no real database, no staging deploy, and no Phases 2–5 backend. Read §2.1 surfaces and §10 phases as "what an adopter wires," not "what runs here."
+
 ---
 
 ## 0. Executive Summary (plain English — read this first)

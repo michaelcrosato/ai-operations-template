@@ -1,6 +1,6 @@
 # Optional Modules — NOT part of the core engine
 
-> **Everything in this file is optional.** None of it ships active, none of it is loaded into agent context, and none of it belongs to the drop-in core that every adopting repo wants. Each module activates only when its **trigger condition** becomes true for *your* repo — until then it costs nothing. All entries were verified against current sources on 2026-06-10 (details + source URLs: [`feedback-2-verification.md`](feedback-2-verification.md)).
+> **Everything in this file is optional.** None of it ships active, none of it is loaded into agent context, and none of it belongs to the drop-in core that every adopting repo wants. Each module activates only when its **trigger condition** becomes true for *your* repo — until then it costs nothing. All entries were verified against current sources on 2026-06-10 (details + source URLs: [`docs/archive/feedback-2-verification.md`](archive/feedback-2-verification.md) — a template-internal record, not shipped to adopters).
 >
 > **How this file is used:** the orchestrator's `/downtime` sentinel scan checks these triggers against the repo's actual state. When a trigger fires, the matching module is groomed into `roadmap/features.json` (or raised in `QUESTIONS.md` if it's an operator call) — it is never adopted silently.
 
@@ -17,6 +17,8 @@
 | Layout decision | src/packages structure | Decided by the product, never imposed by the template (#74, fork-6) |
 
 ## Trigger: the repo goes public
+
+> **Status (2026-06-16): this trigger has FIRED — the repo is public.** `SECURITY.md`, the three issue templates, `CONTRIBUTING.md`, and `CODE_OF_CONDUCT.md` have **shipped** (rows below kept for provenance). Still deferred: the community-library split and the responsible-AI note.
 
 | Module | What it adds | Notes |
 |---|---|---|

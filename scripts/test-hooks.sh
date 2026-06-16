@@ -868,7 +868,7 @@ bash "$INSTALL_SCRIPT" "$IT" >/dev/null 2>&1
 # ── 1. Exclusions ────────────────────────────────────────────────────────────
 check "exclusion: no src/ copied"                  0 "$(path_absent "$IT/src")"
 check "exclusion: no package-lock.json"            0 "$(path_absent "$IT/package-lock.json")"
-check "exclusion: no docs/feedback-2-verification" 0 "$(path_absent "$IT/docs/feedback-2-verification.md")"
+check "exclusion: no docs/archive/ copied"         0 "$(path_absent "$IT/docs/archive")"
 check "exclusion: no docs/feedback-2-verdicts"     0 "$(path_absent "$IT/docs/feedback-2-verdicts.json")"
 check "exclusion: no roadmap/briefs/F-0012.md"     0 "$(path_absent "$IT/roadmap/briefs/F-0012.md")"
 check "exclusion: no roadmap/evidence/F-0001"      0 "$(path_absent "$IT/roadmap/evidence/F-0001")"

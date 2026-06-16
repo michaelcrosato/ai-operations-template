@@ -15,13 +15,13 @@
 
 ## In progress / planned
 - **Product backlog: nothing in progress, nothing deferred** — all 33 items remain finished.
-- **Engine roadmap (optional, no deadline):** the natural next step is the headline payoff — measuring the factory *against a plain baseline* to put a number on how much the factory's process actually improves results — plus a couple of harder benchmark tasks. None of this blocks anything.
+- **Engine roadmap (optional, no deadline):** the "measure the factory against a plain baseline" experiment was built **and run** — and it taught us something useful: on build-from-scratch tasks the plain baseline already earns a perfect score, so there is no gap *there* for the factory's extra process to close. The honest next step is to point the benchmark at **fix-and-improve-existing-code tasks** (where a careful process can actually turn a failure into a pass), rather than larger from-scratch tasks. None of this blocks anything.
 
 ## Blocked / needs you
 - **Nothing blocked. Nothing waiting on you.**
 
 ## Health
-- ✅ **All automated checks passing** (safety-guard checks, product tests, browser test; 326 guard tests; the "do the safety tests actually have teeth?" check kills 10 of 10 deliberately-broken versions).
+- ✅ **All automated checks passing** (safety-guard checks, product tests, browser test; 350+ guard tests; the "do the safety tests actually have teeth?" check kills 10 of 10 deliberately-broken versions).
 - ✅ **The new benchmark is self-verified** — every scorer is proven to give a correct build a perfect score *and* to catch cheating/short-cuts before it is trusted; all seven tasks passed on repeat runs.
 - ✅ **Honest progress count: 33 of 33 product items done, 0 blocked, 0 pending.**
 - ⚠️ **One internal-bookkeeping note (not urgent):** the per-feature metrics log is missing entries for ~15 of the finished items (they shipped in batches without the usual one-line record). It is advisory data only — no product or safety impact — and is logged as a clean-up task so it is not a silent gap.
