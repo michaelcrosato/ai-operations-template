@@ -1,0 +1,8 @@
+{
+  "records": [
+    { "id": "r1", "title": "Getting Started", "url": "https://example.com/start", "body": "intro onboarding guide setup install" },
+    { "id": "r2", "title": "API Reference", "url": "https://example.com/api", "body": "endpoints reference rest http" },
+    { "id": "r3", "title": "Security Guide", "url": "https://example.com/security", "body": "auth rbac security hardening" },
+    { "id": "r4", "title": "Billing FAQ", "url": "https://example.com/billing", "body": "billing invoice subscription payment" }
+  ]
+}

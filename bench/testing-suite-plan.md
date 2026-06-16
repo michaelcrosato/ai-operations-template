@@ -10,6 +10,17 @@ And here is the part most homegrown suites get fatally wrong: **the oracle is th
 
 ---
 
+## 0.5 Blueprint integration + Phase-1 status (DONE)
+The operator's `project-blueprint.md` (telemetry-first, "uncheatable local evaluation") is folded in. Its specific sharpenings, now part of this plan:
+- **Held-out altered-parameter suite** — beyond the primary checks, a *second* hidden set with parameters the agent never saw, to kill hardcoded/mocked returns. *(Implemented in the first task's oracle.)*
+- **Anti-cheat diff = automatic disqualification** — post-flight, if the agent altered the spec/fixtures/oracle, the run is **DQ'd (score 0)**, not scored. *(Implemented: corpus-hash check.)*
+- **Two more telemetry axes:** **iteration / loop count** (`num_turns` — architectural stability; fewer self-corrections is better) and **human-intervention score** (how often a run needed the human queue). *(Iteration count implemented; intervention score lands with the HITL queue.)*
+- **Task-category weighting matrix** — the oracle weights shift by task *type*: **MCP/tooling** → schema-compliance + discovery + graceful errors (used by the first task); **greenfield app** → feature-completeness + persistence + `data-testid`; **refactor** → regression-stays-green + LOC/speed gains; **infra** → state-stability (port-ping, log syntax, zero crash-loops).
+- **The 4-layer stress gauntlet** (a "3DMark for orchestration"), folded into L5: L1 rigid-format/negative-schema · L2 long-context retention · L3 6–8-step tool-chaining (no circular looping) · **L4 torture** — a deliberately broken environment where compilation always fails; the win condition is the engine **hitting its circuit-breaker (the two-strike limit) and exiting cleanly, NOT burning tokens in a runaway loop.** L4 directly tests the engine's failure-handling, which no capability benchmark does.
+- **Daily human-batch multiplier** — failed/borderline runs land in a daily review queue; the engineer applies a binary **1.0 (genuine) / 0.0 (faked/brittle)** multiplier into the baseline (HITL as a batch gate, not micromanagement) — the engine's `awaiting_approval` pattern applied to the benchmark.
+
+**Phase-1 status: DONE.** The first task — `bench/suite/L3-mcp-calc-search/` ("build an MCP server") — is built and **proven end-to-end**: its **validity gate is green** (the oracle scores the reference 1.0 and catches off-by-one, hardcoded/overfit, missing-tool, crash, and corpus-tamper), and a **live Sonnet build scored 1.0** (held-out 4/4) in **3 turns / $0.13 / 31s**. The machinery — agent builds → oracle verifies (primary + held-out + anti-cheat) → blueprint telemetry — works. Next: the L4 CRM (the harder flagship) and the L4-torture/circuit-breaker stress task.
+
 ## 1. What we measure — two axes, never conflated
 
 1. **Capability** — can a *fresh* builder agent complete task X? (probes the model + the agent definition)
