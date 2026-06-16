@@ -1,3 +1,16 @@
+## 2026-06-16 (phase 2) — Harness-property gauntlet G1–G4 built, grounded, dogfooded pass^2 (crash-recovery /goal)
+
+Operator /goal after a crash: reproduce the crashed session's loop from the two Desktop files (`project-blueprint.md` + `suggestedtests.md`) — "the main thing is in the two files." Those are the four-assistant convergence on a four-layer **engine-effect gauntlet** (the second axis the plan specifies but hadn't fully built). The crash had interrupted `G4-circuit-breaker`'s dogfood; recovered with zero loss (all G4 files intact, validity gate green) and confirmed **G4 pass^2**.
+
+- **Built the three missing gauntlet tiers** (parallel build workflow, each self-verified to a green validity gate, then independently reviewed + re-run + dogfooded by the orchestrator):
+  - **`G1-strict-json`** (output discipline): raw-bytes `JSON.parse` + no-fence + minified + exact-ordered-keys over a CSV transform with boolean/precedence/disabled-exclusion traps; DQ on input tamper. Dogfood **pass^2** (1/1/1, format 6/6 · correctness 6/6, 3 turns, $0.17/run).
+  - **`G2-context-trace`** (long-context): source-only TTL patch + **live behavioral probe through the real module graph** (held-out timestamps) + a **gating** peripheral-integrity group (byte-identical or score 0) + trace-report. Dogfood **pass^2** (1/1/1, patch 7/7 · integrity 4/4 · trace 5/5, 8 turns, $0.14/run).
+  - **`G3-dag-pipeline`** (DAG): `PLAN.md` proxy + import-the-module oracle with **7 held-out cases** as the anti-cheat. Dogfood **pass^2** (1/1/1, plan 4/4 · primary 4/4 · heldout 7/7, 12 turns, $0.32/run).
+- **`run-suite.mjs` nested-fixture support** (mkdir -p the dest parent) so G2's `packages/*` monorepo stages; flat-fixture tasks (L1/L3/L4/G1/G4) unaffected.
+- **Grounded the design, not the desktop notes' citations:** a background research workflow live-verified all four layers → `bench/HARNESS-RESEARCH.md`. Headline: "harness as the independent variable" is now a real lineage (Harness-Bench; "Stop Comparing LLM Agents Without Disclosing the Harness" — a 9.5-pt harness swing; ImpossibleBench — an abort-affordance cut cheating 54%→9%, validating G4's "BLOCKED.md is the winning move"). Citation forensics flagged the misattributed/uncorroborated claims to keep OUT (teamai/attainmentlabs misattributions; the Opus 4.8/Fable 5 single-aggregator numbers).
+- **Shipped as ONE PR** (cohesive multi-tier feature + shared run-suite change; deliberate deviation from one-PR-per-feature, logged in DECISIONS).
+- verify.sh PASS (326 hook tests, 10/10 mutation-smoke killed); all 7 suite validity gates green (L1/L3/L4/G1/G2/G3/G4). bench/ isolated dev-tooling, no guard surface.
+
 ## 2026-06-16 — Suite reliability (`pass^k`) + an L4 task-validity fix, both found by dogfooding
 
 Operator: keep working on the test suite + use the engine's own loop to pound on it. Two prior tasks shipped first this session: the **L1 rung** (`L1-parse-duration`, PR #103 — a third oracle type: import-the-module + hidden unit tests; live Sonnet build 1.0) and now the reliability + task-validity pass.
