@@ -1,3 +1,12 @@
+## 2026-06-16 (phase 4, cycle 3) — Metrics-completeness WARN in --validate (the pre-groomed kaizen, now built)
+
+Cycle 3. Closes the metrics-drift blind spot flagged in the phase-3 README pass + DECISIONS 2026-06-12: `update-state.ts --validate` checked metrics RECORD FORMAT but not COMPLETENESS, so 15 of 33 done features silently lacked records and /kaizen + /status sampled only a subset.
+
+- `--validate` now collects the feature ids seen in metrics.jsonl and **WARNs** (non-fatal, mirroring the model-policy-staleness precedent at the same site) listing every `status:done` feature with no record. A hard fail was deliberately rejected — it would block on the pre-existing legacy gap; the WARN surfaces it every run so a session backfills it without fabricating verdicts.
+- 3 contract tests (STATE_FILE + METRICS_FILE fixtures): WARN fires for a missing record, the WARN is non-fatal (exit 0), no WARN when complete. Contract tests 347→350.
+- Side effect (intended): verify.sh now emits the metrics WARN against the real backlog (15 missing) every run — the nudge that makes the gap impossible to ignore.
+- verify.sh PASS; 7/7 suite validity gates green.
+
 ## 2026-06-16 (phase 4, cycle 2) — Guardrail hardening: closed two path-authz bypasses (NotebookEdit + ./scripts rescope); BLOCK→fix→re-review
 
 Cycle 2 of the self-improvement loop. Two path-authorization bypasses, each teeth-tested.

@@ -244,6 +244,7 @@ switch (cmd) {
       : path.join(process.cwd(), 'roadmap', 'metrics.jsonl');
     if (fs.existsSync(metricsFile)) {
       const recordLines = fs.readFileSync(metricsFile, 'utf8').split(/\r?\n/).filter((l) => l.trim());
+      const seenFeatures = new Set<string>();
       recordLines.forEach((l, idx) => {
         // Bounded-injection rule (plan §9): metrics feed /kaizen and /status
         // context, so an oversized record is a prompt-injection channel.
@@ -255,6 +256,7 @@ switch (cmd) {
           const rec = JSON.parse(l);
           if (!/^\d{4}-\d{2}-\d{2}$/.test(rec.date ?? '')) errors.push(`metrics.jsonl line ${idx + 1}: missing/invalid "date" (YYYY-MM-DD)`);
           if (typeof rec.feature !== 'string' || !rec.feature) errors.push(`metrics.jsonl line ${idx + 1}: missing "feature"`);
+          else seenFeatures.add(rec.feature);
           // Cost/quality fields (F-CG1) are OPTIONAL (legacy records predate them) but must be
           // well-formed WHEN PRESENT, so /kaizen's cost scan reads trustworthy data, not free-text.
           if (rec.tier !== undefined && !(typeof rec.tier === 'string' && TIERS.includes(rec.tier))) errors.push(`metrics.jsonl line ${idx + 1}: "tier" must be one of ${TIERS.join('/')} when present`);
@@ -264,6 +266,16 @@ switch (cmd) {
           errors.push(`metrics.jsonl line ${idx + 1}: not valid JSON`);
         }
       });
+      // Completeness (kaizen, DECISIONS 2026-06-12): /kaizen + /status sample metrics.jsonl, so a
+      // shipped feature with NO record is silently excluded from their cost/pass-rate scans. WARN —
+      // never fail (mirrors the model-policy-staleness precedent above; a hard fail would block on
+      // pre-existing legacy gaps) — listing every done feature missing a record so a session backfills it.
+      const missingMetrics = data.features
+        .filter((f) => f.status === 'done' && !seenFeatures.has(f.id))
+        .map((f) => f.id);
+      if (missingMetrics.length) {
+        console.warn(`[update-state] WARN: ${missingMetrics.length} done feature(s) have no metrics.jsonl record (${missingMetrics.join(', ')}) — /kaizen + /status sample only recorded features; append one metrics line per shipped feature.`);
+      }
     }
     if (errors.length) fail(`invalid backlog:\n  - ${errors.join('\n  - ')}`);
     console.log(`[update-state] valid: ${data.features.length} features, ` +
