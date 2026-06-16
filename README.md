@@ -61,6 +61,10 @@ Every feature is assigned a tier **A/B/C** at groom time, gated on **consequence
 
 The design philosophy (autonomy, decide-don't-ask, freshness, token efficiency, self-improvement) is documented in [`AI_OPERATIONS_PLAN.md`](AI_OPERATIONS_PLAN.md) and enforced by [`CLAUDE.md`](CLAUDE.md).
 
+## Why a harness, not a framework
+
+A fair question: why a custom file-based control plane instead of an off-the-shelf orchestration framework (LangGraph, CrewAI, Mastra, …)? Because the **independent variable here is the orchestration *harness*, not the agent graph.** The 2026 evidence is that the harness — not the model or the framework — dominates the outcome: the same model swings ~9.5 points on SWE-bench Pro purely from harness choice, and a tight, legible loop beats a heavier one ("Stop Comparing LLM Agents Without Disclosing the Harness", arXiv 2605.23950; Harness-Bench, arXiv 2605.27922 — both cited in [`bench/HARNESS-RESEARCH.md`](bench/HARNESS-RESEARCH.md)). A plain-English, file-based loop is **inspectable, diffable, and gate-able** in a way a framework's in-memory state is not: every decision is a file a human or agent can read, a hook can block, and CI can re-verify. Frameworks and protocols (MCP, multi-model routers, native sandboxes) are adopted at the *edges* when a concrete trigger fires ([`docs/optional-modules.md`](docs/optional-modules.md)), not baked into the core. This is a deliberate harness-engineering bet, not an oversight.
+
 ## Measuring whether a change actually helps (`bench/`)
 
 The engine measures its own changes instead of guessing, on **two layers**:
@@ -89,13 +93,14 @@ The loop is closing: change the engine → the suite says, with numbers, whether
 ## Honest limitations (the part most READMEs hide)
 
 - **No product, no users, no revenue.** ForgeOps is a self-test demo. No backend, database, auth, payment, or agent runtime. Selling it as a SaaS today would be misrepresentation.
-- **The demo's marketing copy overstates it.** The landing page describes simulated UI as if it were live capability. It's labeled "illustrative," but a casual visitor could be misled. It's an internal demo, not a sales asset.
+- **The demo is a labeled mockup, not a product.** The ForgeOps landing page leads with an above-the-fold "Simulated demo" banner and an "INTERACTIVE DEMO (SIMULATED)" badge, and its feature copy names the mocked surfaces (mocked token/cost counters, a *starter* export scaffold) — it describes a simulated preview, not live capability. It remains an internal self-test demo, not a sales asset.
 - **Guardrails are deterrents + mechanical catches, not sandboxing.** A builder agent technically has shell/edit access; the hooks *catch* out-of-scope behavior rather than *prevent* it at the OS level. Good for a trusted single-operator setup; not a substitute for real isolation in a hostile multi-tenant context.
 - **The "independent" evaluator is the same model family.** A fresh session reduces context-bias, but correlated blind spots (subtle logic/crypto/concurrency bugs) can carry forward. External multi-source review has found real issues the automated gates missed — the system is useful *and* fallible.
 - **Even this engine can ship on a stale assumption.** A model-switching feature was once justified by a now-false claim about the Claude Code platform (that a subagent's model can't be overridden per-invocation — it can). The freshness rule (`CLAUDE.md §5`) exists precisely to catch this; the lapse was caught in review, corrected, and recorded as a scar. Re-verify AI-tooling facts against live docs.
 - **Test depth is uneven by design.** The guardrail/state layer has 326 contract tests + a mutation gate + property tests; the pure-function demo logic is well-tested; the ~2,100-line demo UI has **one** happy-path browser test. "33/33 features passing" means *evidence exists on disk and CI ran green*, not "market-validated."
 - **Heavy AI / key-operator dependency.** Built and maintained by the AI orchestrator. Whether a human team can maintain it cold, at speed, is unproven; the ops plan + constitution are real onboarding cost.
 - **Cross-platform fragility.** Hooks are bash; on Windows they need Git Bash (WSL bash misbehaves). CI does not test Windows builds.
+- **Code formatting is not enforced.** Biome *lint* gates every PR, but auto-format is intentionally off — the engine spends its gate budget on correctness (typecheck, lint, tests, mutation-smoke) over style. A non-writing `biome format --check` is a cheap future add if style drift ever shows up.
 
 ---
 

@@ -1,3 +1,15 @@
+## 2026-06-16 (phase 5, cycle 2) — Reviewer-feedback response: demo honesty labeling + README + CHANGELOG (patch notes)
+
+Cycle 2 — the 3-source landing-page item + doc honesty + the operator's "do we have patch notes?" (we didn't; created one).
+
+- **[3-source] ForgeOps demo labeled as simulated** (`app/page.tsx`): an above-the-fold "Simulated demo" banner, "NOW IN PUBLIC BETA" → "INTERACTIVE DEMO (SIMULATED)", and the hero subhead reworded to name the mocked surfaces (mocked counters, starter export scaffold) instead of "real-time monitoring / production-grade export". The aspirational h1 tagline kept but now unmistakably framed as a simulated preview (branding-tone change — operator may veto per `frontend.md`).
+- **README**: new "Why a harness, not a framework" section (answers the 2-source "reinventing the wheel" — a deliberate harness-engineering bet, cites HARNESS-RESEARCH.md); formatter-not-enforced honesty note; demo-limitation updated to reflect the labeling.
+- **SECURITY.md**: safeguards now list the npm-audit gate (cycle 1).
+- **CHANGELOG.md created** (patch notes — we had none): Keep-a-Changelog `[Unreleased]`, covering the gauntlet, the 3 guard cycles, the CI hardening, and this honesty pass.
+- **docs/optional-modules.md**: SBOM recorded as a trigger-gated deferral (no deployable artifact yet); the zizmor trigger noted as fired by cycle-1's CI change for the next pass.
+- Feedback was verified item-by-item first (a 4-lane workflow + web research): most was praise / already-mitigated / out-of-scope; only the actionable few were touched.
+- verify.sh PASS; E2E runs in CI (now triggered by the `app/` change); 7/7 validity gates green.
+
 ## 2026-06-16 (phase 5, cycle 1) — Reviewer-feedback response: CI hardening (E2E on UI paths + npm-audit gate)
 
 Operator /goal: triage a 3-reviewer feedback file (Desktop `feedback-20260616.md`), fix the meaningful items (3-source first), update README, add patch notes. A verification workflow checked every item against the actual repo + 2026 norms — most were praise, already-mitigated, or out-of-scope (atomic features.json writes exist; mutation-smoke covers the shield-coverage gap; benchmark artifacts ARE documented; install-into already excludes the demo; the sandbox limitation is already disclosed). Cycle 1 took the two real-actionable CI gaps:

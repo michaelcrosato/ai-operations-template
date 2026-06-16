@@ -131,18 +131,24 @@ export default function ForgeOpsLanding() {
         </div>
       </nav>
 
+      {/* Honest demo disclaimer (reviewer feedback 2026-06-16): make the simulated nature unmissable above the fold */}
+      <div className="bg-amber-500/10 border-b border-amber-400/30 text-amber-200/90 text-center text-xs px-4 py-2 tracking-wide">
+        Simulated demo — no real agents run, no backend, synthetic data only. The real engineering is the open-source AI operations engine that built this site.
+      </div>
+
       {/* Hero */}
       <div className="pt-24 pb-16 px-8 max-w-5xl mx-auto text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1 text-xs tracking-[2px] mb-6">
-          NOW IN PUBLIC BETA • BUILT WITH THE AI OPERATIONS ENGINE
+          INTERACTIVE DEMO (SIMULATED) • BUILT WITH THE AI OPERATIONS ENGINE
         </div>
 
         <h1 className="text-7xl md:text-8xl font-semibold tracking-tighter leading-[0.9] mb-6">
           The operating system<br />for AI agent teams.
         </h1>
         <p className="text-2xl text-white/70 max-w-3xl mx-auto mb-6 tracking-tight">
-          Visually orchestrate multi-agent swarms, monitor every token and dollar in real time,
-          iterate with simulation &amp; A/B, and export production-grade self-hosted agents.
+          A simulated, browser-only preview: arrange multi-agent graphs, watch mocked token/dollar
+          counters, explore simulation &amp; A/B panels, and generate a starter self-host scaffold.
+          No real agents run and nothing leaves your browser.
         </p>
         <p className="text-sm text-emerald-400/90 max-w-2xl mx-auto mb-10 tracking-tight">
           ★ Every line of ForgeOps — product, engine, demo, and this site — was built and is maintained by the exact AI operations system we ship to you.
