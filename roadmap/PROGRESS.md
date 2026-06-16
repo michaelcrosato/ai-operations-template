@@ -1,3 +1,11 @@
+## 2026-06-15 — Review pass: fixed a CRLF root-cause + brought the README current (PR #101)
+
+Operator: review the repo, fix anything, confirm README reflects current state + direction.
+- **Fixed a real cross-platform bug:** the bench suite's validity gate failed *locally* (passed in CI) — root cause: `.gitattributes` had no `*.mjs` rule, so `.mjs` checked out CRLF on Windows, and `validate.mjs`'s "missing-tool" mutation regex (`},\n`) silently no-op'd against `},\r\n`, false-failing one check. Fix: added `*.mjs text eol=lf` (also normalizes the engine's own `scripts/capture.mjs`, which had the same latent CRLF) + made the regex CRLF-robust (`},\r?\n`). Validity gate green again. The index was always LF (so CI was never affected); this was a local-checkout flake, now closed at the root.
+- **README brought current:** the Direction section (added #99) predated #100, which actually *built* the suite — it called `bench/` "a smoke test (planned)". Rewrote it to reflect reality: `bench/suite/` exists, Phase 1 (the MCP-server task) is built + validity-gated + proven (a live Sonnet build scored 1.0), with the roadmap (CRM flagship → hard tiers incl. the torture/circuit-breaker task). README now reflects both state AND direction.
+- Note: operator referenced `suggestedtests.md` on the Desktop — not present (likely unsaved); proceeding on the plan's roadmap, will fold it next pass.
+- Docs + a cross-platform fix. verify.sh PASS.
+
 ## 2026-06-15 — Phase-1 BUILT: first MCP-server benchmark task + blueprint verification step, proven end-to-end (PR #100)
 
 Operator /goal: build the first MCP-server (no approval needed) + integrate the Desktop `project-blueprint.md` verification step.
