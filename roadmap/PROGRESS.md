@@ -1,3 +1,13 @@
+## 2026-06-16 (phase 4, cycle 2) — Guardrail hardening: closed two path-authz bypasses (NotebookEdit + ./scripts rescope); BLOCK→fix→re-review
+
+Cycle 2 of the self-improvement loop. Two path-authorization bypasses, each teeth-tested.
+
+- **NotebookEdit bypass:** both PreToolUse guards (`path-guard.js`, `verify-gate.sh`) are wired to `NotebookEdit` but read only `tool_input.file_path`. A NotebookEdit carries `notebook_path` → path-guard saw an empty path and EXITED 0 (out-of-scope `.ipynb` writes bypassed per-feature authz); verify-gate false-blocked authorized notebooks. Both now read `file_path || notebook_path` (all three verify-gate extractors: jq/node/sed). A notebook now gets the SAME authz as Edit/Write.
+- **`./scripts/**` rescope bypass:** `update-state.ts --paths` GUARD_SURFACES was start-anchored, so `./scripts/**` (and `/scripts/**`, `\scripts\**`, drive-letter forms) slipped, then a guard stripped the prefix and authorized edits to the gate scripts. `--paths` now normalizes (backslashes, drive letter, `//`, leading `./`, leading `/`) BEFORE the checks, and rejects an empty-normalizing glob.
+- **Engine caught my own regression (BLOCK→fix→re-review):** my first cut also added `scripts/**` to SAFETY_FORBIDDEN as "defense-in-depth" — a fresh security review **BLOCKED** it: `--add` (unlike `--paths`) has no guard-surface check, and 17/33 historical features were legitimately scoped to `scripts/*`, so forbidden-wins would have left them unable to edit their own target. Reverted; a second fresh review **APPROVED** the corrected fix (reproduced all closures, no regressions; `.claude/**`/`.github/workflows/**` still force-forbidden).
+- **Accepted residual (documented):** a `--paths` glob normalizing to a bare `.`/`./.`/`/./` is accepted but grants nothing (fail-closed on every real file). Optional follow-up.
+- 5 teeth-tests (mutation-verified) + node/sed extractor branch-coverage tests. Contract tests 333→347. verify.sh PASS; 7/7 suite validity gates green.
+
 ## 2026-06-16 (phase 4, cycle 1) — Guardrail hardening: closed 7 assertion-shield diff-header fail-opens (BLOCK→fix→re-review)
 
 Operator /goal: run several improvement cycles — explore→plan→implement→test→decide-ship→self-improve, "see if the system actually works." A read-only explore workflow ranked a backlog; cycle 1 took the highest-value pick. **The engine caught its own incomplete fix and forced a complete one — the system works.**

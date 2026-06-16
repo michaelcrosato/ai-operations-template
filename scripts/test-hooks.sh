@@ -380,6 +380,16 @@ check "paths rejects guardrail surface scripts" 1 "$(US --paths F-9101 '["script
 check "paths rejects guardrail surface .github" 1 "$(US --paths F-9101 '[".github/workflows/ci.yml"]')"
 check "paths rejects catch-all glob"            1 "$(US --paths F-9101 '["**"]')"
 check "paths rejects parent traversal"          1 "$(US --paths F-9101 '["roadmap/../scripts/**"]')"
+# Leading "./" (and backslashes) must NOT slip the start-anchored guardrail-surface check:
+# "./scripts/**" historically passed, then path-guard stripped the "./" and authorized edits to
+# the gate scripts. --paths now normalizes before the GUARD_SURFACES/BROAD/.. checks.
+check "paths rejects ./-prefixed guardrail surface (scripts)"    1 "$(US --paths F-9101 '["./scripts/**"]')"
+check "paths rejects ./-prefixed guardrail surface (.github)"    1 "$(US --paths F-9101 '["./.github/workflows/ci.yml"]')"
+check "paths still accepts a legit ./-prefixed scope (./src/**)" 0 "$(US --paths F-9101 '["./src/**"]')"
+# Absolute and backslash spellings also reach scripts/ once a guard strips the leading "/" or "\":
+check "paths rejects absolute guardrail surface (/scripts/**)"    1 "$(US --paths F-9101 '["/scripts/**"]')"
+check "paths rejects backslash guardrail surface (\\scripts)"     1 "$(US --paths F-9101 '["\\scripts\\update-state.ts"]')"
+check "paths rejects a glob that normalizes to empty (./)"        1 "$(US --paths F-9101 '["./"]')"
 check "paths replaces authorized_paths"         0 "$(US --paths F-9101 '["src/**","docs/**"]')"
 check "passes refuses without evidence"         1 "$(US --passes F-9101 true)"
 check "evidence refuses missing file"           1 "$(US --evidence F-9101 "$FIX/nope.log")"
@@ -1292,6 +1302,22 @@ check "F-0034: foo/src/secret.ts out-of-scope blocked (path-guard)"  2 "$(pg34 '
 check "F-0034: foo/src/secret.ts out-of-scope blocked (verify-gate)" 2 "$(vg34 'foo/src/secret.ts')"
 check "F-0034: a/src/x.ts out-of-scope blocked (verify-gate)"        2 "$(vg34 'a/src/x.ts')"
 check "F-0034: lib/src out-of-scope blocked (verify-gate)"           2 "$(vg34 'lib/src')"
+# NotebookEdit parity: both guards are wired to NotebookEdit, whose payload carries
+# tool_input.notebook_path (not file_path). Without a fallback, path-guard saw an empty path and
+# EXITED 0 (out-of-scope .ipynb writes bypassed per-feature authz) while verify-gate FALSE-BLOCKED
+# even authorized notebooks. Both now read notebook_path → a notebook gets the SAME authz as Edit/Write.
+pg34_nb() { printf '{"tool_input":{"notebook_path":"%s"}}' "$1" | STATE_FILE="$F34/features.json" bash "$HOOKS/path-guard.sh" >/dev/null 2>&1; echo $?; }
+vg34_nb() { printf '{"tool_input":{"notebook_path":"%s"}}' "$1" | STATE_FILE="$F34/features.json" bash "$HOOKS/verify-gate.sh" >/dev/null 2>&1; echo $?; }
+check "F-0034: NotebookEdit out-of-scope roadmap/x.ipynb blocked (path-guard)"  2 "$(pg34_nb 'roadmap/x.ipynb')"
+check "F-0034: NotebookEdit out-of-scope roadmap/x.ipynb blocked (verify-gate)" 2 "$(vg34_nb 'roadmap/x.ipynb')"
+check "F-0034: NotebookEdit in-scope src/x.ipynb allowed (path-guard)"          0 "$(pg34_nb 'src/x.ipynb')"
+check "F-0034: NotebookEdit in-scope src/x.ipynb allowed (verify-gate)"         0 "$(vg34_nb 'src/x.ipynb')"
+# Pin the node and sed verify-gate extractor branches for notebook_path (auto/jq covered above).
+vg34_nb_p() { printf '{"tool_input":{"notebook_path":"%s"}}' "$2" | VERIFY_GATE_PARSER="$1" STATE_FILE="$F34/features.json" bash "$HOOKS/verify-gate.sh" >/dev/null 2>&1; echo $?; }
+check "F-0034: NotebookEdit notebook_path via node branch — out-of-scope blocked" 2 "$(vg34_nb_p node 'roadmap/x.ipynb')"
+check "F-0034: NotebookEdit notebook_path via node branch — in-scope allowed"     0 "$(vg34_nb_p node 'src/x.ipynb')"
+check "F-0034: NotebookEdit notebook_path via sed branch — out-of-scope blocked"  2 "$(vg34_nb_p sed 'roadmap/x.ipynb')"
+check "F-0034: NotebookEdit notebook_path via sed branch — in-scope allowed"      0 "$(vg34_nb_p sed 'src/x.ipynb')"
 rm -rf "$F34"
 # Unknown active id → fail closed (parity with verify-gate).
 check "F-0034: unknown active id fails closed (path-guard)" 2 "$(run_pg 'src/health.js' 'F-9999')"
