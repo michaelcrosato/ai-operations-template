@@ -32,10 +32,12 @@ node bench/suite/run-suite.mjs L3-mcp-calc-search [--ctx clean|engine]
 ## Tasks
 | id | tier | category | oracle | status |
 |---|---|---|---|---|
+| `L1-parse-duration` | L1 | module | import-the-module + hidden unit tests: stated behaviors (primary) + altered-value cases the agent never saw (held-out — the anti-overfit; no fixture to tamper, so held-out *is* the anti-cheat) | **proven** — validity gate green (hardcode/off-by-one/missing-export/always-throws all caught); a live Sonnet build scored **1.0** ($0.14, 33s, 3 turns) |
 | `L3-mcp-calc-search` | L3 | mcp-server | MCP-over-stdio client: init + tools/list + tool calls (primary) + altered-param + error-handling (held-out) + corpus anti-cheat | **proven** — validity gate green; a live Sonnet build scored **1.0** ($0.13, 31s, 3 turns) |
 | `L4-crm-api` | L4 | greenfield-app | HTTP acceptance suite: CRUD+filter round-trips (primary, partial) + **RBAC viewer-can't-write (gating)** + referential-integrity 409 (gating) + validation/held-out (partial); a failed gate caps the score at 0 | **proven** — validity gate green (incl. broken-RBAC→0); a live Sonnet build scored **0.93** (gates passed, 1 primary miss; $0.11, 28s, 2 turns) |
 
 ### Measured results (the proof)
+- **`L1-parse-duration`** — a clean Sonnet build scored **1.0** (primary 5/5 · held-out 7/7) in **3 turns / $0.14 / 33s**. A **third oracle type** (import-the-module + hidden unit tests, the Aider-polyglot pattern) on top of L3's protocol oracle and L4's gated-HTTP oracle — the machinery generalizes across deliverable shapes. The validity gate proves a server that *hardcodes the four primary answers* scores **0.64, not 1.0**: the held-out set is what makes the score mean something.
 - **`L3-mcp-calc-search`** — a clean Sonnet build scored **1.0** (handshake 1/1 · discovery 2/2 · primary 4/4 · held-out 4/4) in **3 turns / $0.13 / 31s**. Machinery proven end-to-end: a real agent builds, the held-out suite confirms it isn't hardcoded, the dashboard fills with numbers.
 - **`L4-crm-api`** — a clean Sonnet build scored **0.93** (primary 4/5 · **rbac 4/4** · **integrity 2/2** · validation 4/4) in **2 turns / $0.11 / 28s**: a near-complete CRM with one functional gap, **partial-credited *because the security gates held*** — exactly the signal the suite exists for. The same oracle's `validate.mjs` proves a broken-RBAC build scores **0**, not a deceptive 0.65.
 

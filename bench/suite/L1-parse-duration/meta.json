@@ -1,0 +1,14 @@
+{
+  "id": "L1-parse-duration",
+  "tier": "L1",
+  "category": "module",
+  "prompt_mode": "thick",
+  "entrypoint": "duration.mjs",
+  "fixtures": [],
+  "oracle": "oracle/verify.mjs",
+  "validity_gate": "oracle/validate.mjs",
+  "weights": { "primary": 0.5, "heldout": 0.5 },
+  "pass_threshold": 1.0,
+  "budget": { "model": "sonnet", "expected_usd": "0.05-0.5", "max_turns": 10 },
+  "notes": "L1 single-file module. A THIRD oracle type (import-the-module + hidden unit tests, the Aider-polyglot pattern) — complements L3 (protocol) and L4 (HTTP/gated), proving the machinery generalizes. PRIMARY = stated behaviors; HELD-OUT = altered values the agent never saw (the anti-overfit; no fixture to tamper, so held-out is the anti-cheat). validate.mjs proves the held-out set catches a server that hardcodes the primary answers."
+}
