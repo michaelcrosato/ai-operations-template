@@ -1,3 +1,7 @@
+## 2026-06-15 — README: added a "Direction (where this is headed)" section (PR #99)
+
+Operator asked whether the README reflects the current state + direction. It was current on STATE (rewritten in #95, bench section added in #97) but had no roadmap/direction and didn't reference the testing-suite plan. Added a concise **Direction** section anchored to `bench/testing-suite-plan.md`: the next major effort is the real oracle-first benchmark (without it, no change is verifiable), with the roadmap (prove one MCP oracle → CRM flagship → hard tiers), distinct from the product fork. Docs-only. verify.sh PASS.
+
 ## 2026-06-15 — Testing-suite PLAN: layered, oracle-first end-to-end benchmark (PR #98)
 
 Operator /goal (/deep-research + brutal-senior persona): real end-to-end test prompts (build-a-CRM, build-an-MCP-server) laddered easy→very-hard, each with an OBJECTIVE oracle, so engine changes can actually be verified. **Plan-only deliverable** (`bench/testing-suite-plan.md`) for operator review.
