@@ -367,9 +367,20 @@ switch (cmd) {
     const GUARD_SURFACES = /^(\.claude|\.github|scripts)(\/|$)/;
     const BROAD = new Set(['*', '**', '**/*', '**/**', './**', '/**']);
     for (const p of paths) {
-      if (p.includes('..')) fail(`--paths rejects parent-traversal glob: "${p}"`);
-      if (BROAD.has(p.trim())) fail(`--paths rejects catch-all glob "${p}" — scope must be explicit`);
-      if (GUARD_SURFACES.test(p.trim())) fail(`--paths rejects guardrail surface "${p}" (.claude/, .github/, scripts/ are never feature scope)`);
+      // Normalize BEFORE the guardrail checks so no path-spelling is a bypass — matching what the
+      // guards enforce against (verify-gate.sh strips a leading "/" and drive letter; path-guard.js
+      // strips "./"). "./scripts/**", "/scripts/**", and "\\scripts\\**" all reach scripts/ once a
+      // guard normalizes them, so they must be rejected here too. (.. is checked on the normal form.)
+      const norm = p.trim()
+        .replace(/\\/g, '/')        // backslashes -> /
+        .replace(/^[A-Za-z]:/, '')  // strip a Windows drive letter
+        .replace(/\/+/g, '/')       // collapse //
+        .replace(/^(\.\/)+/, '')    // strip leading ./
+        .replace(/^\/+/, '');       // strip leading / (absolute)
+      if (!norm) fail(`--paths rejects a glob that normalizes to empty: "${p}"`);
+      if (norm.includes('..')) fail(`--paths rejects parent-traversal glob: "${p}"`);
+      if (BROAD.has(norm)) fail(`--paths rejects catch-all glob "${p}" — scope must be explicit`);
+      if (GUARD_SURFACES.test(norm)) fail(`--paths rejects guardrail surface "${p}" (.claude/, .github/, scripts/ are never feature scope)`);
     }
     const f = find(data, id);
     if (f.status !== 'pending' && f.status !== 'in_progress') fail(`${f.id}: can only rescope pending/in_progress features (status: ${f.status})`);

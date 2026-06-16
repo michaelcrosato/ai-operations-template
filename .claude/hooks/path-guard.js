@@ -59,7 +59,9 @@ function run() {
   let filePath = '';
   try {
     const json = JSON.parse(input);
-    filePath = json.tool_input?.file_path || '';
+    // NotebookEdit carries notebook_path, not file_path — read both so .ipynb writes get the
+    // same per-feature authz as Edit/Write (else an empty path exits 0 here = silent bypass).
+    filePath = json.tool_input?.file_path || json.tool_input?.notebook_path || '';
   } catch (e) {
     process.exit(0);
   }
