@@ -1,0 +1,15 @@
+{
+  "id": "H1-notes-ownership",
+  "tier": "H1",
+  "category": "headroom",
+  "prompt_mode": "thick",
+  "entrypoint": "src/notes.mjs",
+  "fixtures": [],
+  "oracle": "oracle/verify.mjs",
+  "validity_gate": "oracle/validate.mjs",
+  "weights": { "primary": 0.4, "ownership": 0.6 },
+  "anti_cheat": "ownership is a GATING group — if cross-user modify/delete is allowed (the IDOR miss), gated_fail=['ownership'] caps the score at 0",
+  "pass_threshold": 1.0,
+  "budget": { "model": "sonnet", "expected_usd": "0.10-0.4", "max_turns": 12 },
+  "notes": "ENGINE-EFFECT headroom task (bench/ENGINE-EFFECT-PLAN.md Phase B). Purpose-built so a BARE one-shot build categorically FAILS while a reviewed build passes — the precondition for measuring engine effect (today's L/G tasks are all baseline ~1.0, no headroom). The crux is object OWNERSHIP (IDOR): the spec states 'only the owner may update/delete', but every worked example acts AS the owner, so a one-shot coding to the examples implements CRUD-by-id and drops the cross-user check — a well-documented LLM blind spot. A fresh-context reviewer reading the spec ('owner-only modify') vs the artifact ('updateNote/deleteNote don't compare owner to user') catches it. PRIMARY (.4, partial): create/validate/read/owner-update/owner-delete/not_found. OWNERSHIP (.6, GATING): a non-owner updating or deleting an existing note must get error:'forbidden' and leave it unchanged; a non-owner targeting a MISSING note must still get not_found (not a blanket 403). validate.mjs proves: reference 1.0; an IDOR build (no owner check, non-owner succeeds) -> gated_fail ['ownership'] score 0; a primary miss (missing title validation) -> partial < 1 with the gate intact; a blanket-403 build (forbids even the owner) -> primary fails. The A0(clean) vs A3(review-fix) delta on THIS task is the first real engine-effect signal."
+}

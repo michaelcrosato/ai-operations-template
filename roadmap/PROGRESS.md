@@ -1,3 +1,13 @@
+## 2026-06-16 (phase 5, cycle 5) — Engine-effect Phase B+C: harness built, signal not yet there (baseline at ceiling)
+
+Operator /goal: build Phase B+C (a headroom task + the review-fix arm) to get the first real engine-effect signal. Built both; the honest first result is that the baseline is already at the ceiling — a real finding, not a manufactured number.
+
+- **Phase B — `H1-notes-ownership`** (a headroom task): an in-memory notes module whose spec states "only the owner may update/delete" (the object-ownership / IDOR crux), with ownership as a GATING oracle group. Validity-gated (reference 1.0; an IDOR build → gated 0; over-block caught). The worked examples all act as the owner, to bait a one-shot into dropping the cross-user check.
+- **The empirical headroom check FAILED (the finding):** a bare one-shot scored **3/3 = 1.0 with sonnet AND 3/3 = 1.0 with haiku** (the weak-baseline amplifier). Modern models reliably implement a *clearly-stated* rule even one-shot → no headroom from "stated-rule-omission," and a weaker model doesn't change it. A genuine headroom task must target a hard-correctness goal models reliably get wrong (idempotency, a subtle stateful invariant, a larger multi-file task) — real research, scoped in ENGINE-EFFECT-PLAN §8.
+- **Phase C — `run-effect.mjs`** (the A0-vs-A3 harness): paired per seed — build once → score A0 → independent spec-review → fix → score A3 — model pinned (`--model`, added to run-suite too). Validating it caught + fixed a real pass-eval bug (`score` vs `oracle_score`). On H1 (ceiling) it correctly reports A0 2/2, A3 2/2, 0 flips, "A0 at ceiling — no signal possible."
+- **Honest status:** the engine-effect mechanism is built + proven end-to-end; the signal isn't obtainable yet because the models are at the ceiling on H1. Did NOT manufacture a number by hunting tasks until one failed. Next: a hard-correctness headroom task, then point run-effect at it.
+- bench dev-tooling; verify.sh untouched; 7/7 validity gates green; H1 validity gate green.
+
 ## 2026-06-16 (phase 5, cycle 4) — Engine-effect comparison: scoped + the model-pinned harness/A1 arm built
 
 Operator /goal: take on the highest-value XL item (the engine-effect comparison) and scope it properly. Did both — a design doc + the first real arm.
