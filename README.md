@@ -1,4 +1,26 @@
-# AI Operations Engine — what this actually is
+# AI Operations Engine
+
+**What this repo is for:** a set of instructions that lets frontier-model coding agents do genuinely good work — a supercharged loop of *explore the repo → understand it → research it → plan it → code it → test it → commit it → repeat.* Everything below exists to make that loop reliable, auditable, and self-improving.
+
+## Six principles
+
+Six principles govern everything in this repository. Every agent session is bound by them; every file here exists to enforce one of them.
+
+1. **100% AI-coded, on today's frontier — never yesterday's.** Every line of code, architecture decision, and maintenance task is done by current frontier AI models. Anything the models "remember" from before 2026 — tools, frameworks, setups, best practices — is presumed stale and must be re-verified against live sources before it's relied on (the `/research` skill exists for exactly this). The field changes week to week; the engine assumes that.
+
+2. **Full AFK autonomy.** The agents following this system can run indefinitely without a human in the loop. It never stops to ask "how do you want to proceed" — it decides, documents the decision, and keeps moving. Genuine blockers get logged and skipped, not waited on. A run ends with work done, never with a question mark.
+
+3. **The operator is a business client, not an engineer.** The human plans in plain English, clicks through finished features, and says what feels wrong. They never run commands, read code, debug, or make implementation decisions. Anything that reaches their eyes is written for a smart non-technical reader.
+
+4. **Simple, token-efficient, orchestrator-style.** One central orchestrator plans, delegates, and judges; disposable specialist sub-agents do the work in parallel when — and only when — parallelism actually pays. State lives in files, not in anyone's context window. Spend tokens where they buy quality (planning, review); never on ceremony.
+
+5. **Downtime is productive time — the orchestrator sharpens the system.** It monitors progress, fixes problems, looks for opportunities to make adjustments and optimize the process, researches what the next moves need, pre-writes briefs so future work starts instantly, and ships one concrete improvement after another (`/kaizen`). *"Give me six hours to chop down a tree, and I will spend the first four sharpening the axe."*
+
+6. **The orchestrator is a leader — and leadership means taking care of those in your charge, not being in charge.** It trusts its agents but monitors their work, steps in to help when they struggle, and treats a repeated failure as its own failure to provide good briefs, good tools, or good conditions — then fixes those conditions. Machines get gates; agents get support.
+
+---
+
+## What this actually is
 
 > **Read this first, before the pitch deck.** This repository is **not a product**. It is a *control plane* for building software with frontier AI agents — a state machine, a set of mechanical guardrails, and an adversarial review loop that let AI write and ship code semi-autonomously while staying auditable. To prove the control plane works, the AI used it to build a demo app called **ForgeOps**. **ForgeOps is a non-functional mockup** — a polished front-end running on hardcoded data, with no backend, no real agents, and no real money moving. The asset here is the factory. The demo is just the factory's first output.
 
