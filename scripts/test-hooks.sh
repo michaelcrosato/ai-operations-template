@@ -794,6 +794,24 @@ check "shield module-decl FP: destructuring require decl passes (exit 0)" 0 "$(c
 
 rm -rf "$MD_BASE"
 
+# Fail-open regression (ForgeOps purge): a diff exceeding the old 1 MB execFileSync default once
+# threw and was silently swallowed, blanking the scan — so a deleted assertion hidden in a large
+# diff slipped through (exit 0). The shield now reads large diffs (raised maxBuffer) and fails
+# CLOSED on a genuine diff error. Prove a >1 MB diff that deletes an assertion is still BLOCKED.
+FO="$(mktemp -d)"
+(
+  cd "$FO" || exit
+  git init -q && git config user.email t@t && git config user.name t
+  mkdir tests
+  printf 'test("real", () => {\n  expect(compute(2)).toBe(4);\n});\n' > tests/a.test.js
+  git add -A && git commit -qm base && git branch base
+  printf 'test("real", () => {\n});\n' > tests/a.test.js          # delete the assertion
+  head -c 1500000 /dev/zero | tr '\0' 'a' | fold -w 80 > big.txt  # ...inside a >1 MB diff
+  git add -A
+) >/dev/null 2>&1
+check "F-AS-failopen: >1MB diff deleting an assertion is still BLOCKED (no fail-open)" 1 "$(cd "$FO" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+rm -rf "$FO"
+
 rm -rf "$AS"
 
 # F-0016: a first commit before the upstream base exists must NOT leak git's
