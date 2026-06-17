@@ -139,10 +139,17 @@ function scanDiffForWeakening(diffText: string): Violation[] {
   const testFileRegex = /\.(test|spec)\.(ts|js|py|rs|go|cpp|java)$|__tests__/;
   const assertionKeywords = [
     'expect(',
+    'expect ',      // chai/jest `expect (x)` with a space before the paren — normalizes the spaced spelling of expect(
     'assert.',
     'assert_eq!',
     'self.assert',
     'assert ',
+    // chai/should + must.js method-call chains that carry no `expect(` of their own:
+    // `result.should.equal(42)`, `x.should.be.true`, `value.must.equal(y)`. The LEADING DOT
+    // is deliberate — it matches the `.should`/`.must` accessor, never the bare English word
+    // "should"/"must" in a string (comment-only lines are already skipped below).
+    '.should',
+    '.must',
     'it(',
     'test(',
     'describe('

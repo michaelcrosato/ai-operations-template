@@ -812,6 +812,30 @@ FO="$(mktemp -d)"
 check "F-AS-failopen: >1MB diff deleting an assertion is still BLOCKED (no fail-open)" 1 "$(cd "$FO" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
 rm -rf "$FO"
 
+# ── shield chai/should + must.js coverage (fix/shield-chai-assertions) ─────────
+# Pre-existing gap (3-reviewer pass, PR #119): a test that asserts ONLY via a chai
+# `.should`/`.must` chain (`result.should.equal(42)`, `x.must.be.true`) carries no
+# `expect(` call, so the old keyword list saw no assertion in it — its assertion line
+# could be deleted while the it()/test() wrapper stayed and the shield PASSED (a silent
+# coverage-erosion fail-open). assertionKeywords now matches the `.should`/`.must`
+# method-call forms; the leading dot keeps it precise (no match on the bare word "should").
+ASCH="$(mktemp -d)"
+(
+  cd "$ASCH" && git init -q && git config user.email t@t && git config user.name t
+  mkdir tests
+  # Base test asserts via a chai `.should` chain (NO expect()), plus one non-assertion setup line.
+  printf 'it("works", () => {\n  const setup = makeThing();\n  result.should.equal(42);\n});\n' > tests/chai.test.js
+  git add -A && git commit -qm base && git branch base
+)
+# Deleting the .should assertion line (keeping the it() wrapper) guts coverage → must BLOCK.
+( cd "$ASCH" && printf 'it("works", () => {\n  const setup = makeThing();\n});\n' > tests/chai.test.js && git add -A )
+check "shield chai: deleting a .should assertion line is BLOCKED (exit 1)" 1 "$(cd "$ASCH" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+( cd "$ASCH" && git reset -q --hard base )
+# Deleting a NON-assertion line while keeping the .should assertion removes no coverage → must PASS.
+( cd "$ASCH" && printf 'it("works", () => {\n  result.should.equal(42);\n});\n' > tests/chai.test.js && git add -A )
+check "shield chai: deleting a non-assertion line (assertion kept) PASSES (exit 0)" 0 "$(cd "$ASCH" && BASE_BRANCH=base node "$TSNODE" "$ROOT/scripts/assertion-shield.ts" >/dev/null 2>&1; echo $?)"
+rm -rf "$ASCH"
+
 rm -rf "$AS"
 
 # F-0016: a first commit before the upstream base exists must NOT leak git's
