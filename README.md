@@ -1,6 +1,6 @@
 # AI Operations Engine
 
-**What this repo is for:** a set of instructions that lets frontier-model coding agents do genuinely good work — a supercharged loop of *explore the repo → understand it → research it → plan it → code it → test it → commit it → repeat.* Everything below exists to make that loop reliable, auditable, and self-improving.
+**What this repo is for:** a set of instructions that lets frontier-model coding agents do genuinely good work — a supercharged loop of *explore -> plan -> code -> commit.* Everything below exists to make that loop more reliable, efficient, auditable, and self-improving.
 
 ## Six principles
 
