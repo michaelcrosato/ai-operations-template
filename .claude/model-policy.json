@@ -3,7 +3,6 @@
   "agents": {
     "builder": "builder",
     "builder-strong": "reasoning",
-    "db-engineer": "reasoning",
     "evaluator": "reasoning",
     "explorer": "fast",
     "security-reviewer": "reasoning"
@@ -13,7 +12,7 @@
       "model": "opus",
       "effort": "high",
       "last_verified": "2026-06-09",
-      "notes": "Orchestrator, planner, evaluator, security-reviewer, db-engineer, and builder-strong (Tier C implementation — reasoning-critical/irreversible/novel work). Fable 5 (claude-fable-5) is a valid upgrade for the hardest planning/evaluation passes; usage-credit pricing applies after 2026-06-22."
+      "notes": "Orchestrator, planner, evaluator, security-reviewer, and builder-strong (Tier C implementation — reasoning-critical/irreversible/novel work). Fable 5 (claude-fable-5) is a valid upgrade for the hardest planning/evaluation passes; usage-credit pricing applies after 2026-06-22."
     },
     "builder": {
       "model": "sonnet",

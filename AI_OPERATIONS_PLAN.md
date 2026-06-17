@@ -106,7 +106,7 @@ Phase 0 (§10) builds exactly this tree. One-line purpose per entry; detailed sp
 │   │   ├── builder.md            #   implements ONE feature (builder tier)
 │   │   ├── evaluator.md          #   fresh-context, read-only grader → PASS/NEEDS_WORK
 │   │   ├── security-reviewer.md  #   security-focused review (Auth, PII, dependencies)
-│   │   ├── db-engineer.md        #   migrations, schema updates, query plans
+│   │   ├── db-engineer.md        #   migrations, schema updates, query plans (optional; adopter-added — docs/optional-modules.md)
 │   │   └── explorer.md           #   cheap read-only codebase search (fast tier)
 │   ├── skills/                   # Reusable procedures (§5.4)
 │   │   ├── work/SKILL.md         #   /work — the main autonomous loop
@@ -117,9 +117,9 @@ Phase 0 (§10) builds exactly this tree. One-line purpose per entry; detailed sp
 │   │   ├── kaizen/SKILL.md       #   /kaizen — daily ≥1% system improvement (§5.5)
 │   │   └── downtime/SKILL.md     #   /downtime — idle protocol: sentinel scan, pre-briefs (§5.5)
 │   ├── rules/                    # Path-scoped rules, loaded only when touching matches
-│   │   ├── database.md           #   paths: schema/**, migrations/**
+│   │   ├── database.md           #   paths: schema/**, migrations/** (optional; adopter-added)
 │   │   ├── security.md           #   paths: src/api/**, src/auth/**
-│   │   └── frontend.md           #   paths: src/components/**, src/views/**
+│   │   └── frontend.md           #   paths: src/components/**, src/views/** (optional; adopter-added)
 │   └── hooks/                    # Hook scripts (§6.3)
 │       ├── verify-gate.sh        #   blocks direct features.json edits → update-state.ts only (§6.3)
 │       ├── guard-bash.sh         #   deny destructive/forbidden commands
@@ -276,7 +276,7 @@ Long single sessions are *allowed* (cloud sessions persist after the browser clo
 | `builder` | `builder` | full edit/bash in sandbox | Implement exactly one briefed feature + its tests; no scope creep; stay inside the feature's `authorized_paths`; report evidence paths |
 | `evaluator` | `reasoning` | **read-only** (no Write/Edit) | Grade diff + evidence against acceptance; output `PASS` or `NEEDS_WORK` + findings; never trust claims without opening evidence; **always diff the test files for deleted/weakened assertions** — the known failure-loop cheat — before any PASS |
 | `security-reviewer` | `reasoning` | read-only | Authorization models, Data Access Layer checks, PII handling/encryption, secrets in diffs; mandatory for sensitive API and auth paths |
-| `db-engineer` | `reasoning` | edit/bash | Migrations, database performance, index/EXPLAIN validation |
+| `db-engineer` | `reasoning` | edit/bash | Migrations, database performance, index/EXPLAIN validation — *optional module, ships only when an adopter adds a data layer (docs/optional-modules.md)* |
 | `explorer` | `fast` | read-only | Fan-out codebase/docs searches; return conclusions only |
 
 ### 5.4 Skills (`.claude/skills/`)
