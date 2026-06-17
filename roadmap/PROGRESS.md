@@ -1,3 +1,16 @@
+## 2026-06-17 (phase 6, cycle 2) — Power-to-weight audit, lean cuts, branch consolidation
+
+Operator /goal: a brutal power-to-weight review of the whole repo, then "do what's best" + "review/merge/delete all non-`main` branches into develop."
+
+- **Audit (4 explorer scouts + live web verification):** the always-loaded tax is tiny (`CLAUDE.md` 52 lines vs ≤150 budget), the guardrail layer earns its 4.6:1 test ratio, and the load-bearing citations are REAL — arXiv 2605.23950's 9.5pt SWE-bench Pro harness swing (quoted accurately), the Fable 5 / Opus 4.8 / Sonnet 4.6 / Haiku 4.5 lineup + pricing, and GHSA-8q5r-mmjf-575q (2026-05-20) all verified against primary sources.
+- **Cuts shipped (PR #124, merged):** orphan evidence F-0027b/c, dead `orchestrator-status.ps1`, `db-engineer` agent + `database.md`/`frontend.md` rules → optional-modules (synced model-policy + PLAN tree/roster), PROGRESS archived 1213→509 per §4.3.
+- **CORRECTION:** the audit's "evidence is ~39% dead weight" headline was **wrong** — `update-state.ts --validate` re-verifies every passing feature's evidence on disk, and untethered `fix-*` dirs back DECISIONS entries; evidence is load-bearing dogfooding, not fat. Only the 2 orphaned deleted-feature dirs were dead. (See DECISIONS.)
+- **Branches consolidated:** merged #124 + Dependabot #121 (claude-code-action SHA roll) + #122 (@types/node); folded #123's shellcheck 3→4 bump into the consolidation PR (lockfile conflict) and closed it. End state: only `main` + `develop`.
+- **Doc-accuracy:** README bench oversell reconciled with the "no signal yet" reality; PLAN's deleted `e2e.yml` re-marked optional/adopter-added.
+- **bench/ kept** (working measurement tool + falsifiability apparatus) — fixed the oversell rather than amputating.
+
+Next: backlog unchanged (21 features); no new features groomed. The engine is leaner and the docs now match it.
+
 ## 2026-06-16 (phase 6, cycle 1) — Purged the ForgeOps demo: the repo is now an engine-only template
 
 Operator intent (plain English): "We are gutting all of this. It doesn't actually do anything. This is an engine, it is to be as lean and lightweight as possible. Maximum power-to-weight ratio. Purge every last bit of it for the repo." Confirmed scope with two clarifying questions (purge all of `src/forge`; remove all demo-subject backlog rows).

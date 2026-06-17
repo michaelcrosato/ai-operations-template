@@ -105,7 +105,7 @@ The daily `/kaizen` pass is wired to the probes, so "this change is a 1% improve
 
 ## Direction (where this is headed)
 
-The engine's foundation (determinism, evidence gates, guardrails), its adaptive layer (risk tiers driving review depth, model, and a human-approval gate), **and the measurable benchmark that makes engine changes falsifiable** are all **built, audited, and shipped.**
+The engine's foundation (determinism, evidence gates, guardrails), its adaptive layer (risk tiers driving review depth, model, and a human-approval gate), **and the benchmark harness that measures engine changes** are all **built, audited, and shipped** — with one honest caveat: the headline *engine-effect delta* (the full loop vs. a bare baseline, expressed as a number) is **not yet obtainable**, because today's tasks sit at the model's 1.0 ceiling (see the next paragraph).
 
 The benchmark is **oracle-first** and now spans both axes (full detail in [`bench/testing-suite-plan.md`](bench/testing-suite-plan.md)):
 - **Capability ladder** — `L1-parse-duration` (module), `L3-mcp-calc-search` (MCP server), `L4-crm-api` (the security/integrity-**gated** CRM flagship): "can a fresh builder complete task X?", laddered by deliverable shape.
