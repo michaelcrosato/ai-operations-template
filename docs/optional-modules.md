@@ -15,6 +15,8 @@
 | Env-var documentation | Plain-markdown list of required env-var **names** (never values) | NOT a literal `.env.example` — the engine's own deny rules would make that file unreadable to agents (#73, reshaped) |
 | semgrep / CodeQL | Deep static analysis fleet | Explicitly deferred until real product source exists (J-23, fork-3) |
 | Layout decision | src/packages structure | Decided by the product, never imposed by the template (#74, fork-6) |
+| `db-engineer` agent + `database.md` rule | The migration/schema specialist sub-agent (the only agent that writes migrations) + its path-scoped rule (`schema/**`, `migrations/**`) | Removed from the active engine in the lean pass — the engine-only template has no data layer, so neither ever fired. Re-add `.claude/agents/db-engineer.md` (+ its `model-policy.json` `agents` entry → `reasoning`) and `.claude/rules/database.md` when a DB lands. Recoverable from git history |
+| `frontend.md` rule | Path-scoped UI rule (`app/**`, `components/**`): loading/empty/error/success states, accessibility floor, E2E-is-mandatory | Removed in the lean pass — no UI code ships in the engine-only template, so it never fired. Re-add `.claude/rules/frontend.md` when frontend code lands. Recoverable from git history |
 
 ## Trigger: the repo goes public
 
