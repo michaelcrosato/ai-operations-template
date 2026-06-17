@@ -19,7 +19,7 @@ cd "$ROOT" || exit 1
 fail=0
 CUR_FILE=""
 CUR_BAK=""
-START_BAK=""       # rbac pre-run baseline
+SELFTEST_DIR=""    # hermetic --selftest fixture dir
 US_START_BAK=""    # update-state.ts pre-run baseline
 AS_START_BAK=""    # assertion-shield.ts pre-run baseline
 MFIX=""            # update-state fixture dir
@@ -34,7 +34,7 @@ restore_cur() {
 # and must NOT touch the *_START_BAK baselines — those are the comparison baselines for the run.
 cleanup() {
   restore_cur
-  [ -n "$START_BAK" ] && rm -f "$START_BAK"
+  [ -n "$SELFTEST_DIR" ] && rm -rf "$SELFTEST_DIR"
   [ -n "$US_START_BAK" ] && rm -f "$US_START_BAK"
   [ -n "$AS_START_BAK" ] && rm -f "$AS_START_BAK"
   [ -n "$MFIX" ] && rm -rf "$MFIX"
@@ -58,43 +58,24 @@ mutate() {
   restore_cur
 }
 
-RBAC="src/forge/rbac.ts"
-RBAC_TEST="node --test src/forge/rbac.test.ts"
-
-# --selftest: validate the detection logic itself through the real mutate(). A mutation NO test
-# catches (an untested allow-all principal) MUST be reported SURVIVED — a meta-gate that cannot
-# flag a survivor is blind and worthless. Exit 0 iff the survivor was correctly flagged.
+# --selftest: validate the detection logic itself through the real mutate(). It builds a HERMETIC
+# fixture (a SUT with a branch no test exercises + a vacuous test) and applies a mutation NO test
+# catches — which MUST be reported SURVIVED. A meta-gate that cannot flag a survivor is blind and
+# worthless; exit 0 iff the survivor was correctly flagged. Hermetic, so it depends on no real SUT.
 if [ "${1:-}" = "--selftest" ]; then
   echo "── mutation smoke SELFTEST: a known survivor must be flagged ──"
-  mutate "$RBAC" "s/p === 'owner'/p === 'owner' || p === 'mutation_selftest_ghost'/" "$RBAC_TEST" "selftest: untested allow-all principal (expected to SURVIVE)"
+  SELFTEST_DIR="$(mktemp -d)"
+  printf 'function classify(x) { return x === 1 ? "a" : "b"; }\nmodule.exports = { classify };\n' > "$SELFTEST_DIR/sut.js"
+  printf 'const { test } = require("node:test");\nconst assert = require("node:assert");\nconst { classify } = require("./sut.js");\ntest("classify(1) is a", () => { assert.strictEqual(classify(1), "a"); });\n' > "$SELFTEST_DIR/sut.test.js"
+  # Widen the matched branch with an UNTESTED value: the test only checks classify(1), so it still
+  # passes against the mutant → the gate MUST report SURVIVED.
+  mutate "$SELFTEST_DIR/sut.js" "s/x === 1/x === 1 || x === 999/" "node --test $SELFTEST_DIR/sut.test.js" "selftest: untested branch widening (expected to SURVIVE)"
+  rm -rf "$SELFTEST_DIR"; SELFTEST_DIR=""
   if [ "$fail" -ne 0 ]; then echo "── selftest: OK (survivor correctly flagged) ──"; exit 0; fi
   echo "── selftest: FAIL (a survivor was NOT flagged — detection is broken) ──"; exit 1
 fi
 
-# SUT must exist and its guarding test must be GREEN on UNMUTATED code first — otherwise "all
-# mutants killed" is vacuous (an erroring/failing test reads as a kill for every mutation). Fail
-# closed (security review #3/#5).
-[ -f "$RBAC" ] || { echo "── mutation smoke: ERROR — $RBAC not found ──"; exit 1; }
-if ! eval "$RBAC_TEST" >/dev/null 2>&1; then
-  echo "── mutation smoke: ERROR — baseline test ($RBAC_TEST) is not green on unmutated code; kills are meaningless ──"
-  exit 1
-fi
-# Capture the PRE-RUN content. The backstop compares against THIS (working-tree, WIP-inclusive)
-# baseline — NOT git HEAD — so an agent mid-edit on rbac.ts is not false-failed (security review #1).
-START_BAK="$(mktemp)"; cp "$RBAC" "$START_BAK"
-
 echo "── mutation smoke: do the safety-critical tests actually constrain behavior? ──"
-# Neuter owner's allow-all → owner-permission tests must fail.
-mutate "$RBAC" "s/p === 'owner'/p === 'owner_MUTANT'/" "$RBAC_TEST" "rbac: owner allow-all disabled"
-# Drop 'billing' from the org/billing deny-set → admin/editor billing-denial tests must fail.
-mutate "$RBAC" "s/'org', 'billing'/'org'/" "$RBAC_TEST" "rbac: 'billing' removed from org/billing deny-set"
-# Widen editor-mutable to 'secrets' → editor-scope (no-escalation) test must fail.
-mutate "$RBAC" "s/new Set(\\['graph', 'template'\\])/new Set(['graph', 'template', 'secrets'])/" "$RBAC_TEST" "rbac: editor-mutable widened to include secrets"
-# Break the fail-closed action contract (known-actions gate) → unknown/empty-action tests must fail.
-mutate "$RBAC" "s/if (!KNOWN_ACTIONS.has(a)) return 'deny';/if (!KNOWN_ACTIONS.has(a)) { \\/* mutant: skip *\\/ }/" "$RBAC_TEST" "rbac: fail-closed unknown-action gate removed"
-# Flip the fall-through default-deny → allow (the ^  return 'deny';$ at end of check(), unique to
-# line 78) → the arbitrary-principal default-deny property test must fail.
-mutate "$RBAC" "s/^  return 'deny';\$/  return 'allow';/" "$RBAC_TEST" "rbac: fall-through default-deny flipped to allow"
 
 # ── update-state.ts: the state writer (the most-hardened guard surface this program) ──
 # Killers are FAST + TARGETED: one ts-node call each (the full contract suite is ~86s — far too
@@ -151,7 +132,7 @@ if [ "$fail" -ne 0 ]; then
 fi
 # Backstop: every mutated SUT must be byte-identical to its PRE-RUN state (all mutations restored).
 # Compared to the cp-backup baselines, NOT git HEAD, so legitimate uncommitted WIP cannot false-fail.
-for pair in "$START_BAK:$RBAC" "$US_START_BAK:$US" "$AS_START_BAK:$AS"; do
+for pair in "$US_START_BAK:$US" "$AS_START_BAK:$AS"; do
   bak="${pair%%:*}"; src="${pair#*:}"
   if [ -n "$bak" ] && ! cmp -s "$bak" "$src"; then
     echo "── mutation smoke: ERROR — $src was not restored to its pre-run state ──"; exit 1

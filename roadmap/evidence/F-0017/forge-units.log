@@ -1,7 +1,0 @@
-16 pass, 0 fail
-abSim 4 tests (AC2 + structure + 2-prin RBAC)
-promptToGraph 3 + CLI
-rbac 3 + CLI
-export 2 + CLI
-health 4 + CLI
-(CLI smokes + side emits)

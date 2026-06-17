@@ -13,6 +13,7 @@ import * as path from 'node:path';
  *   ts-node scripts/update-state.ts --evidence F-0001 <path> [<path>...]
  *   ts-node scripts/update-state.ts --passes F-0001 true
  *   ts-node scripts/update-state.ts --paths F-0001 '<json-string-array>'   (replace authorized_paths — groom corrections)
+ *   ts-node scripts/update-state.ts --remove F-0001 [F-0002 ...]   (delete feature rows; cascade-strip the removed ids from any remaining feature's dependencies)
  */
 
 // STATE_FILE override exists for contract tests (scripts/test-hooks.sh) so they
@@ -413,6 +414,30 @@ switch (cmd) {
     if (evidenceErrors.length) fail(evidenceErrors.join('\n  - '));
     f.passes = true;
     save(data);
+    break;
+  }
+  case '--remove': {
+    if (args.length === 0) fail('--remove requires at least one <id>');
+    const removeSet = new Set(args);
+    // Every id must exist (fail loudly on a typo rather than silently no-op).
+    for (const id of args) find(data, id);
+    // Cascade: a removed feature can no longer be depended upon, so strip the removed ids from
+    // every remaining feature's dependencies. Otherwise save()'s validate() rejects the dangling
+    // edge ("dependency X does not exist"). Report each rewire so the deletion is auditable.
+    const rewired: string[] = [];
+    const remaining = data.features.filter((f) => !removeSet.has(f.id));
+    for (const f of remaining) {
+      if (!Array.isArray(f.dependencies)) continue;
+      const dropped = f.dependencies.filter((d) => removeSet.has(d));
+      if (dropped.length) {
+        rewired.push(`${f.id} (dropped ${dropped.join(', ')})`);
+        f.dependencies = f.dependencies.filter((d) => !removeSet.has(d));
+      }
+    }
+    data.features = remaining;
+    save(data); // re-validates the whole backlog (ids, deps, cycles, invariants)
+    console.log(`[update-state] removed ${args.length} feature(s): ${args.join(', ')}.` +
+      (rewired.length ? ` Rewired dependencies: ${rewired.join('; ')}.` : ''));
     break;
   }
   default:

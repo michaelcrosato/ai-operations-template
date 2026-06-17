@@ -367,6 +367,25 @@ check "reserved-range refusal wrote nothing to real backlog" "$PRE_COUNT" "$(nod
 check "status rejects unknown id"               1 "$(US --status F-9999 'done')"
 check "status rejects invalid enum"             1 "$(US --status F-9101 finished)"
 check "status blocked requires+stores reason"   0 "$(US --status F-9104 blocked waiting on operator)"
+
+# --remove (ForgeOps purge): deletes rows AND cascade-strips the removed ids from every remaining
+# feature's dependencies, then re-validates. A dangling dep would make save() reject (exit 1), so a
+# clean exit 0 PROVES the cascade fired. Unknown id / no id must fail loudly.
+RMV="$FIX/remove.json"
+write_rmv() { cat > "$RMV" <<'EOF'
+{ "features": [
+  { "id": "F-9401", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [], "priority": 1, "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null },
+  { "id": "F-9402", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": ["F-9401"], "priority": 1, "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null }
+] }
+EOF
+}
+write_rmv
+check "remove rejects unknown id"                       1 "$(US_WITH_STATE "$RMV" --remove F-9999)"
+check "remove requires at least one id"                 1 "$(US_WITH_STATE "$RMV" --remove)"
+write_rmv
+check "remove deletes a depended-upon row (exit 0 = cascade validated)" 0 "$(US_WITH_STATE "$RMV" --remove F-9401)"
+check "remove: no trace of F-9401 (row + dep both stripped)" "no"  "$(grep -q 'F-9401' "$RMV" && echo yes || echo no)"
+check "remove: F-9402 retained"                         "yes" "$(grep -q 'F-9402' "$RMV" && echo yes || echo no)"
 # F-0025: single-in_progress invariant (self-contained temp fixtures, no shared-state ordering)
 F25="$(mktemp -d)"
 cat > "$F25/two-pending.json" <<'EOF'
@@ -1030,8 +1049,6 @@ LANEEOF
 check "lane parity: broken fixture workflow rejected" 1 "$(lane_parity "$LANE_FIX"; echo $?)"
 rm -rf "$LANE_FIX"
 
-check "e2e.yml triggers on its own changes" 0 "$(grep -qF '.github/workflows/e2e.yml' "$WF_DIR/e2e.yml" && echo 0 || echo 1)"
-
 echo "── ship.sh"
 SHIP_FIX="$(mktemp -d)"
 STUB="$SHIP_FIX/bin"; mkdir -p "$STUB"
@@ -1303,8 +1320,8 @@ check "F-0034: traversal src/../package.json blocked (verify-gate)" 2 "$(vg34 's
 check "F-0034: deeper traversal src/a/../../package.json blocked (path-guard)"  2 "$(pg34 'src/a/../../package.json')"
 check "F-0034: deeper traversal src/a/../../package.json blocked (verify-gate)" 2 "$(vg34 'src/a/../../package.json')"
 # ** glob fix: a NESTED file under src/** is allowed by BOTH (regression for the .[^/]* corruption).
-check "F-0034: src/** matches nested src/forge/abSim.ts (path-guard)"  0 "$(pg34 'src/forge/abSim.ts')"
-check "F-0034: src/** matches nested src/forge/abSim.ts (verify-gate)" 0 "$(vg34 'src/forge/abSim.ts')"
+check "F-0034: src/** matches nested src/sub/nested.ts (path-guard)"  0 "$(pg34 'src/sub/nested.ts')"
+check "F-0034: src/** matches nested src/sub/nested.ts (verify-gate)" 0 "$(vg34 'src/sub/nested.ts')"
 check "F-0034: src/** matches deeply nested src/a/b/c.ts (path-guard)" 0 "$(pg34 'src/a/b/c.ts')"
 # In-scope traversal that lands back inside src/ is still allowed.
 check "F-0034: src/x/../y.ts resolves inside scope → allowed (path-guard)" 0 "$(pg34 'src/x/../y.ts')"

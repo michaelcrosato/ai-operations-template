@@ -79,7 +79,7 @@ This `run.mjs` is a zero-dependency **starting point + proof**. For a durable su
 | Reproducible `--bare` runs (zero project context, identical on every machine/CI) | an **`ANTHROPIC_API_KEY`** | `--bare` skips OAuth/keychain; subscription login can't use it. With a key, the bench runs hermetically in CI. |
 | Authoritative cost (not estimates) | **Anthropic Admin/Usage & Cost API** key | reconcile `total_cost_usd` estimates against billed spend. |
 | Real coding-task perf (SWE-bench Verified / Terminal-Bench) | **Docker** + disk + time (each is heavy) | these run real repos in containers and execute test suites. |
-| Browser/UI task benchmarks (does the demo actually work end-to-end?) | **Playwright MCP** server (or the built-in browser control) | drive the ForgeOps UI and assert on rendered state, beyond the one existing Playwright spec. |
+| Browser/UI task benchmarks (if a future build ships a UI) | **Playwright MCP** server (or the built-in browser control) | drive a rendered UI and assert on its state — out of scope for the engine-only template, but available if a build target needs it. |
 | Live-loop token/cost/latency dashboards | an **OTel collector** (Grafana/Honeycomb/etc.) + `CLAUDE_CODE_ENABLE_TELEMETRY=1` | measure the *real* autonomous loop, not just probe tasks. |
 | The framework layer (promptfoo) | `npm i -D promptfoo` (or `npx promptfoo`) | upgrade `run.mjs` → a maintained suite with A/B + CI gating. |
 | Bigger judge-precision sets, held-out tasks, fixture-pinned repo-explore tasks | curation time (human or `/groom`) | v0 has a tiny labeled set; precision/recall needs ~20+ labeled cases per judge. |
