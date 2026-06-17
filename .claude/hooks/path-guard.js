@@ -11,7 +11,7 @@ function fail(msg) {
 // Correctness note (F-0034): `**` is mapped through a sentinel BEFORE single `*` is
 // expanded, otherwise the `*`->[^/]* pass corrupts the `.*` produced for `**` into
 // `.[^/]*`, which can never cross a `/` — so `src/**` historically failed to match a
-// nested file like `src/forge/abSim.ts`. The sentinel keeps `**` = `.*` (crosses dirs).
+// nested file like `src/sub/nested.ts`. The sentinel keeps `**` = `.*` (crosses dirs).
 function matchGlob(filePath, glob) {
   const normPath = normalizePath(filePath);
   const normGlob = glob.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\.\//, '').replace(/\/$/, '').trim();

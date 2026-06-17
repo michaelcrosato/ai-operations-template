@@ -1,6 +1,6 @@
 ---
 paths:
-  - "src/forge/**"
+  - "src/**"
 ---
 
 # Security rules (loaded only when touching API/auth/server paths)

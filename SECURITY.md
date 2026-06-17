@@ -2,7 +2,7 @@
 
 ## What this repository is
 
-`ai-operations-template` is a **public reference template** for running autonomous AI coding agents under strict, file-based guardrails. It ships an engine (gates, hooks, a state machine) plus a thin demo product ("ForgeOps"). The demo runs on **synthetic seed data only** — there is no production backend, no real customer data, and no live secrets in this repository.
+`ai-operations-template` is a **public reference template** for running autonomous AI coding agents under strict, file-based guardrails. It ships an engine (gates, hooks, a state machine) and nothing else — there is no bundled product. Agent environments use **synthetic seed data only** — there is no production backend, no real customer data, and no live secrets in this repository.
 
 ## Reporting a vulnerability
 
@@ -22,8 +22,7 @@ We aim to acknowledge a report within **5 business days** and to agree on a disc
 - Anything that lets an agent read secrets, escape its authorized paths, weaken tests undetected, or forge a passing verification.
 
 ### Out of scope
-- The demo product surface (`app/**`, `components/**`, `lib/**`) treated as a security target — it is a synthetic-data demo with no real users, billing, or backend. Logic bugs there are normal issues, not vulnerabilities.
-- The deliberately simplified example modules under `src/forge/**` (e.g. the demo RBAC) — these are loop fixtures, not a production access-control system. See `README.md` / `AI_OPERATIONS_PLAN.md`.
+- Any product or example code an adopter builds on top of this engine — that is the adopter's own surface, runs on synthetic data, and is theirs to secure. Logic bugs in adopter code are normal issues, not vulnerabilities in this template.
 - Findings that require already having write access to the repository or the operator's machine.
 - Dependency advisories already tracked by Dependabot (these are handled through the normal update flow).
 

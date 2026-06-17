@@ -70,7 +70,7 @@
 | Native sandboxing | Untrusted-code review work or local unattended runs | Use **Claude Code's first-party OS-level sandbox** (bubblewrap/seatbelt, sandbox-runtime) — never bespoke Docker (fork-4) |
 | Full eval suite (gating/nightly) | The loop is proven on real product work AND eval budget is accepted | The lean slice (deterministic fixtures in contract tests + advisory promptfoo set for evaluator/security-reviewer) comes first; gating thresholds, nightly benchmarks, fixture-corpus repos only after (#29) |
 | zizmor workflow audit | Next substantive CI-workflow change | Configure `unpinned-uses` to respect the documented tag-pin decision (its default since v1.20 hash-pins everything) (B-11 rider). **Trigger fired 2026-06-16** by the e2e-paths/npm-audit CI change — groom next pass. |
-| SBOM generation (CycloneDX / syft) | A deployable/distributable artifact ships (release CI) | Nothing to attest while the only output is a synthetic-data browser demo; generate at release once a real artifact exists (review feedback 2026-06-16) |
+| SBOM generation (CycloneDX / syft) | A deployable/distributable artifact ships (release CI) | Nothing to attest until the adopter's production artifact exists; generate at release once a real artifact exists (review feedback 2026-06-16) |
 | Provider gateway / spend limits | Multiple providers or real spend caps needed | Until then `model-policy.json` stays the declarative indirection (J-20) |
 
 ## The decision rule (mirrors plan §2.1)

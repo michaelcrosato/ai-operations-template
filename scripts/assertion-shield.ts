@@ -8,6 +8,20 @@ import { execFileSync } from 'node:child_process';
 
 const BASE_BRANCH = process.env.BASE_BRANCH || 'origin/develop';
 
+// A real git diff never approaches this. The execFileSync default (1 MB) silently THREW on a larger
+// diff and the error was swallowed below — blanking the entire scan, the exact fail-open this gate
+// exists to prevent. Raise the ceiling; a diff that still overflows fails CLOSED in getGitDiff().
+const DIFF_MAXBUF = 256 * 1024 * 1024;
+
+function inGitRepo(): boolean {
+  try {
+    execFileSync('git', ['rev-parse', '--git-dir'], { stdio: 'pipe' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function refExists(ref: string): boolean {
   // --verify --quiet resolves the ref without printing anything; stdio 'pipe'
   // keeps git's stderr off the console so a missing upstream is silent.
@@ -44,16 +58,23 @@ function getGitDiff(): string {
     // (whether in a rename hunk or a plain deletion). A deletion too dissimilar to
     // pair as a rename is shown as a full file delete (all assertions flagged).
     try {
-      diffs.push(execFileSync('git', ['-c', 'core.quotepath=false', 'diff', '-M', '--no-ext-diff', '--no-color', '--text', '--src-prefix=a/', '--dst-prefix=b/',`${BASE_BRANCH}...HEAD`], { encoding: 'utf8' }));
-    } catch {
-      // base resolved but the range diff failed — fall through to staged check
+      diffs.push(execFileSync('git', ['-c', 'core.quotepath=false', 'diff', '-M', '--no-ext-diff', '--no-color', '--text', '--src-prefix=a/', '--dst-prefix=b/',`${BASE_BRANCH}...HEAD`], { encoding: 'utf8', maxBuffer: DIFF_MAXBUF }));
+    } catch (e) {
+      // Base resolved but the diff could not be read (e.g. it exceeded the buffer). We cannot tell
+      // what changed, so fail CLOSED — never silently skip. (Scar: a >1 MB diff once threw here on
+      // the default buffer and was swallowed, blanking the entire scan — a fail-open.)
+      console.error(`\x1b[31m[Assertion Shield] ERROR: could not read the ${BASE_BRANCH}...HEAD diff — failing closed.\x1b[0m`);
+      console.error(String(e));
+      process.exit(1);
     }
   } else if (refExists('HEAD~1')) {
     // base not fetched/available but prior history exists — diff the last commit
     try {
-      diffs.push(execFileSync('git', ['-c', 'core.quotepath=false', 'diff', '-M', '--no-ext-diff', '--no-color', '--text', '--src-prefix=a/', '--dst-prefix=b/','HEAD~1'], { encoding: 'utf8' }));
-    } catch {
-      // no usable history — staged check below may still apply
+      diffs.push(execFileSync('git', ['-c', 'core.quotepath=false', 'diff', '-M', '--no-ext-diff', '--no-color', '--text', '--src-prefix=a/', '--dst-prefix=b/','HEAD~1'], { encoding: 'utf8', maxBuffer: DIFF_MAXBUF }));
+    } catch (e) {
+      console.error('\x1b[31m[Assertion Shield] ERROR: could not read the HEAD~1 diff — failing closed.\x1b[0m');
+      console.error(String(e));
+      process.exit(1);
     }
   } else {
     // First commit before the upstream base exists yet — not an error, just no
@@ -63,8 +84,15 @@ function getGitDiff(): string {
   try {
     // Staged-but-uncommitted changes — what a pre-commit hook is actually
     // gating. Without --cached the hook only ever saw prior commits.
-    diffs.push(execFileSync('git', ['-c', 'core.quotepath=false', 'diff', '-M', '--no-ext-diff', '--no-color', '--text', '--src-prefix=a/', '--dst-prefix=b/','--cached'], { encoding: 'utf8' }));
-  } catch {
+    diffs.push(execFileSync('git', ['-c', 'core.quotepath=false', 'diff', '-M', '--no-ext-diff', '--no-color', '--text', '--src-prefix=a/', '--dst-prefix=b/','--cached'], { encoding: 'utf8', maxBuffer: DIFF_MAXBUF }));
+  } catch (e) {
+    // A staged-diff failure INSIDE a real repo means we cannot verify the commit → fail CLOSED.
+    // Only a genuine not-a-git-repo is a benign skip (there is nothing to gate).
+    if (inGitRepo()) {
+      console.error('\x1b[31m[Assertion Shield] ERROR: could not read the staged (--cached) diff — failing closed.\x1b[0m');
+      console.error(String(e));
+      process.exit(1);
+    }
     console.log('Not in a git repository. Skipping assertion check.');
   }
   return diffs.join('\n');

@@ -2,7 +2,7 @@
 
 Welcome to your AI-coded repository! You do not need to run commands or read code. The AI workforce handles the execution, and you act as the planner and the final release authority.
 
-> **What's wired in *this* repo today vs. the template target.** This guide describes the factory's full intended operating model. In *this* template repo the GitHub and Claude Code surfaces and the `@claude` PR-fix lane are live, but a **staging/preview deployment** (Vercel/Netlify/etc.) and **scheduled nightly Routines** are **not yet configured** — they are one-time operator setup steps in `AI_OPERATIONS_PLAN.md` §11. Wherever this guide says "click the staging link" or "nightly Routines run," read it as *once you have wired those surfaces.*
+> **What's wired in *this* repo today vs. what you set up per product.** This guide describes the factory's full intended operating model. In the engine-only template the GitHub and Claude Code surfaces and the `@claude` PR-fix lane are live, but a **staging/preview deployment** (Vercel/Netlify/etc.) and **scheduled nightly Routines** are **product-specific surfaces you wire once** — see the one-time operator setup steps in `AI_OPERATIONS_PLAN.md` §11. Wherever this guide says "click the staging link" or "nightly Routines run," read it as *once you have wired those surfaces for your product.*
 
 ---
 
@@ -13,7 +13,7 @@ You will interact with the system via these three main interfaces:
 1. **GitHub Dashboard**: 
    - Edit the roadmap (`roadmap/ROADMAP.md`) and answer questions (`roadmap/QUESTIONS.md`) directly in the browser.
    - Review and merge pull requests (PRs) opened by the agents.
-2. **Staging / QA URL**:
+2. **Staging / QA URL** (once your product has a deployable surface wired):
    - Every PR generates a click-through link (e.g. Vercel Preview, Netlify Preview). 
    - Staging (from `develop` branch) is a persistent staging site running with seeded mock data.
 3. **Claude Code / cloud settings**:
