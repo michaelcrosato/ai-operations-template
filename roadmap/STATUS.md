@@ -1,27 +1,26 @@
-# Status Report — 2026-06-18 — A direction decision is waiting for you
+# Status Report — 2026-06-18 — The new one-shot tool's first working version is live
 
-> Plain-English summary for the business owner. The big item this round is **not** a code change — it's a **strategy decision I've prepared for you**. You shared a direction note about building a different *kind* of tool. I researched whether that's a good idea, fact-checked it hard against the newest sources, had a separate review team try to tear the recommendation apart, fixed everything they found, and wrote it up. There are **three questions only you can answer** (below). Nothing was built or changed in the engine while you decide.
+> Plain-English summary for the business owner. You said "build the new one-shot tool now." It's built — the first working version is in. It's small and focused on purpose, exactly as you asked: all substance, no fluff. The next step is yours only if you want to name it.
 
 ## Shipped this week
-- **A researched strategy recommendation** about your "do one job at a time, with a skilled person watching" idea. The short version: the latest evidence **backs your instinct** — that approach is the more reliable lane today — and it is genuinely a *different product* from the all-night engine, not just a setting. One important caveat the research surfaced: even on a simple, solvable job, AI will sometimes **confidently say it's finished when it isn't**, so the new tool still needs the engine's core "prove it actually works" checks, with you as the final judge. Recommended path: give the new tool its **own home** but **reuse the safety machinery** both tools share.
-- **A lean-up of the project finished landing** — the system is lighter, the old demo is fully gone, and the housekeeping is merged. Everything still passes its safety checks.
+- **The new one-shot tool's first working version is live.** It does the full minimal loop you described, in two parts:
+  1. A **fit check** that decides, *before* any work starts, whether a job is a good match for "one sitting" — the job needs a single clear "is it done?" test, and the files it needs must be small enough to hold reliably at once. If not, it says no and explains why.
+  2. A **proof check** that only reports "done" when there is real proof the job's own test passed — it **ignores the AI's say-so**. If the AI claims success but the test fails, it reports NOT DONE and shows the gap. This is the direct fix for "the AI sometimes thinks it's finished when it isn't."
+- Both pieces were checked by an independent reviewer; the proof check was **adversarially tested** to confirm it can't be tricked into a false "done."
+- (Earlier this week: the strategy write-up, and your decision to build this.)
 
 ## Ready for your QA
-- Nothing to click through this round — this was research and planning, not a new screen.
+- This is the engine-level foundation (no clickable screen yet). The next visible step would be wrapping it so you can point it at a real job.
 
 ## In progress / planned
-- Nothing is mid-build. The 21 finished engine items remain finished, and I deliberately started **no** new building work — the next move is your decision, not more code.
+- Two small engine **fix-it items** are queued (below). Nothing else mid-build.
 
 ## Blocked / needs you
-- **A decision, in three parts (this is the main thing):**
-  1. **Start now, or keep it on paper?** Should I begin building the new "one-job-at-a-time" tool, or leave it as a written plan until you've thought it over?
-  2. **What do we call it, and who is it for?** A name and a one-line "who is this for" would shape everything — for example, skilled solo builders, or teams who want a tight, supervised tool.
-  3. **One thing at a time, or both at once?** Pause the all-night engine's to-do list to focus on the new tool, or keep both moving in parallel?
-- These are written out in plain English in your questions list. **No rush** — nothing is waiting or at risk while you decide.
+- **Nothing is blocking you right now.** You already answered the big question (build it — done). One smaller question stays open whenever you want it: **a name and "who is it for"** for the new tool. Not blocking — it builds fine under a plain internal name until you decide.
 
 ## Health
-- ✅ **All automated checks pass** — the safety guards, the engine's own tests, and the "do the safety tests really have teeth?" check. The latest run on the main line is green.
-- ✅ **Honest count: 21 of 21 engine items finished, 0 blocked, 0 mid-build.** The project is lean — no demo, no leftover web-app baggage.
-- ✅ **Nothing irreversible was done this round.** No new project or copy was created; the engine's rules and its finished-work list are untouched.
-- ⚠️ **One internal-bookkeeping note (not urgent):** the per-feature metrics log is still missing entries for a few finished items — advisory data only, no product or safety impact, tracked as a clean-up task.
-- 💲 **Cost:** this round was research-and-writing — live web research, an adversarial fact-check review, and one round of edits. No new recurring costs; the engine adds no ongoing spend while it sits idle awaiting your decision.
+- ✅ **All automated checks pass.** The latest run on the main line is green; the new tool ships with its own tests, proven non-vacuous.
+- ✅ **Honest count: 23 of 25 items finished.** The 2 unfinished are the two engine fix-it items below — both queued for a careful, security-reviewed fix.
+- ⚠️ **Two engine rough edges found while building (being fixed):** (1) on Windows, a safety guard was mis-reading file paths and getting in the way of legitimate edits; (2) the engine's self-tests stumble while a job is mid-build. **Neither affects the new tool's correctness** — they're about making the building process smoother and keeping a guard fully effective. Both are written up and queued.
+- ⚠️ **One older bookkeeping note (not urgent):** a few finished items are still missing their metrics-log entries — advisory data only.
+- 💲 **Cost:** this round was building + reviewing (a few AI builder and independent-reviewer passes). No new recurring costs.

@@ -1,3 +1,14 @@
+## 2026-06-18 (phase 6, cycle 6) — Shipped F-0041 (evidence-gated verdict): the one-shot tool MVP is complete
+
+Built + shipped the second/final MVP feature; the bounded one-shot tool's minimal loop now exists end-to-end.
+
+- **F-0041 SHIPPED (PR #131, merged).** `src/oneshot/verdict.js` — the evidence-gated verdict: runs the task's acceptance command, captures the REAL exit code to an evidence file, and returns **PASS only when that captured exit code is 0** — the agent's self-claim is ignored entirely; otherwise **NOT-DONE** with a `{claimed vs evidence}` report. Consumes the exact F-0040 descriptor shape (`{acceptanceCommand, contextPaths}`); a test pipes an `admit()`-ADMITted descriptor straight into `verdict()`. No new deps.
+- **Fresh-context evaluator: PASS.** The core **no-false-PASS invariant was adversarially confirmed** — PASS iff the persisted exit code is 0, across exit codes 0/1/2/42/127/255, and the evidence write is fail-closed (a write failure throws rather than reporting success). 5/5 non-vacuous tests (25/25 full suite). Evidence: `roadmap/evidence/F-0041/verify.log`.
+- **MVP COMPLETE.** `src/oneshot/` now does the full minimal loop the operator asked for: **gate what you attempt (F-0040) → prove the result (F-0041)** — "if it works here, that is the start." Built lean (isolated dir, reuses the shared safety core, zero new dependencies).
+- **Interim workaround used (clean):** F-0041 stayed `pending` during the build (builder scoped via `CLAUDE_ACTIVE_FEATURE` env), sidestepping engine bug F-0043 so `verify.sh` ran green without the in_progress-test failures.
+
+State: backlog 23 done / 2 pending. The 2 pending are the engine bugs **F-0042** (verify-gate Windows path) + **F-0043** (test-hooks in_progress isolation), both Tier C — the next cycle is their security-reviewed fix. Next: a Tier-C `/work` cycle on F-0042/F-0043.
+
 ## 2026-06-18 (phase 6, cycle 5) — Built + shipped F-0040 (one-shot admission gate); 2 engine bugs found + groomed
 
 Continued the one-shot tool build (operator /goal "build now"). Ran the full `/work` loop on F-0040.
