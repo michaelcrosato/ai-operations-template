@@ -820,9 +820,12 @@
     },
     {
       "dependencies": [],
-      "status": "pending",
-      "passes": false,
-      "evidence": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0043/verify.log",
+        "roadmap/evidence/F-0043/in-progress-demo.log"
+      ],
       "attempts": 0,
       "blocked_reason": null,
       "tier": "C",

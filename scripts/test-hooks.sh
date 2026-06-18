@@ -11,7 +11,8 @@ TSNODE="$ROOT/node_modules/ts-node/dist/bin.js"
 mkdir -p tmp
 HOOKS=".claude/hooks"
 FIX="$(mktemp -d "tmp/hook-tests-XXXXXX")"
-trap 'rm -rf "$FIX"' EXIT
+ZFIX=""  # F-0043 zero-in_progress fixture dir (created below; cleaned on EXIT)
+trap 'rm -rf "$FIX" "$ZFIX"' EXIT
 PASS=0; FAIL=0
 
 check() { # check <name> <expected-exit> <actual-exit>
@@ -21,6 +22,26 @@ check() { # check <name> <expected-exit> <actual-exit>
 
 hook_bash() { printf '{"tool_input":{"command":"%s"}}' "$1" | bash "$HOOKS/guard-bash.sh" >/dev/null 2>&1; echo $?; }
 hook_file() { printf '{"tool_input":{"file_path":"%s"}}' "$1" | bash "$HOOKS/verify-gate.sh" >/dev/null 2>&1; echo $?; }
+
+# F-0043: an ISOLATED zero-in_progress STATE_FILE fixture for the verify-gate "permissive
+# mode" contract tests. These assert exit 0 only WHEN no feature is active; previously they
+# read the LIVE roadmap/features.json, so the moment the /work loop marked any feature
+# in_progress (its required step-1 state) verify-gate derived that feature as active and the
+# tests flipped to exit 2 — failing `bash scripts/verify.sh` for the whole build (F-0040/F-0041
+# had to stay `pending` to dodge it). Pinning STATE_FILE to this controlled zero-in_progress
+# fixture makes "permissive when zero in_progress" a property of the fixture, not of live state.
+# hook_file_z is hook_file with that fixture pinned; the same fixture is used for the two inline
+# permissive cases (content-decoy + sed branch).
+ZFIX="$(mktemp -d "tmp/hook-zero-ip-XXXXXX")"
+ZSTATE="$ZFIX/features.json"
+cat > "$ZSTATE" <<'ZEOF'
+{ "features": [
+  { "id": "F-9000", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+    "acceptance": ["a"], "authorized_paths": ["scripts/**"], "forbidden_paths": [], "dependencies": [],
+    "priority": 1, "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null }
+] }
+ZEOF
+hook_file_z() { printf '{"tool_input":{"file_path":"%s"}}' "$1" | STATE_FILE="$ZSTATE" bash "$HOOKS/verify-gate.sh" >/dev/null 2>&1; echo $?; }
 
 echo "── local-cli-preflight.sh"
 PREFLIGHT="$ROOT/scripts/local-cli-preflight.sh"
@@ -201,17 +222,53 @@ check "blocks features.json (backslash path)"   2 "$(hook_file 'roadmap\\\\featu
 check "blocks features.json (dot segment)"      2 "$(hook_file 'roadmap/./features.json')"
 check "blocks features.json (double slash)"     2 "$(hook_file 'roadmap//features.json')"
 check "blocks features.json (parent re-entry)"  2 "$(hook_file 'roadmap/../roadmap/features.json')"
-check "allows other files"                0 "$(hook_file 'scripts/update-state.ts')"
-check "allows other features.json outside roadmap" 0 "$(hook_file 'src/config/features.json')"
-check "allows file mentioning it in content only" 0 "$(printf '{"tool_input":{"file_path":"docs/x.md","content":"see roadmap/features.json"}}' | bash "$HOOKS/verify-gate.sh" >/dev/null 2>&1; echo $?)"
+# F-0043: permissive-mode cases read the isolated zero-in_progress fixture (hook_file_z /
+# STATE_FILE="$ZSTATE") so their exit-0 contract holds regardless of the live backlog's state.
+check "allows other files"                0 "$(hook_file_z 'scripts/update-state.ts')"
+check "allows other features.json outside roadmap" 0 "$(hook_file_z 'src/config/features.json')"
+check "allows file mentioning it in content only" 0 "$(printf '{"tool_input":{"file_path":"docs/x.md","content":"see roadmap/features.json"}}' | STATE_FILE="$ZSTATE" bash "$HOOKS/verify-gate.sh" >/dev/null 2>&1; echo $?)"
 
 echo "── verify-gate.sh degraded environment (no jq, no node → sed fallback)"
 RES="$(printf '{"tool_input":{"file_path":"roadmap/features.json"}}' | VERIFY_GATE_PARSER='sed' bash "$HOOKS/verify-gate.sh" >/dev/null 2>&1; echo $?)"
 check "fail-closed without jq/node (sed branch)" 2 "$RES"
 RES="$(printf '{"tool_input":{"file_path":"roadmap/features.json","content":"decoy \\"file_path\\": \\"docs/x.md\\""}}' | VERIFY_GATE_PARSER='sed' bash "$HOOKS/verify-gate.sh" >/dev/null 2>&1; echo $?)"
 check "sed branch ignores decoy file_path in content" 2 "$RES"
-RES="$(printf '{"tool_input":{"file_path":"docs/ok.md"}}' | VERIFY_GATE_PARSER='sed' bash "$HOOKS/verify-gate.sh" >/dev/null 2>&1; echo $?)"
+# F-0043: pin the zero-in_progress fixture so the permissive sed-branch verdict is fixture-
+# controlled, not dependent on the live backlog having zero in_progress features.
+RES="$(printf '{"tool_input":{"file_path":"docs/ok.md"}}' | STATE_FILE="$ZSTATE" VERIFY_GATE_PARSER='sed' bash "$HOOKS/verify-gate.sh" >/dev/null 2>&1; echo $?)"
 check "sed branch still allows other files" 0 "$RES"
+
+echo "── verify-gate.sh F-0043 permissive-mode state isolation"
+# Proof of the F-0043 fix: the permissive-mode verdict is a property of the pinned STATE_FILE
+# fixture, NOT of whatever the live backlog happens to contain. Two halves:
+#   (1) The zero-in_progress fixture the 6 permissive tests use yields exit 0 (no active feature
+#       -> permissive) for an out-of-scope path — the contract those tests rely on.
+#   (2) Swapping ONLY the STATE_FILE to a one-in_progress fixture flips that same out-of-scope
+#       path to exit 2 (the feature is derived as active and the edit is outside its scope). So
+#       the verdict tracks the pinned state source. Because the 6 tests pin the ZERO fixture,
+#       a feature going in_progress in the LIVE backlog can no longer flip them to exit 2.
+F43="$(mktemp -d)"
+cat > "$F43/zero.json" <<'AEOF'
+{ "features": [
+  { "id": "F-9043", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+    "acceptance": ["a"], "authorized_paths": ["scripts/**"], "forbidden_paths": [], "dependencies": [],
+    "priority": 1, "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null }
+] }
+AEOF
+cat > "$F43/inprogress.json" <<'AEOF'
+{ "features": [
+  { "id": "F-9043", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+    "acceptance": ["a"], "authorized_paths": ["scripts/**"], "forbidden_paths": [], "dependencies": [],
+    "priority": 1, "status": "in_progress", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null }
+] }
+AEOF
+F43_OUT='src/some-ui.tsx'  # outside the fixture feature's scripts/** scope
+check "F-0043: out-of-scope path is permissive (exit 0) under a ZERO-in_progress STATE_FILE" 0 "$(STATE_FILE="$F43/zero.json" hook_file "$F43_OUT")"
+check "F-0043: same path flips to BLOCKED (exit 2) when STATE_FILE has ONE in_progress" 2 "$(STATE_FILE="$F43/inprogress.json" hook_file "$F43_OUT")"
+# The pinned zero-in_progress fixture (ZSTATE) the 6 tests use is itself zero-in_progress,
+# so it is immune to the live backlog flipping a feature to in_progress mid-build.
+check "F-0043: the ZSTATE fixture the 6 permissive tests pin is zero-in_progress" "0" "$(node -e 'const fs=require("fs");const f=(JSON.parse(fs.readFileSync(process.argv[1],"utf8")).features)||[];console.log(f.filter(x=>x&&x.status==="in_progress").length)' "$ZSTATE")"
+rm -rf "$F43"
 
 echo "── verify-gate.sh per-feature authz (F-0007, AC1/2/3)"
 AFIX="$(mktemp -d)"
@@ -223,9 +280,11 @@ cat > "$AST" <<'AEOF'
     "dependencies": [], "priority": 1, "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null }
 ] }
 AEOF
-# AC2: no-active-feature — orchestrator/maintenance sessions must not be broken (allow edits)
-check "no-active-feature (orchestrator) allows file outside any feature scope" 0 "$(hook_file 'roadmap/ROADMAP.md')"
-check "no-active-feature (orchestrator) allows file in scripts" 0 "$(hook_file 'scripts/seed.ts')"
+# AC2: no-active-feature — orchestrator/maintenance sessions must not be broken (allow edits).
+# F-0043: read the isolated zero-in_progress fixture so "no active feature" is a controlled
+# precondition, not an artifact of the live backlog momentarily having zero in_progress features.
+check "no-active-feature (orchestrator) allows file outside any feature scope" 0 "$(hook_file_z 'roadmap/ROADMAP.md')"
+check "no-active-feature (orchestrator) allows file in scripts" 0 "$(hook_file_z 'scripts/seed.ts')"
 # AC1 + AC3: active feature — block outside authz, block forbidden, allow inside; exercised via STATE_FILE fixture
 check "allows edit inside authorized_paths (scripts/**)" 0 "$(CLAUDE_ACTIVE_FEATURE=F-9999 STATE_FILE="$AST" hook_file 'scripts/test-hooks.sh')"
 check "allows edit inside authorized_paths (.claude/hooks/**)" 0 "$(CLAUDE_ACTIVE_FEATURE=F-9999 STATE_FILE="$AST" hook_file '.claude/hooks/verify-gate.sh')"
