@@ -23,3 +23,21 @@
 **Answer (operator):** MIT.
 
 **Folded:** `LICENSE` file added (MIT, © 2026 Michael Crosato), `package.json` license field set, decision logged in DECISIONS.md.
+
+---
+
+## Q-0003 (2026-06-18, open) — Do we split into two products: a "one-shot" tool and the current all-night engine?
+
+**The situation in plain English.** Your direction note describes two genuinely different ways to use AI to build software, and you asked whether a real pivot should live on its own branch or fork. After reading your blueprint and checking the latest evidence against live sources, the answer is: **these are two different products, and the right move is to give the new one its own home while quietly reusing the safety machinery both share.** Think of it like two vehicles built on the same chassis:
+
+- **Product A — the "one-shot" tool (the new direction).** It does one well-understood job at a time, in a single sitting, with a skilled person watching and approving. It deliberately stays inside what today's AI does most reliably. It expects the human to be a capable "manager of agents," not a hands-off client.
+- **Product B — the all-night engine (what this repo is today).** It runs unattended for long stretches, builds bigger things across many sessions, and is designed so a *non-technical* operator never has to touch it.
+
+The newest research backs your instinct that the one-shot approach is the more reliable lane today — with one important caveat: even on a "simple, solvable" job, the AI will sometimes *confidently say it's finished when it isn't*. So Product A still needs the core "prove it actually works" checks the engine already has — an independent reviewer, proof saved to disk, protected tests — with you as the final judge. (The engine's all-night-specific approval and model-routing steps don't apply to a supervised one-shot tool, so they'd be set aside, not reused.) The full write-up and sources are saved in the strategy record alongside this file.
+
+**What I need from you (no rush — work continues meanwhile):**
+1. **Green-light the split, or keep it on paper?** Should I actually start building Product A as its own thing now, or leave this as a written plan until you've decided?
+2. **What do we call it / who is it for?** A name and a one-line "who buys this" would shape everything. (Skilled solo builders? Teams who want a tight, supervised tool?)
+3. **What happens to the all-night engine in the meantime?** Pause its current to-do list and focus on the new tool, or keep both moving in parallel?
+
+**What was assumed meanwhile (the safe default):** I changed nothing irreversible. No new repo or fork was created, the current engine's rules and its 21-item backlog are untouched, and the new direction exists only as a written strategy + this question. If you say "go," standing it up is a clean next step; if you say "wait," nothing needs undoing.
