@@ -1,3 +1,15 @@
+## 2026-06-18 (phase 6, cycle 7) — Shipped F-0042 + F-0043 (Tier-C engine fixes) + docs reconciled
+
+Completed the two queued Tier-C engine fixes and reconciled all docs to reflect the current state.
+
+- **F-0042 SHIPPED (PR #133, merged).** verify-gate.sh Windows absolute-path normalization fix: canonicalizes paths to repo-relative via `path.relative`, mirroring path-guard.js. In-scope edits on Windows are no longer wrongly blocked; the bug had forced builders to bypass the guard via unscoped Bash calls, defeating path authorization on Windows local builds. path-guard.js root aligned to `CLAUDE_PROJECT_DIR||cwd`. First Tier-C feature: builder-strong, evaluator PASS, security-reviewer APPROVE (no fail-open). 364 hook-contract tests green. Evidence: `roadmap/evidence/F-0042/verify.log`.
+- **F-0043 SHIPPED (PR #134, merged).** Hook-contract test STATE_FILE isolation: six permissive-mode tests in test-hooks.sh now pin a zero-in_progress STATE_FILE fixture instead of reading the live backlog. verify.sh now passes while a feature is in_progress. No coverage hole. Tier C: builder-strong, evaluator PASS, security-reviewer APPROVE. Hook-contract tests: 367. Evidence: `roadmap/evidence/F-0043/verify.log`.
+- **Tier layer now EXERCISED end-to-end.** F-0040/F-0041 (Tier B — builder + evaluator) and F-0042/F-0043 (Tier C — builder-strong + evaluator + mandatory security-reviewer + awaiting_approval operator gate) are the first tiered features to ship through the adaptive layer end-to-end.
+- **Docs reconciled.** README, TASK_AUTONOMY_TRIAGE.md, CHANGELOG.md, AI_OPERATIONS_PLAN.md, and STATUS.md updated to reflect: the one-shot tool MVP (F-0040/F-0041), the two engine fixes (F-0042/F-0043), 25/25 features done, 367 hook tests, and the tier layer now exercised.
+
+State: 25 done, 0 pending, 0 blocked.
+Next: run agent-cleaner pass; naming the one-shot tool is the operator's open call (non-blocking).
+
 ## 2026-06-18 (phase 6, cycle 6) — Shipped F-0041 (evidence-gated verdict): the one-shot tool MVP is complete
 
 Built + shipped the second/final MVP feature; the bounded one-shot tool's minimal loop now exists end-to-end.
