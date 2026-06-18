@@ -286,6 +286,39 @@ AEOF
 check "F-0022: env var overrides derived feature (env blocks when outside authz)" 2 "$(CLAUDE_ACTIVE_FEATURE=F-9999 STATE_FILE="$AST" hook_file 'src/some-ui.tsx')"
 check "F-0022: env var overrides derived feature (env allows inside authz)"       0 "$(CLAUDE_ACTIVE_FEATURE=F-9999 STATE_FILE="$AST" hook_file 'scripts/verify.sh')"
 
+
+# F-0042: verify-gate path normalization mirrors path-guard.js (Windows abs-path bug).
+# The Write/Edit tool passes an ABSOLUTE drive-letter path (C:/dev/<repo>/src/oneshot/x.js).
+# The OLD normalization stripped only the drive+leading slash, leaving a PARENT-PREFIXED path
+# (dev/<repo>/src/oneshot/x.js) that never matched a repo-relative src/oneshot/** scope, so it
+# WRONGLY BLOCKED in-scope edits. The fix canonicalizes via path.relative(root, abs) like path-guard.js.
+# (test #1 FAILS against the OLD code: in-scope abs path returned exit 2.)
+A42="$(mktemp -d)"; AST42="$A42/features.json"
+cat > "$AST42" <<'AEOF'
+{ "features": [
+  { "id": "F-9042", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
+    "acceptance": ["a"], "authorized_paths": ["src/oneshot/**"], "forbidden_paths": [],
+    "dependencies": [], "priority": 1, "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null }
+] }
+AEOF
+# Drive-letter absolute path, the way the Edit tool emits it on Windows. abs_path() resolves
+# relative-to-the-repo-root and prints a drive-letter POSIX-slash path (no backslash regex,
+# keeping the LF .gitattributes pin clean and shellcheck quiet).
+abs_path() { node -e 'const p=require("path");process.stdout.write(p.resolve(process.cwd(),process.argv[1]).split(p.sep).join("/"))' "$1"; }
+F42_IN="$(abs_path src/oneshot/admit.js)"
+F42_OUT="$(abs_path secret/x.js)"
+F42_FJSON="$(abs_path roadmap/features.json)"
+check "F-0042: in-scope ABSOLUTE drive-letter path is ALLOWED (exit 0)" 0 "$(CLAUDE_ACTIVE_FEATURE=F-9042 STATE_FILE="$AST42" hook_file "$F42_IN")"
+check "F-0042: out-of-scope ABSOLUTE path is still BLOCKED (exit 2)" 2 "$(CLAUDE_ACTIVE_FEATURE=F-9042 STATE_FILE="$AST42" hook_file "$F42_OUT")"
+check "F-0042: relative in-scope path still ALLOWED (exit 0)" 0 "$(CLAUDE_ACTIVE_FEATURE=F-9042 STATE_FILE="$AST42" hook_file 'src/oneshot/admit.js')"
+check "F-0042: features.json hard-block fires for an ABSOLUTE path (exit 2)" 2 "$(hook_file "$F42_FJSON")"
+check "F-0042: src/oneshot/../../package.json cannot escape scope (exit 2)" 2 "$(CLAUDE_ACTIVE_FEATURE=F-9042 STATE_FILE="$AST42" hook_file 'src/oneshot/../../package.json')"
+# AC3 (consistent normalization): verify-gate.sh and path-guard.js agree on the SAME verdict.
+pg42() { printf '{"tool_input":{"file_path":"%s"}}' "$1" | CLAUDE_ACTIVE_FEATURE=F-9042 STATE_FILE="$AST42" node "$HOOKS/path-guard.js" >/dev/null 2>&1; echo $?; }
+vg42() { CLAUDE_ACTIVE_FEATURE=F-9042 STATE_FILE="$AST42" hook_file "$1"; }
+check "F-0042: in-scope abs path verdict matches path-guard.js" "$(pg42 "$F42_IN")"  "$(vg42 "$F42_IN")"
+check "F-0042: out-of-scope abs path verdict matches path-guard.js" "$(pg42 "$F42_OUT")" "$(vg42 "$F42_OUT")"
+rm -rf "$A42"
 rm -rf "$AFIX"
 
 echo "── commit-on-stop.sh"

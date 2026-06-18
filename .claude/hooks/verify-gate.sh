@@ -28,8 +28,14 @@ fi
 # text-matched an `src/**` scope). node is a hard dependency here and resolves ../
 # correctly (including refusing to over-collapse leading ../); the bash collapse below
 # is a floor for the (unreached) no-node case and still handles //,/./.
+# F-0042: canonicalize to a REPO-RELATIVE path via path.relative(root, abs) — mirroring
+# .claude/hooks/path-guard.js normalizePath EXACTLY so both guards agree on one canonical
+# path. The prior replace(/^([A-Za-z]:)?/+/,"") stripped only the drive+leading slash,
+# leaving an absolute Windows path C:/dev/<repo>/src/x.js as the PARENT-PREFIXED
+# dev/<repo>/src/x.js — which never matched a repo-relative src/** scope, wrongly BLOCKING
+# in-scope edits on Windows. root = CLAUDE_PROJECT_DIR||cwd (same notion used for STATE below).
 if command -v node >/dev/null 2>&1; then
-  FILE_NORM="$(printf '%s' "$FILE" | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{const p=require("path");let f=d.replace(/\\/g,"/");f=p.posix.normalize(f).replace(/^([A-Za-z]:)?\/+/,"").replace(/^\.\//,"");process.stdout.write(f);})' 2>/dev/null)"
+  FILE_NORM="$(printf '%s' "$FILE" | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{const p=require("path");const root=process.env.CLAUDE_PROJECT_DIR||process.cwd();let f=d;try{f=p.isAbsolute(d)?p.relative(root,d):p.relative(root,p.resolve(root,d));}catch(e){f=d;}f=f.replace(/\\/g,"/").replace(/\/+/g,"/").replace(/^\.\//,"").replace(/\/$/,"").trim();process.stdout.write(f);})' 2>/dev/null)"
   [ -n "$FILE_NORM" ] && FILE="$FILE_NORM"
 fi
 FILE="${FILE//\\//}"                       # backslashes → slashes
@@ -139,7 +145,7 @@ let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{ try{
     if command -v node >/dev/null 2>&1; then
       node -e '
 let pats=[];try{pats=JSON.parse(process.argv[1]||"[]")}catch{process.exit(2)}
-let fp=(process.argv[2]||"").replace(/\\/g,"/").replace(/\/+/g,"/").replace(/^[A-Za-z]:/,"").replace(/^\/+/,"").replace(/^\.\//,"");
+let fp=(process.argv[2]||"");try{const _p=require("path");const _r=process.env.CLAUDE_PROJECT_DIR||process.cwd();fp=_p.isAbsolute(fp)?_p.relative(_r,fp):_p.relative(_r,_p.resolve(_r,fp));}catch(e){}fp=fp.replace(/\\/g,"/").replace(/\/+/g,"/").replace(/^\.\//,"").replace(/\/$/,"").trim();
 for(let p0 of pats){
   let p=p0.replace(/\\/g,"/").replace(/\/+/g,"/").replace(/^[A-Za-z]:/,"").replace(/^\/+/,"").replace(/^\.\//,"");
   // F-0034: ANCHORED matching only, mirroring path-guard.js. The prior segment-
