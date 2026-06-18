@@ -22,14 +22,15 @@ Six principles govern everything in this repository. Every agent session is boun
 
 ## What this actually is
 
-> **Read this first.** This repository is **not a product** — it is a *control plane* for building software with frontier AI agents: a state machine, a set of mechanical guardrails, and an adversarial review loop that let AI write and ship code semi-autonomously while staying auditable. It ships as an **engine-only template**: it carries no product code of its own. An adopter drops it into their repo, points it at their product spec, and the factory builds from there. The asset here is the factory.
+> **Read this first.** This repository is **not a product** — it is a *control plane* for building software with frontier AI agents: a state machine, a set of mechanical guardrails, and an adversarial review loop that let AI write and ship code semi-autonomously while staying auditable. The factory remains the core asset. The repo now also hosts the first slice of a second product built **with** that factory — the bounded one-shot tool (`src/oneshot/`): a deliberately-scoped, single-context-window, human-supervised coding harness (see [`docs/bounded-vs-afk-strategy.md`](docs/bounded-vs-afk-strategy.md)). An adopter can still drop the factory into their own repo and point it at their spec.
 
-**Operational status — last verified 2026-06-16 (`develop`):**
+**Operational status — last verified 2026-06-18 (`develop`):**
 
 | Layer | Status |
 |---|---|
-| Engine — state machine, gates, `.claude/hooks/`, **350+** hook-contract tests, mutation gate, CI | ✅ **Working** |
-| Risk-tier adaptive layer (A/B/C → builder model, review depth, approval gate) | ✅ Machinery built & gate-tested · ⏳ **not yet exercised** on a real feature (the 21 shipped engine features predate it) |
+| Engine — state machine, gates, `.claude/hooks/`, **367** hook-contract tests, mutation gate, CI | ✅ **Working** |
+| Risk-tier adaptive layer (A/B/C → builder model, review depth, approval gate) | ✅ **now exercised end-to-end** — F-0040/F-0041 (Tier B) + F-0042/F-0043 (Tier C, incl. the mandatory security-reviewer + the awaiting_approval gate) |
+| One-shot tool (`src/oneshot/`) — admission gate + evidence-gated verdict | ✅ **MVP shipped** (F-0040/F-0041) — first slice of the bounded-single-shot product; early MVP, not a finished product |
 | Benchmark (`bench/`) | ✅ Built & validity-gated — atomic **7/7**; `L1 pass^5`, `L4/G1–G4 pass^2` dogfooded |
 | Engine-effect measurement | ⏳ Harness built; **no signal yet** — greenfield tasks already score 1.0, so the next move is refactoring/regression tasks, not bigger greenfield |
 
@@ -76,7 +77,7 @@ Every feature is assigned a tier **A/B/C** at groom time, gated on **consequence
 - **Human-in-the-loop gate:** a Tier-C / irreversible merge is **held for operator sign-off** — the feature parks in `awaiting_approval`, and the state writer *mechanically refuses* to mark it `done` without that park — while the loop keeps building other features. The gate never stalls the loop.
 - **Advisory cost:** per-feature tier / builder / attempts are recorded to metrics; `/kaizen` scans them for over-tiering and thin-brief signals. **Advisory only** — the platform exposes no per-subagent token telemetry, so cost is never a hard gate.
 
-> **Status (be honest):** this tier machinery — the `builder-strong` agent, the `check-model-policy.ts` gate, the `tier` schema field, and the lifecycle transitions in `update-state.ts` — is built and covered by the hook-contract + mutation gates. But the 21 features shipped so far predate it and are recorded untiered; tiers bind features groomed from here forward. The capability is real and tested; it has **not yet been exercised end-to-end on a production feature.**
+> **Status (be honest):** this tier machinery — the `builder-strong` agent, the `check-model-policy.ts` gate, the `tier` schema field, and the lifecycle transitions in `update-state.ts` — is built and covered by the hook-contract + mutation gates. The tier layer has now shipped its first tiered features end-to-end: **F-0040/F-0041 (Tier B** → builder + evaluator) and **F-0042/F-0043 (Tier C** → builder-strong + evaluator + mandatory security-reviewer + the awaiting_approval operator gate). Real, tested, and now exercised. Legacy pre-2026-06-18 features remain recorded untiered.
 
 ## The guardrails that make it trustworthy (`.claude/hooks/`, `scripts/`)
 
@@ -105,6 +106,8 @@ The daily `/kaizen` pass is wired to the probes, so "this change is a 1% improve
 
 ## Direction (where this is headed)
 
+The active **product** direction is the bounded one-shot tool (per [`docs/bounded-vs-afk-strategy.md`](docs/bounded-vs-afk-strategy.md)): a deliberately-scoped, single-context-window, human-supervised coding harness whose MVP (admission gate + evidence-gated verdict) has shipped in `src/oneshot/`. It is an early MVP — the first slice, not a finished or sellable product. The benchmark and engine-effect measurement work continues in parallel.
+
 The engine's foundation (determinism, evidence gates, guardrails), its adaptive layer (risk tiers driving review depth, model, and a human-approval gate), **and the benchmark harness that measures engine changes** are all **built, audited, and shipped** — with one honest caveat: the headline *engine-effect delta* (the full loop vs. a bare baseline, expressed as a number) is **not yet obtainable**, because today's tasks sit at the model's 1.0 ceiling (see the next paragraph).
 
 The benchmark is **oracle-first** and now spans both axes (full detail in [`bench/testing-suite-plan.md`](bench/testing-suite-plan.md)):
@@ -119,13 +122,13 @@ The loop is closing: change the engine → the suite says, with numbers, whether
 
 ## Honest limitations (the part most READMEs hide)
 
-- **No product, no users, no revenue.** This is an engineering template — a way to *build* software, not software you can sell as-is. Treating it as a finished SaaS would be misrepresentation.
+- **Early product MVP exists, but no users and no revenue.** The repo now hosts the first slice of the bounded one-shot tool (`src/oneshot/`) — a real, tested, deliberately-scoped MVP. It is not sellable as-is and has no users. The factory itself remains an engineering template — a way to *build* software, not a finished product. Treating either as a turnkey SaaS would be misrepresentation.
 - **Guardrails are deterrents + mechanical catches, not sandboxing.** A builder agent technically has shell/edit access; the hooks *catch* out-of-scope behavior rather than *prevent* it at the OS level. Good for a trusted single-operator setup; not a substitute for real isolation in a hostile multi-tenant context.
 - **The "independent" evaluator is the same model family.** A fresh session reduces context-bias, but correlated blind spots (subtle logic/crypto/concurrency bugs) can carry forward. External multi-source review has found real issues the automated gates missed — the system is useful *and* fallible.
 - **Even this engine can ship on a stale assumption.** A model-switching feature was once justified by a now-false claim about the Claude Code platform (that a subagent's model can't be overridden per-invocation — it can). The freshness rule (`CLAUDE.md §5`) exists precisely to catch this; the lapse was caught in review, corrected, and recorded as a scar. Re-verify AI-tooling facts against live docs.
-- **Test depth is concentrated on the guardrail/state layer.** It has 350+ contract tests + a mutation gate + property tests; the engine's own scripts carry targeted contract tests. "21/21 features passing" means *evidence exists on disk and CI ran green*, not "market-validated."
+- **Test depth is concentrated on the guardrail/state layer.** It has 367 contract tests + a mutation gate + property tests; the engine's own scripts carry targeted contract tests. "25/25 features passing" means *evidence exists on disk and CI ran green*, not "market-validated."
 - **Heavy AI / key-operator dependency.** Built and maintained by the AI orchestrator. Whether a human team can maintain it cold, at speed, is unproven; the ops plan + constitution are real onboarding cost.
-- **Cross-platform fragility.** Hooks are bash; on Windows they need Git Bash (WSL bash misbehaves). CI does not test Windows builds.
+- **Cross-platform fragility.** Hooks are bash; on Windows they need Git Bash (WSL bash misbehaves). CI does not test Windows builds. A Windows path-normalization bug in the path-authorization gate — which had silently forced builders to bypass the guard via unscoped Bash calls — was found and fixed in F-0042 (verify-gate.sh now canonicalizes paths via `path.relative`, matching path-guard.js).
 - **Code formatting is not enforced.** Biome *lint* gates every PR, but auto-format is intentionally off — the engine spends its gate budget on correctness (typecheck, lint, tests, mutation-smoke) over style. A non-writing `biome format --check` is a cheap future add if style drift ever shows up.
 
 ---
@@ -159,7 +162,7 @@ New here? Read in this order: **README** (this file) → **OPERATOR_GUIDE.md** (
 | `OPERATOR_GUIDE.md` | The non-technical operator's daily loop | Human-facing; agents skip it | ✅ Current |
 | `AI_OPERATIONS_PLAN.md` | The full factory blueprint (adopter-generic) | Deep design + one-time setup (§11) | ✅ Current — blueprint, uses `<PLACEHOLDER>`s |
 | `CLAUDE.md` | The enforceable agent constitution (≤150 lines) | Auto-loaded rules every agent obeys | ✅ Current |
-| `TASK_AUTONOMY_TRIAGE.md` | Risk-tier (A/B/C) routing | How much autonomy a task gets | ✅ Machinery built · ⏳ not yet exercised |
+| `TASK_AUTONOMY_TRIAGE.md` | Risk-tier (A/B/C) routing | How much autonomy a task gets | ✅ exercised (F-0040–F-0043) |
 | `AGENTS.md` | Pointer stub for non-Claude CLIs | Cross-tool entry; everything lives in CLAUDE.md | ✅ Stub (by design) |
 | `CHANGELOG.md` | Engine/template change log | Adopter-facing "what changed" | ✅ Current |
 | `SECURITY.md` · `CONTRIBUTING.md` · `CODE_OF_CONDUCT.md` | Community-standards files | Public-repo standards | ✅ Boilerplate |
@@ -171,6 +174,8 @@ New here? Read in this order: **README** (this file) → **OPERATOR_GUIDE.md** (
 | `bench/HARNESS-RESEARCH.md` | Verified 2026 citations | Grounds the gauntlet design | ✅ Current |
 | `bench/testing-suite-plan.md` · `bench/ENGINE-EFFECT-PLAN.md` | Design records (executed) | Rationale + the honest engine-effect result | ✅ Kept as record |
 | `docs/optional-modules.md` | Deferred-modules catalog + triggers | What activates when — never silently | ✅ Current |
+| `docs/bounded-vs-afk-strategy.md` | Two-products strategy + the bounded one-shot tool design | Why the one-shot tool exists + its design | ✅ Current |
+| `src/oneshot/` | Bounded one-shot tool (admission gate + evidence-gated verdict) | First product slice built with the factory | ✅ MVP shipped (F-0040/F-0041) |
 | `roadmap/ROADMAP.md` | Operator priorities | Plain-English backlog intent | ✅ Operator-owned |
 | `roadmap/STATUS.md` | Auto-generated business status | The operator's weekly read | ✅ Auto (`/status`) |
 | `roadmap/QUESTIONS.md` | Open operator questions | Non-blocking escalation channel | ✅ Current |
