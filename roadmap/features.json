@@ -783,6 +783,66 @@
         ".github/workflows/**",
         "roadmap/features.json"
       ]
+    },
+    {
+      "dependencies": [],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "C",
+      "id": "F-0042",
+      "epic": "factory-hardening",
+      "priority": 1,
+      "title": "Fix verify-gate.sh Windows absolute-path normalization (in-scope writes wrongly blocked)",
+      "description": "On a Windows/Git-Bash local build, the verify-gate.sh PreToolUse hook normalizes an absolute path like C:/dev/<repo>/src/oneshot/x.js to a parent-prefixed dev/<repo>/src/oneshot/x.js instead of the repo-relative src/oneshot/x.js, so it never matches repo-relative authorized_paths globs (e.g. src/oneshot/**) and BLOCKS legitimate in-scope Write/Edit calls. Builders are forced to bypass via the Bash tool, which is not path-scoped - defeating the path-guard on Windows (observed building F-0040). Fix the normalization to resolve paths relative to the repo root the same way .claude/hooks/path-guard.js does (path.relative), so in-scope absolute paths are authorized while out-of-scope paths stay fail-closed.",
+      "spec_ref": "roadmap/PROGRESS.md (F-0040 build report); .claude/hooks/path-guard.js (correct relative-path approach)",
+      "acceptance": [
+        "An in-scope absolute Windows path (e.g. an absolute path under src/<feature-dir>) is ALLOWED (exit 0) by verify-gate.sh after normalization to the repo-relative path; covered by a contract test in scripts/test-hooks.sh.",
+        "An out-of-scope absolute path is still BLOCKED (exit non-zero) - fail-closed behavior preserved; covered by a contract test.",
+        "verify-gate.sh and path-guard.js agree on the same path for the same input (consistent normalization); bash scripts/verify.sh PASS with the new contract tests wired in."
+      ],
+      "authorized_paths": [
+        ".claude/hooks/verify-gate.sh",
+        "scripts/test-hooks.sh",
+        "roadmap/evidence/F-0042/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "roadmap/features.json"
+      ]
+    },
+    {
+      "dependencies": [],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "C",
+      "id": "F-0043",
+      "epic": "factory-hardening",
+      "priority": 1,
+      "title": "Isolate hook-contract tests from live features.json so verify works while a feature is in_progress",
+      "description": "Six tests in scripts/test-hooks.sh exercise the path-guard against the LIVE roadmap/features.json and assume zero in_progress features, i.e. permissive mode. When the /work loop marks a feature in_progress in step 1, as required before BUILD and VERIFY, the path-guard correctly derives that feature as active and those tests get exit 2 instead of exit 0, so bash scripts/verify.sh FAILS for the whole duration of every build. This blocks the loop own mark-in_progress-then-verify sequence, observed building F-0040 and worked around by capturing evidence while the feature was pending. Fix by pointing those tests at an isolated STATE_FILE fixture, a seam the engine already has, so they assert the permissive and fail-closed contracts against controlled state, independent of the live backlog.",
+      "spec_ref": "roadmap/PROGRESS.md F-0040 build report; scripts/test-hooks.sh the six failing cases",
+      "acceptance": [
+        "Running scripts/test-hooks.sh while a real feature is marked in_progress yields 0 failures, because the previously-failing six permissive-mode cases now read an isolated STATE_FILE fixture instead of the live features.json - verified by the test run itself.",
+        "bash scripts/verify.sh PASS while a feature is in_progress, which is the loop intended state during a build - demonstrated in this feature evidence.",
+        "The isolated tests still assert the SAME permissive contract for zero in_progress and fail-closed contract for multi in_progress or unknown id - no guard behavior is weakened, only the state source is isolated."
+      ],
+      "authorized_paths": [
+        "scripts/test-hooks.sh",
+        ".claude/hooks/path-guard.js",
+        "roadmap/evidence/F-0043/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "roadmap/features.json"
+      ]
     }
   ]
 }
