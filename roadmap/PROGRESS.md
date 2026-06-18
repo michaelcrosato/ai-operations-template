@@ -1,3 +1,15 @@
+## 2026-06-18 (phase 6, cycle 5) — Built + shipped F-0040 (one-shot admission gate); 2 engine bugs found + groomed
+
+Continued the one-shot tool build (operator /goal "build now"). Ran the full `/work` loop on F-0040.
+
+- **F-0040 SHIPPED (PR #129, merged).** `src/oneshot/admit.js` — the solvability admission gate: ADMIT only when acceptance is a single machine-checkable command AND the assembled context fits a configurable working-set token budget (default 8000, env/option overridable; deterministic chars/4 heuristic, no new deps); else REJECT `no-verifiable-criterion` / `over-budget` with measured-vs-budget counts. Defines the task-descriptor shape F-0041 reuses. Fresh-context evaluator **PASS** (5/5 criteria, 16/16 non-vacuous tests, scope clean, no new deps). Evidence: `roadmap/evidence/F-0040/verify.log`.
+- **2 real engine bugs surfaced during the build (manager's conditions problem) — groomed Tier C, priority 1:**
+  - **F-0042** — `verify-gate.sh` normalizes absolute Windows paths to a parent-prefixed `dev/<repo>/src/…` instead of repo-relative `src/…`, so it BLOCKS legitimate in-scope Write/Edit calls and forces a Bash-tool bypass that is NOT path-scoped — defeating the path-guard on Windows local builds. (Confirmed via my own brief-write block + the builder report; `path-guard.js` does it correctly with `path.relative`.)
+  - **F-0043** — 6 hook-contract tests in `test-hooks.sh` read the LIVE `features.json` and assume zero in_progress; they get exit 2 vs 0 whenever a feature is in_progress, so `verify.sh` FAILS for the duration of every build (breaking the loop's own mark-in_progress→verify sequence). Worked around F-0040 by capturing evidence while pending; the fix is STATE_FILE isolation.
+- **Tooling gotcha logged.** `update-state.ts --add "<json>"` on Windows mangles `;`/`(`/`)` inside the JSON text via the npx→cmd/PowerShell wrapper (a semicolon inside parens broke F-0043's add). Sanitized to plain text. **Kaizen candidate:** an `--add-file <path>` mode that never puts JSON on a command line.
+
+State: backlog 23 → 25 (F-0040 **done**; F-0041 pending/unblocked; F-0042 + F-0043 pending Tier C). Next: build F-0041 (the evidence-gated verdict — the other MVP half), then a Tier-C (security-reviewed) cycle for the F-0042/F-0043 guard fixes.
+
 ## 2026-06-18 (phase 6, cycle 4) — Groom: one-shot tool MVP (operator green-lit Q-0003)
 
 Operator /goal: "Build the new one-shot tool now; reduce the scope, be precise about what we can do; if it works here, that is the start; keep power-to-weight high — all substance, no fluff." (Answers Q-0003.)
