@@ -715,6 +715,72 @@
         "contract tests cover the new patterns; the docs state plainly that guards are a deterrent layer, not the security boundary",
         "bash scripts/verify.sh returns VERIFY PASS exit 0; security-reviewer APPROVE"
       ]
+    },
+    {
+      "dependencies": [],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "B",
+      "id": "F-0040",
+      "epic": "oneshot-harness",
+      "priority": 1,
+      "title": "One-shot solvability admission gate (single acceptance criterion + working-set token budget)",
+      "description": "A bounded single-shot tool must refuse tasks that are not known-solvable in one context window - being precise about what we can do is the product core. Add src/oneshot/ admission logic that, given a task descriptor (a single acceptance command plus the list of context file paths), returns ADMIT only when the acceptance is a single machine-checkable command AND the assembled context fits a configurable working-set token budget; otherwise REJECT with the specific reason. This feature DEFINES the task-descriptor shape that the verdict (F-0041) consumes.",
+      "spec_ref": "docs/bounded-vs-afk-strategy.md section 5 (admission gate + working-set budget)",
+      "acceptance": [
+        "Given a well-scoped descriptor (one runnable acceptance command plus context files whose estimated tokens are under the budget), the gate returns ADMIT (exit 0); covered by a unit test.",
+        "Given a descriptor whose acceptance is missing/empty or is not a single runnable command, the gate returns REJECT with reason no-verifiable-criterion; covered by a unit test.",
+        "Given a descriptor whose assembled context exceeds the configured working-set token budget, the gate returns REJECT with reason over-budget and reports measured-vs-budget token counts; covered by a unit test.",
+        "The working-set budget is one configurable value with a documented default (not hardcoded per call); the token estimate is a deterministic local heuristic introducing no new dependencies (node builtins only).",
+        "The task-descriptor shape (acceptance command plus context paths) is defined and documented here so F-0041 can consume it; new tests live under src/oneshot/ and are wired into the npm test script; bash scripts/verify.sh PASS."
+      ],
+      "authorized_paths": [
+        "src/oneshot/**",
+        "package.json",
+        "roadmap/evidence/F-0040/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "roadmap/features.json"
+      ]
+    },
+    {
+      "dependencies": [
+        "F-0040"
+      ],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "B",
+      "id": "F-0041",
+      "epic": "oneshot-harness",
+      "priority": 1,
+      "title": "Evidence-gated one-shot verdict (PASS only on exit-0 proof; ignores the agent self-claim)",
+      "description": "After a bounded attempt on an admitted task, the tool must never report success on the agent say-so - the verification gap persists even single-shot. Add src/oneshot/ verdict logic that runs the descriptor acceptance command, captures the REAL exit code to an evidence file (mirroring the engine existing capture semantics - real exit code authoritative), and returns PASS only when that captured exit code is 0; any done or tests-pass claim in the input is ignored. On non-zero it returns NOT-DONE with a structured report contrasting the input claim against the captured evidence.",
+      "spec_ref": "docs/bounded-vs-afk-strategy.md section 5 (reuse evidence-on-disk; surface calibrated doubt)",
+      "acceptance": [
+        "The verdict is a pure function of the acceptance command CAPTURED exit code; any done or tests-pass or PASS claim in the input is ignored - covered by a negative test where the input claims success but the command exits non-zero, yielding NOT-DONE.",
+        "When the acceptance command exits 0, the verdict is PASS and an evidence file on disk records the captured exit code 0; covered by a unit test.",
+        "When the acceptance command exits non-zero, the verdict is NOT-DONE and the evidence file on disk records that non-zero exit; covered by a unit test.",
+        "The NOT-DONE report names what the input claimed vs what the captured evidence shows; the capture semantics mirror the engine existing real-exit-code-authoritative approach, not a divergent scheme; introduces no new dependencies (node builtins only).",
+        "The verdict consumes the same task-descriptor shape the admission gate (F-0040) defines - covered by a test that feeds an ADMITted descriptor straight into the verdict; new tests live under src/oneshot/ and are wired into the npm test script; bash scripts/verify.sh PASS."
+      ],
+      "authorized_paths": [
+        "src/oneshot/**",
+        "package.json",
+        "roadmap/evidence/F-0041/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "roadmap/features.json"
+      ]
     }
   ]
 }

@@ -26,7 +26,7 @@
 
 ---
 
-## Q-0003 (2026-06-18, open) — Do we split into two products: a "one-shot" tool and the current all-night engine?
+## Q-0003 (2026-06-18, answered & folded 2026-06-18) — Do we split into two products: a "one-shot" tool and the current all-night engine?
 
 **The situation in plain English.** Your direction note describes two genuinely different ways to use AI to build software, and you asked whether a real pivot should live on its own branch or fork. After reading your blueprint and checking the latest evidence against live sources, the answer is: **these are two different products, and the right move is to give the new one its own home while quietly reusing the safety machinery both share.** Think of it like two vehicles built on the same chassis:
 
@@ -41,3 +41,11 @@ The newest research backs your instinct that the one-shot approach is the more r
 3. **What happens to the all-night engine in the meantime?** Pause its current to-do list and focus on the new tool, or keep both moving in parallel?
 
 **What was assumed meanwhile (the safe default):** I changed nothing irreversible. No new repo or fork was created, the current engine's rules and its 21-item backlog are untouched, and the new direction exists only as a written strategy + this question. If you say "go," standing it up is a clean next step; if you say "wait," nothing needs undoing.
+
+**Answer (operator, 2026-06-18):** "Let's build the new one-shot tool now. We are reducing the scope and being more precise about what we can do — if it works here, that is the start. Keep the power-to-weight ratio high: everything pulls its weight, all substance, no fluff."
+
+- **Q1 (build now?) → YES.** Start building, but as a *deliberately minimal* slice built **here** as the seed (not a fork yet — that's the lighter, reversible start; the full fork stays deferred until the seed proves out).
+- **Q3 (pause or parallel?) → parallel by default / moot.** The all-night engine's backlog is already 21/21 done, so there is nothing to pause; focus is on the new tool.
+- **Q2 (name / who is it for?) → still open, intentionally deferred.** A brand/name and "who buys this" is the operator's call and is *not needed to build the internal harness*, which proceeds under the neutral technical directory `src/oneshot/`. Will revisit when there is something to brand. Not blocking.
+
+**Folded (2026-06-18):** scope reduced to a 2-feature minimal loop — F-0040 (one-shot solvability admission gate) + F-0041 (evidence-gated verdict) — groomed into `features.json` (Tier B, priority 1, isolated in `src/oneshot/`, reusing the shared safety core, no new dependencies). Decision logged in DECISIONS.md; the richer human-referee / calibrated-doubt UX from the strategy record §5.4 is deliberately deferred until this core proves out ("if it works here, that is the start").
