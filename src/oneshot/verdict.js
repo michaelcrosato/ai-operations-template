@@ -45,7 +45,7 @@ function defaultEvidencePath() {
  */
 function verdict(descriptor, options) {
   const command = descriptor.acceptanceCommand;
-  const evidencePath = (options && options.evidencePath) ? options.evidencePath : defaultEvidencePath();
+  const evidencePath = options?.evidencePath ? options.evidencePath : defaultEvidencePath();
 
   // Run the acceptance command as a shell command; shell:true lets it work
   // exactly as the user would type it (and mirrors how capture.mjs runs gates).
