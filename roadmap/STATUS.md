@@ -1,25 +1,27 @@
-# Status Report — 2026-06-16 — The demo was removed; the project is now a lean engine-only template
+# Status Report — 2026-06-18 — A direction decision is waiting for you
 
-> Plain-English summary for the business owner. One big change this round: the **ForgeOps demo** — the simulated, click-through preview the system built earlier to show itself off — has been **completely removed**. It never did real work (no real data, no real money, no real agents), so it was pure weight. What remains is the part that always held the value: the **factory** — the system that lets AI safely build and ship software. Nothing is blocked or waiting on you, except one approval (below).
+> Plain-English summary for the business owner. The big item this round is **not** a code change — it's a **strategy decision I've prepared for you**. You shared a direction note about building a different *kind* of tool. I researched whether that's a good idea, fact-checked it hard against the newest sources, had a separate review team try to tear the recommendation apart, fixed everything they found, and wrote it up. There are **three questions only you can answer** (below). Nothing was built or changed in the engine while you decide.
 
-> Written for a business reader; no jargon.
-
-## What changed (since the last report)
-- **The demo is gone.** Every piece of the ForgeOps demo was removed — its screens, its fake data, the web-app machinery it needed, and the leftover to-do items that only described it. The project is now lighter and easier to understand: it is purely the "how we build software" engine, with no pretend product bolted on.
-- **The engine itself is unchanged and still fully working.** All the safety machinery (the quality gate, the guardrails, the independent reviewer, the "do the tests really have teeth?" check) is intact. One safety check that used to practice on demo code now practices on the engine's own core code instead — so it stays exactly as strict.
-- **The finished-work list was trimmed to match.** The internal to-do list dropped from 33 finished items to 21; the 12 removed items were all demo-related. The 21 that remain are the real engine.
+## Shipped this week
+- **A researched strategy recommendation** about your "do one job at a time, with a skilled person watching" idea. The short version: the latest evidence **backs your instinct** — that approach is the more reliable lane today — and it is genuinely a *different product* from the all-night engine, not just a setting. One important caveat the research surfaced: even on a simple, solvable job, AI will sometimes **confidently say it's finished when it isn't**, so the new tool still needs the engine's core "prove it actually works" checks, with you as the final judge. Recommended path: give the new tool its **own home** but **reuse the safety machinery** both tools share.
+- **A lean-up of the project finished landing** — the system is lighter, the old demo is fully gone, and the housekeeping is merged. Everything still passes its safety checks.
 
 ## Ready for your QA
-- Nothing to click through this round. The only "product screen" the project ever had was the demo, and it has been removed at your request. This was a clean-up pass on the engine itself.
+- Nothing to click through this round — this was research and planning, not a new screen.
 
 ## In progress / planned
-- **Nothing in progress, nothing deferred** — the 21 engine items remain finished.
+- Nothing is mid-build. The 21 finished engine items remain finished, and I deliberately started **no** new building work — the next move is your decision, not more code.
 
 ## Blocked / needs you
-- **One approval.** The change that removes the demo is in a pull request. Because removing a feature also removes its tests, the project's "don't quietly delete tests" guard will show **red on purpose** on this one change — that guard is doing its job on a genuine, intended removal. Every other automated check passes. The plan you approved is for you to sign off and merge it.
+- **A decision, in three parts (this is the main thing):**
+  1. **Start now, or keep it on paper?** Should I begin building the new "one-job-at-a-time" tool, or leave it as a written plan until you've thought it over?
+  2. **What do we call it, and who is it for?** A name and a one-line "who is this for" would shape everything — for example, skilled solo builders, or teams who want a tight, supervised tool.
+  3. **One thing at a time, or both at once?** Pause the all-night engine's to-do list to focus on the new tool, or keep both moving in parallel?
+- These are written out in plain English in your questions list. **No rush** — nothing is waiting or at risk while you decide.
 
 ## Health
-- ✅ **All other automated checks pass** (safety guards, the engine's own tests, the "do the safety tests have teeth?" check).
-- ✅ **The project is leaner** — no web-app dependencies, no demo code, no demo to-do items left behind.
-- ✅ **Honest count: 21 of 21 engine items finished, 0 blocked, 0 pending.**
-- ⚠️ **One internal-bookkeeping note (not urgent):** the per-feature metrics log is missing entries for a few finished items. It is advisory data only — no product or safety impact — and is tracked as a clean-up task, not a silent gap.
+- ✅ **All automated checks pass** — the safety guards, the engine's own tests, and the "do the safety tests really have teeth?" check. The latest run on the main line is green.
+- ✅ **Honest count: 21 of 21 engine items finished, 0 blocked, 0 mid-build.** The project is lean — no demo, no leftover web-app baggage.
+- ✅ **Nothing irreversible was done this round.** No new project or copy was created; the engine's rules and its finished-work list are untouched.
+- ⚠️ **One internal-bookkeeping note (not urgent):** the per-feature metrics log is still missing entries for a few finished items — advisory data only, no product or safety impact, tracked as a clean-up task.
+- 💲 **Cost:** this round was research-and-writing — live web research, an adversarial fact-check review, and one round of edits. No new recurring costs; the engine adds no ongoing spend while it sits idle awaiting your decision.
