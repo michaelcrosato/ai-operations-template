@@ -26,4 +26,4 @@
 - **25 of 25 items finished.** Nothing pending, nothing mid-build, nothing blocked.
 - The two engine rough edges from last round are fixed. No open technical concerns.
 - One older note (not urgent): a handful of finished items from earlier in the project are still missing their metrics log entries — advisory record-keeping only, no effect on quality.
-- **Cost:** this round covered building, fixing, and independent security review (two Tier-C features, each with a builder pass, evaluator pass, and security-reviewer pass). No new recurring costs.
+- **Cost:** this round covered fixing the two engine rough edges and having each one independently double-checked for safety before it went in. No new recurring costs.
