@@ -1,0 +1,479 @@
+CAPTURED-BY: scripts/capture.mjs
+CAPTURE-FEATURE: F-0040
+CAPTURE-CMD: bash scripts/verify.sh
+CAPTURE-COMMIT: a8e8021d8d9996f017dc6e2f488aa41ef07007d1
+CAPTURE-TS: 2026-06-18T09:35:35.755Z
+CAPTURE-EXIT: 0
+----- 8< ----- captured stdout+stderr below -----
+
+──── verify: typecheck ────
+──── typecheck: OK
+
+──── verify: lint ────
+Checked 10 files in 10ms. No fixes applied.
+──── lint: OK
+
+──── verify: unit tests ────
+✔ getHealth() reports status ok and the correct service name (0.982ms)
+✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.1383ms)
+✔ getHealth() uptime_s is a non-negative number (0.0745ms)
+✔ CLI: node src/health.js exits 0 and prints JSON with status ok (41.1568ms)
+✔ ADMIT: well-scoped descriptor returns verdict ADMIT (1.3755ms)
+✔ REJECT no-verifiable-criterion: empty acceptanceCommand (0.0865ms)
+✔ REJECT no-verifiable-criterion: missing acceptanceCommand (0.5219ms)
+✔ REJECT no-verifiable-criterion: whitespace-only acceptanceCommand (0.0901ms)
+✔ REJECT no-verifiable-criterion: chained with && (0.1184ms)
+✔ REJECT no-verifiable-criterion: chained with semicolon (0.0733ms)
+✔ REJECT no-verifiable-criterion: chained with || (0.0809ms)
+✔ REJECT no-verifiable-criterion: piped command (0.0722ms)
+✔ REJECT no-verifiable-criterion: command with embedded newline (0.0784ms)
+✔ REJECT over-budget: context exceeds tiny budget of 1 token (2.2912ms)
+✔ REJECT over-budget: tokens.measured and tokens.budget are numbers (0.5286ms)
+✔ Budget: DEFAULT_TOKEN_BUDGET is exported and equals 8000 (0.0763ms)
+✔ Budget: default budget used when options.budget and env absent (0.627ms)
+✔ Budget: options.budget overrides the default (0.7306ms)
+✔ Budget: ONESHOT_TOKEN_BUDGET env var used when options.budget absent (0.5559ms)
+✔ Budget: unreadable path counts as 0 chars (deterministic) (0.1608ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 98.8646
+──── unit tests: OK
+(no build script — skipping)
+──── test coverage guard: OK (every src test file is wired into npm test)
+(placeholder check: template repo — self-skipped; activates after adoption rename)
+
+──── verify: features.json schema + invariants ────
+[update-state] valid: 23 features, 21 passing (evidence re-verified).
+──── features.json schema + invariants: OK
+
+──── verify: model-policy ↔ agent frontmatter (no drift) ────
+[check-model-policy] OK: 5 agent model bindings match policy
+──── model-policy ↔ agent frontmatter (no drift): OK
+
+──── verify: assertion shield ────
+[32m[Assertion Shield] Check passed. No deleted assertions detected in test files.[0m
+──── assertion shield: OK
+
+──── verify: engine lint (biome) ────
+Checked 6 files in 10ms. No fixes applied.
+──── engine lint (biome): OK
+
+──── verify: shellcheck (hooks + gate scripts) ────
+──── shellcheck (hooks + gate scripts): OK
+(actionlint not installed locally — enforced in CI)
+
+──── verify: hook contract tests ────
+── local-cli-preflight.sh
+  [PASS] preflight: Git Bash/MSYS passes
+  [PASS] preflight: Linux/cloud passes
+  [PASS] preflight: WSL bash without cygpath fails
+  [PASS] preflight: WSL failure prints Git Bash fix
+  [PASS] preflight: missing node fails
+  [PASS] preflight: missing node message names node
+  [PASS] preflight: missing-tool message is not WSL-specific
+── guard-bash.sh
+  [PASS] blocks push to main
+  [PASS] blocks push to master
+  [PASS] blocks refspec push to main
+  [PASS] blocks refs/heads refspec
+  [PASS] blocks bare refs/heads dst
+  [PASS] blocks -C flag push to main
+  [PASS] blocks -c flag push to main
+  [PASS] blocks force push
+  [PASS] blocks -C force push
+  [PASS] blocks +refspec to main
+  [PASS] blocks +refs/heads refspec
+  [PASS] blocks -C +refspec to main
+  [PASS] blocks +refspec force (any branch)
+  [PASS] blocks --work-tree push to main
+  [PASS] blocks --git-dir= push to main
+  [PASS] blocks .env read
+  [PASS] blocks .env.local read
+  [PASS] blocks pipe-to-shell
+  [PASS] blocks npm publish
+  [PASS] blocks shield bypass
+  [PASS] blocks rm -rf on root
+  [PASS] blocks exfil POST (key-shaped data)
+  [PASS] blocks exfil upload (env secret ref)
+  [PASS] blocks exfil form (github token)
+  [PASS] blocks wget --post-data exfil
+  [PASS] blocks curl -T secret upload
+  [PASS] allows gh api read
+  [PASS] allows harmless POST
+  [PASS] allows gh api POST of plain refs
+  [PASS] allows push to develop
+  [PASS] allows -C push to develop
+  [PASS] allows feature branch push
+  [PASS] allows scoped rm
+  [PASS] allows plain git commit
+── guard-bash.sh F-0030 cross-shell patterns
+  [PASS] F-0030: blocks Get-Content .env
+  [PASS] F-0030: blocks Get-Content .env.local
+  [PASS] F-0030: blocks gc .env.production
+  [PASS] F-0030: blocks Get-ChildItem .env
+  [PASS] F-0030: blocks gci .env.test
+  [PASS] F-0030: allows Get-Content src/app.ts
+  [PASS] F-0030: allows Get-Content .envrc
+  [PASS] F-0030: allows Get-Content .environment
+  [PASS] F-0030: blocks [System.IO.File]::ReadAllText .env
+  [PASS] F-0030: blocks [System.IO.File]::ReadAllLines .env
+  [PASS] F-0030: blocks [System.IO.File]::ReadAllBytes .env
+  [PASS] F-0030: allows [System.IO.File]::ReadAllText config.json
+  [PASS] F-0030: blocks xxd .env
+  [PASS] F-0030: blocks od .env
+  [PASS] F-0030: blocks base64 .env
+  [PASS] F-0030: blocks nl .env
+  [PASS] F-0030: blocks cut .env
+  [PASS] F-0030: blocks dd if=.env
+  [PASS] F-0030: allows xxd binary.bin
+  [PASS] F-0030: allows base64 image.png
+  [PASS] F-0030: blocks < .env
+  [PASS] F-0030: blocks < .env.local
+  [PASS] F-0030: allows < input.txt
+  [PASS] F-0030: allows < .envrc
+  [PASS] F-0030: blocks Remove-Item -Recurse /
+  [PASS] F-0030: blocks recursive Remove-Item on a C:\ Windows path (real hook)
+  [PASS] F-0030: blocks Remove-Item -Recurse ~
+  [PASS] F-0030: blocks Remove-Item -Recurse $HOME
+  [PASS] F-0030: blocks Remove-Item $env:USERPROFILE -Recurse
+  [PASS] F-0030: allows Remove-Item tmp/foo.txt
+  [PASS] F-0030: allows Remove-Item -Recurse node_modules
+  [PASS] F-0030: allows Remove-Item -Recurse build/output
+  [PASS] F-0030: allows Remove-Item -r src/generated
+  [PASS] F-0030: allows Remove-Item -Recurse roadmap/evidence/x
+  [PASS] F-0030: blocks Invoke-RestMethod -Method Post
+  [PASS] F-0030: blocks irm -Body
+  [PASS] F-0030: blocks Invoke-WebRequest -InFile
+  [PASS] F-0030: blocks iwr -Method Post
+  [PASS] F-0030: allows Invoke-RestMethod GET
+  [PASS] F-0030: allows Invoke-WebRequest GET
+  [PASS] F-0030: blocks PS env bypass (ASSERTION_SHIELD_BYPASS via env:)
+── guard-bash.sh kill switch
+  [PASS] AGENT_STOP halts all commands
+── verify-gate.sh
+  [PASS] blocks features.json (posix path)
+  [PASS] blocks features.json (rel path)
+  [PASS] blocks features.json (backslash path)
+  [PASS] blocks features.json (dot segment)
+  [PASS] blocks features.json (double slash)
+  [PASS] blocks features.json (parent re-entry)
+  [PASS] allows other files
+  [PASS] allows other features.json outside roadmap
+  [PASS] allows file mentioning it in content only
+── verify-gate.sh degraded environment (no jq, no node → sed fallback)
+  [PASS] fail-closed without jq/node (sed branch)
+  [PASS] sed branch ignores decoy file_path in content
+  [PASS] sed branch still allows other files
+── verify-gate.sh per-feature authz (F-0007, AC1/2/3)
+  [PASS] no-active-feature (orchestrator) allows file outside any feature scope
+  [PASS] no-active-feature (orchestrator) allows file in scripts
+  [PASS] allows edit inside authorized_paths (scripts/**)
+  [PASS] allows edit inside authorized_paths (.claude/hooks/**)
+  [PASS] blocks edit outside authorized_paths
+  [PASS] blocks edit to package.json (outside F-9999 authorized_paths)
+  [PASS] blocks edit inside forbidden_paths
+  [PASS] blocks when active feature unknown (fail-closed)
+  [PASS] blocks when active feature has empty authorized_paths (fail-closed)
+  [PASS] F-0022: derived from in_progress blocks out-of-scope edit (no env)
+  [PASS] F-0022: derived from in_progress allows in-scope edit (no env)
+  [PASS] F-0022: derived from in_progress blocks forbidden path (no env)
+  [PASS] F-0022: zero in_progress → permissive fallback (no env) allows any file
+  [PASS] F-0025: multiple in_progress → fail-closed (verify-gate blocks any edit, no env)
+  [PASS] F-0022: env var overrides derived feature (env blocks when outside authz)
+  [PASS] F-0022: env var overrides derived feature (env allows inside authz)
+── commit-on-stop.sh
+  [PASS] blocks stop on dirty tree
+  [PASS] allows stop on clean tree
+  [PASS] kill switch overrides dirty block
+── session-brief.sh
+  [PASS] exits 0
+  [PASS] emits brief content
+── update-state.ts (fixture: tmp/hook-tests-3QdpNo)
+  [PASS] validate accepts valid fixture
+  [PASS] validate exits 0 despite stale policy
+  [PASS] validate warns on stale model-policy
+  [PASS] validate accepts well-formed metrics
+  [PASS] validate rejects malformed metrics line
+  [PASS] validate rejects metrics missing date
+  [PASS] validate rejects oversized metrics record
+  [PASS] F-CG1: metrics accepts valid tier+builder+attempts
+  [PASS] F-CG1: metrics rejects an invalid tier (not A/B/C)
+  [PASS] F-CG1: metrics rejects an unknown builder
+  [PASS] F-CG1: metrics rejects non-integer attempts
+  [PASS] metrics completeness: WARNs when a done feature lacks a record
+  [PASS] metrics completeness: the WARN is non-fatal (exit 0)
+  [PASS] metrics completeness: no WARN when every done feature has a record
+  [PASS] add rejects malformed JSON
+  [PASS] add rejects passes:true at birth
+  [PASS] add rejects dangling dependency
+  [PASS] add accepts valid feature
+  [PASS] add refuses reserved F-9xxx range on real backlog
+  [PASS] reserved-range refusal wrote nothing to real backlog
+  [PASS] status rejects unknown id
+  [PASS] status rejects invalid enum
+  [PASS] status blocked requires+stores reason
+  [PASS] remove rejects unknown id
+  [PASS] remove requires at least one id
+  [PASS] remove deletes a depended-upon row (exit 0 = cascade validated)
+  [PASS] remove: no trace of F-9401 (row + dep both stripped)
+  [PASS] remove: F-9402 retained
+  [PASS] F-0025: status sets in_progress when none active
+  [PASS] F-0025: status rejects a 2nd concurrent in_progress
+  [PASS] F-0025: validate rejects 2+ in_progress (hand-edit defense)
+  [PASS] paths rejects non-array
+  [PASS] paths rejects empty array
+  [PASS] paths rejects guardrail surface .claude
+  [PASS] paths rejects guardrail surface scripts
+  [PASS] paths rejects guardrail surface .github
+  [PASS] paths rejects catch-all glob
+  [PASS] paths rejects parent traversal
+  [PASS] paths rejects ./-prefixed guardrail surface (scripts)
+  [PASS] paths rejects ./-prefixed guardrail surface (.github)
+  [PASS] paths still accepts a legit ./-prefixed scope (./src/**)
+  [PASS] paths rejects absolute guardrail surface (/scripts/**)
+  [PASS] paths rejects backslash guardrail surface (\scripts)
+  [PASS] paths rejects a glob that normalizes to empty (./)
+  [PASS] paths replaces authorized_paths
+  [PASS] passes refuses without evidence
+  [PASS] evidence refuses missing file
+  [PASS] evidence accepts existing file
+  [PASS] passes rejects QUOTED marker in failed log
+  [PASS] passes accepts green verify log (exact line)
+  [PASS] validate rejects corrupt backlog
+  [PASS] F-SM2: validate rejects an unknown field (closed shape)
+  [PASS] F-SM2: validate rejects type errors (string attempts / non-array evidence)
+  [PASS] F-SM2: --add cannot clear safety forbidden_paths (.claude/** kept)
+  [PASS] F-SM2: --add cannot clear safety forbidden_paths (.github kept)
+  [PASS] F-SM2: schema property set matches the closed-shape contract
+  [PASS] F-SM2: schema items set additionalProperties:false
+  [PASS] F-LP1: validate accepts a valid tier (A/B/C)
+  [PASS] F-LP1: validate rejects an invalid tier (not A/B/C)
+  [PASS] F-AP1: validate accepts awaiting_approval WITH evidence
+  [PASS] F-AP1: validate REJECTS awaiting_approval with NO evidence
+  [PASS] F-AP1: --status in_progress+evidence -> awaiting_approval allowed
+  [PASS] F-AP1: --status REJECTS awaiting_approval from pending (unbuilt)
+  [PASS] F-AP1: --status REJECTS awaiting_approval without evidence
+  [PASS] F-AP1: awaiting_approval does NOT block a new in_progress (loop keeps moving)
+  [PASS] F-AP1: --add REJECTS a feature born awaiting_approval (must be pending)
+  [PASS] F-AP1: --add REJECTS a feature born in_progress
+  [PASS] F-AP1: --add REJECTS a feature born done
+  [PASS] F-AP1: schema status enum matches the writer's STATUSES
+  [PASS] F-TH1: --add defaults a missing tier to B
+  [PASS] F-TH1: Tier-C feature CANNOT go in_progress -> done directly
+  [PASS] F-TH1: Tier-C feature CAN go awaiting_approval -> done
+  [PASS] F-TH1: Tier-B feature CAN go in_progress -> done (gate is C-only)
+  [PASS] F-EC1: --passes REJECTS evidence from a failing capture (no red->green)
+  [PASS] F-EC1: --passes REJECTS a captured-by log with clean marker but CAPTURE-EXIT!=0
+  [PASS] F-EC1: --passes ACCEPTS a captured green log (CAPTURE-EXIT: 0 + marker)
+── assertion-shield.ts (fixture repo)
+  [PASS] shield catches STAGED assertion deletion
+  [PASS] shield catches deleted test FILE
+  [PASS] shield passes on clean tree
+  [PASS] shield catches ADDED test.skip
+  [PASS] shield catches ADDED it.only
+  [PASS] shield allows ADDED healthy test
+  [PASS] F-0027: shield allows removing an in-branch-added test file
+  [PASS] F-0027: shield still blocks gutting an existing assertion to a tautology
+  [PASS] shield rename-detection: pure rename passes (exit 0)
+  [PASS] shield rename-detection: rename+deleted assertion blocked (exit 1)
+  [PASS] shield rename-detection: in-place deletion still blocked (exit 1)
+  [PASS] shield prefix-config: diff.noprefix=true still blocks gutted assertion (exit 1)
+  [PASS] shield prefix-config: diff.mnemonicPrefix=true still blocks gutted assertion (exit 1)
+  [PASS] shield quotepath: non-ASCII test filename still blocks gutted assertion (exit 1)
+  [PASS] shield color.ui=always still blocks gutted assertion (exit 1)
+  [PASS] shield space-in-path still blocks gutted assertion (exit 1)
+  [PASS] shield .gitattributes -diff still blocks gutted assertion (exit 1)
+  [PASS] shield diff.srcPrefix/dstPrefix still blocks gutted assertion (exit 1)
+  [PASS] shield module-decl FP: deleting require() decl passes (exit 0)
+  [PASS] shield module-decl FP: deleting real assertion still blocked (exit 1)
+  [PASS] shield module-decl FP: require-in-assertion line still blocked (exit 1)
+  [PASS] shield module-decl FP: prefix-bypass (require;+assertion) still blocked (exit 1)
+  [PASS] shield module-decl FP: destructuring require decl passes (exit 0)
+  [PASS] F-AS-failopen: >1MB diff deleting an assertion is still BLOCKED (no fail-open)
+  [PASS] shield chai: deleting a .should assertion line is BLOCKED (exit 1)
+  [PASS] shield chai: deleting a non-assertion line (assertion kept) PASSES (exit 0)
+  [PASS] shield first-commit (no upstream) passes
+  [PASS] shield first-commit emits no git fatal
+  [PASS] shield first-commit prints a calm line
+── seed.ts delegating shim
+  [PASS] template mode (no src, no seed script) exits 0
+  [PASS] refuses prod DATABASE_URL
+  [PASS] product mode without seed script fails
+  [PASS] delegates to seed script (success)
+  [PASS] propagates seed script failure
+  [PASS] circular delegation fails fast
+── update-state.ts invariants (fixture: tmp/hook-tests-3QdpNo)
+  [PASS] status:done without passes is rejected
+  [PASS] dependency cycle is rejected
+  [PASS] validate audits evidence of passing features (missing file rejected)
+── install-into.sh
+  [PASS] refusal: missing arg exits 1
+  [PASS] refusal: template root exits 1
+  [PASS] refusal: ancestor of template root exits 1
+  [PASS] exclusion: no src/ copied
+  [PASS] exclusion: no package-lock.json
+  [PASS] exclusion: no docs/archive/ copied
+  [PASS] exclusion: no docs/feedback-2-verdicts
+  [PASS] exclusion: no roadmap/briefs/F-0012.md
+  [PASS] exclusion: no roadmap/evidence/F-0001
+  [PASS] exclusion: features.json has empty array
+  [PASS] fresh pkg: no test script
+  [PASS] fresh pkg: lint is biome lint scripts
+  [PASS] fresh pkg: name is not ai-operations-template
+  [PASS] fresh pkg: devDep @biomejs/biome present
+  [PASS] fresh pkg: devDep @types/node present
+  [PASS] fresh pkg: devDep shellcheck present
+  [PASS] fresh pkg: devDep ts-node present
+  [PASS] fresh pkg: devDep typescript present
+  [PASS] merge pkg: name preserved
+  [PASS] merge pkg: test script preserved
+  [PASS] merge pkg: lint script preserved
+  [PASS] merge pkg: verify script added
+  [PASS] merge pkg: shield script added
+  [PASS] merge pkg: state script added
+  [PASS] merge pkg: devDep @biomejs/biome added
+  [PASS] merge pkg: devDep @types/node added
+  [PASS] merge pkg: devDep shellcheck added
+  [PASS] merge pkg: devDep ts-node added
+  [PASS] merge pkg: devDep typescript added
+  [PASS] idempotent: marker feature survives re-run
+  [PASS] idempotent: engine-owned scripts/verify.sh present after re-run
+  [PASS] product-mode warning: present when src/ exists
+  [PASS] product-mode warning: absent when no src/
+  [PASS] seeded features.json validates against schema
+  [PASS] seeded ROADMAP: exactly one '## Now'
+  [PASS] seeded ROADMAP: exactly one '## Next'
+  [PASS] seeded ROADMAP: exactly one '## Later'
+  [PASS] seeded ROADMAP: exactly one '## Ideas'
+  [PASS] merge-copy: adopter scripts/custom.sh survives install
+  [PASS] merge-copy: adopter .github/workflows/deploy.yml survives
+  [PASS] merge-copy: adopter .claude/settings.local.json survives
+  [PASS] merge-copy: engine scripts/verify.sh present after install
+── workflow lane parity (F-0014)
+  [PASS] lane parity: every verify.sh workflow conforms
+  [PASS] lane parity: refs extracted from ci.yml
+  [PASS] lane parity: broken fixture workflow rejected
+── ship.sh
+  [PASS] ship: rejects missing PR number
+  [PASS] ship: rejects non-numeric PR
+  [PASS] ship: rejects unknown flag
+  [PASS] ship: fails closed when no checks ever register
+  [PASS] ship: no-checks path does not merge
+  [PASS] ship: green + --merge merges
+  [PASS] ship: merge happened
+  [PASS] ship: green without --merge exits 0
+  [PASS] ship: no merge without --merge
+  [PASS] ship: failing checks exit non-zero
+  [PASS] ship: failing checks do not merge
+  [PASS] ship: registers after a delay then merges
+  [PASS] ship: delayed registration merged
+  [PASS] ship: refuses to merge PR based on main
+  [PASS] ship: main-based PR not merged
+  [PASS] ship: refuses when base cannot be determined
+  [PASS] ship: undetermined-base PR not merged
+  [PASS] ship: merge failure propagates
+── path-guard.sh
+  [PASS] pg: zero in_progress (no env) allows out-of-scope file
+  [PASS] pg: zero in_progress (no env) allows forbidden path
+  [PASS] pg: active feature allows authorized file
+  [PASS] pg: active feature allows package.json
+  [PASS] pg: active feature blocks unauthorized file
+  [PASS] pg: active feature blocks forbidden path
+  [PASS] pg: active feature blocks forbidden subpath
+  [PASS] pg: active feature handles backslashes in authorized path
+  [PASS] pg: active feature resolves relative traversal in authorized path
+  [PASS] pg: non-existent active feature fails closed (F-0034)
+  [PASS] pg F-0022: derived feature blocks out-of-scope edit (no env)
+  [PASS] pg F-0022: derived feature allows in-scope edit (no env)
+  [PASS] pg F-0022: derived feature blocks forbidden path (no env)
+  [PASS] pg F-0034: env override to unknown id fails closed (was allow-all)
+  [PASS] pg F-0025: multiple in_progress (no env) → fail-closed (blocks any file)
+  [PASS] F-0034: traversal src/../package.json blocked (path-guard)
+  [PASS] F-0034: traversal src/../package.json blocked (verify-gate)
+  [PASS] F-0034: deeper traversal src/a/../../package.json blocked (path-guard)
+  [PASS] F-0034: deeper traversal src/a/../../package.json blocked (verify-gate)
+  [PASS] F-0034: src/** matches nested src/sub/nested.ts (path-guard)
+  [PASS] F-0034: src/** matches nested src/sub/nested.ts (verify-gate)
+  [PASS] F-0034: src/** matches deeply nested src/a/b/c.ts (path-guard)
+  [PASS] F-0034: src/x/../y.ts resolves inside scope → allowed (path-guard)
+  [PASS] F-0034: foo/src/secret.ts out-of-scope blocked (path-guard)
+  [PASS] F-0034: foo/src/secret.ts out-of-scope blocked (verify-gate)
+  [PASS] F-0034: a/src/x.ts out-of-scope blocked (verify-gate)
+  [PASS] F-0034: lib/src out-of-scope blocked (verify-gate)
+  [PASS] F-0034: NotebookEdit out-of-scope roadmap/x.ipynb blocked (path-guard)
+  [PASS] F-0034: NotebookEdit out-of-scope roadmap/x.ipynb blocked (verify-gate)
+  [PASS] F-0034: NotebookEdit in-scope src/x.ipynb allowed (path-guard)
+  [PASS] F-0034: NotebookEdit in-scope src/x.ipynb allowed (verify-gate)
+  [PASS] F-0034: NotebookEdit notebook_path via node branch — out-of-scope blocked
+  [PASS] F-0034: NotebookEdit notebook_path via node branch — in-scope allowed
+  [PASS] F-0034: NotebookEdit notebook_path via sed branch — out-of-scope blocked
+  [PASS] F-0034: NotebookEdit notebook_path via sed branch — in-scope allowed
+  [PASS] F-0034: unknown active id fails closed (path-guard)
+  [PASS] F-0034: duplicate active id fails closed (path-guard)
+  [PASS] F-0034: empty authorized_paths fails closed (path-guard)
+  [PASS] F-EC1: capture of a passing command exits 0
+  [PASS] F-EC1: capture wrote a provenance-stamped log
+  [PASS] F-EC1: capture propagates the command's non-zero exit (no red->green laundering)
+  [PASS] F-EC1: failing capture records CAPTURE-EXIT: 7
+  [PASS] F-EC1: rejects a non-F-XXXX feature id
+  [PASS] F-EC1: rejects a name with a path separator
+  [PASS] F-TC4: mutation-smoke detects a survivor (--selftest)
+  [PASS] F-DM1: unit tests leave roadmap/evidence unchanged (hermeticity)
+── F-0026 known-bad corpus (mechanical judge DENY assertions)
+  [PASS] F-0026 corpus: weakened-assertion diff BLOCKED by assertion-shield
+  [PASS] F-0026 corpus: forbidden-path edit BLOCKED by path-guard
+  [PASS] F-0026 corpus: out-of-scope edit BLOCKED by path-guard
+  [PASS] F-0026 corpus: status:done without passes REJECTED by update-state
+  [PASS] F-0026 corpus: 2nd concurrent in_progress REJECTED by update-state
+  [PASS] F-0026 corpus: secret-read (cat .env) BLOCKED by guard-bash
+  [PASS] F-0026 corpus: exfil via secret-shaped POST BLOCKED by guard-bash
+  [PASS] F-0026 corpus: PS Get-Content .env BLOCKED by guard-bash
+── F-0026 known-bad corpus complete
+── check-model-policy.ts (model-policy ↔ agent frontmatter)
+  [PASS] F-MP1: --check passes when frontmatter matches policy
+  [PASS] F-MP1: --check FAILS on frontmatter drift
+  [PASS] F-MP1: --check passes again after --write
+  [PASS] F-MP1: --write wrote the policy model into the agent file
+  [PASS] F-MP1: --check FAILS on an unmanaged agent model (fail-closed)
+  [PASS] F-MP1: --check FAILS on an unsafe agent name (no path traversal in --write)
+  [PASS] F-MP1: --check FAILS when policy.agents map is missing
+  [PASS] F-MP1: real .claude config has no model-policy drift
+  [PASS] F-MP2: builder-strong resolves to the reasoning tier
+  [PASS] F-MP2: Tier-C builder uses a different model than the default builder
+
+hook contract tests: 357 passed, 0 failed
+──── hook contract tests: OK
+
+──── verify: mutation smoke ────
+── mutation smoke: do the safety-critical tests actually constrain behavior? ──
+  [killed]   update-state: Tier-C done-gate removed
+  [killed]   update-state: single-in_progress invariant removed
+  [killed]   update-state: --add born-status pending guard removed
+  [killed]   update-state: awaiting_approval-requires-evidence removed
+  [killed]   assertion-shield: deletion-detection gate removed
+── mutation smoke: OK (every known mutant was killed by a test) ──
+──── mutation smoke: OK
+
+VERIFY-COMMIT: a8e8021d8d9996f017dc6e2f488aa41ef07007d1 @ 2026-06-18T09:37:51Z
+VERIFY: PASS (exit 0)
+
+----- stderr -----
+(node:58072) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/scripts/update-state.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\C:\dev\ai-operations-template\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[update-state] WARN: 5 done feature(s) have no metrics.jsonl record (F-0022, F-0025, F-0026, F-0027, F-0030) — /kaizen + /status sample only recorded features; append one metrics line per shipped feature.
+(node:2464) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/scripts/check-model-policy.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\C:\dev\ai-operations-template\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:16460) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/scripts/assertion-shield.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\C:\dev\ai-operations-template\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
