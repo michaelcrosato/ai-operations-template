@@ -34,12 +34,17 @@ function matchGlob(filePath, glob) {
 // absolute/drive prefix. path.resolve collapses traversal so `src/../package.json`
 // becomes `package.json` (cannot escape an `src/**` scope).
 function normalizePath(p) {
+  // root = CLAUDE_PROJECT_DIR || cwd — the IDENTICAL root expression the now-merged
+  // verify-gate.sh uses (F-0042 security-review LOW). A no-op in production and tests
+  // (CLAUDE_PROJECT_DIR == cwd == repo root in prod; unset -> cwd in tests); it only makes
+  // the two guards derive their repo-relative path from one shared root source.
+  const root = process.env.CLAUDE_PROJECT_DIR || process.cwd();
   let relative = p;
   try {
     if (path.isAbsolute(p)) {
-      relative = path.relative(process.cwd(), p);
+      relative = path.relative(root, p);
     } else {
-      relative = path.relative(process.cwd(), path.resolve(p));
+      relative = path.relative(root, path.resolve(root, p));
     }
   } catch (e) {
     // Fallback if path resolution fails
