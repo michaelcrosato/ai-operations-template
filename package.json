@@ -7,7 +7,7 @@
   "scripts": {
     "lint": "biome lint scripts src",
     "typecheck": "tsc --noEmit",
-    "test": "node --test src/health.test.js src/oneshot/admit.test.js",
+    "test": "node --test src/health.test.js src/oneshot/admit.test.js src/oneshot/verdict.test.js",
     "verify": "bash scripts/verify.sh",
     "shield": "ts-node scripts/assertion-shield.ts",
     "state": "ts-node scripts/update-state.ts",
