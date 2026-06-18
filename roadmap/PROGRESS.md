@@ -1,3 +1,17 @@
+## 2026-06-18 (phase 6, cycle 3) — Strategy pivot recorded: two products (bounded "LLM-wheelhouse" vs the AFK engine)
+
+Operator /goal: reflecting on a direction pivot — "branch or fork when really pivoting," toward a *non-Ralph* overhaul that works **within the agent's context window** for **known-solvable 1-shot** tasks, where the human is a skilled **agent-manager** and the system **flags likely false positives**; larger/longer projects still need tools+tests+LLM intertwined ("teamwork makes the dream work"). Two genuinely different approaches; current focus = staying inside the LLM wheelhouse. Must-read: `AI-Operations-Loop-20260618.md` (operator Desktop).
+
+- **Received with review rigor** (`/receiving-code-review`), not reflexive agreement: flagged the false binary (mode/branch/**fork**), the principle-#3 inversion, and the missing one-shot-solvability gate before building on the direction.
+- **Grounded it (`/deep-research`, 107 agents / 25 sources / 16 confirmed, 9 adversarially KILLED):** bounded scope removes the *error-compounding / self-conditioning* failure mode (Sinha 2509.09677; METR 2503.14499) — but the **verification gap persists single-shot** (overconfidence up to 55pp, arXiv 2602.06948; 49–54% reward-hacking on *impossible* tasks, ImpossibleBench 2510.20270). Reliable working set = a *fraction* of the window (Chroma; NoLiMa 2502.05167); trend = **more** operator skill, not less. Killed list (don't reuse): clean failure-vs-duration curve, "task half-life", exponential per-step decay, multiplicative subtask compounding.
+- **A stray PDF extraction** (`_extracted_report.txt`, Anthropic's *2026 Agentic Coding Trends Report*, pulled by a research-fetch agent) was moved OUT of the worktree to the operator Desktop — preserved as a source, not committed into the engine.
+- **Corrected thesis:** "stay in the LLM wheelhouse" is **necessary but not sufficient** — the bounded product still needs deterministic referees (hidden/read-only tests, fresh-context evaluator) + strict context engineering. "Tools+tests+LLM" is not exclusive to the big system.
+- **Structural ruling:** two products, not one with a flag (3 of 6 README principles invert) → **fork at the constitution/loop/admission layer, SHARE the verification/guardrail core** (don't duplicate the safety code). Full record: `docs/bounded-vs-afk-strategy.md`; ADR line in DECISIONS.
+- **Escalated the irreversible/operator-visible call** (`QUESTIONS.md` Q-0003, plain English): green-light the split now or keep on paper · name/positioning · pause-or-parallel the AFK backlog. Conservative default applied: **document-only — no fork, constitution + 21-feature backlog untouched.**
+- **JUDGE gate:** a 5-lens adversarial red-team panel (research-fidelity, structural soundness, decision-rights, house-style, contrarian steelman) is running over the three artifacts; verdict + any fixes folded into this block on completion.
+
+Next: apply red-team fixes; await operator answer on Q-0003 before any execution. Backlog unchanged (21 features); engine constitution unchanged.
+
 ## 2026-06-17 (phase 6, cycle 2) — Power-to-weight audit, lean cuts, branch consolidation
 
 Operator /goal: a brutal power-to-weight review of the whole repo, then "do what's best" + "review/merge/delete all non-`main` branches into develop."
