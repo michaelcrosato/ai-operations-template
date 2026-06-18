@@ -1,3 +1,17 @@
+## 2026-06-18 (phase 6, cycle 4) — Groom: one-shot tool MVP (operator green-lit Q-0003)
+
+Operator /goal: "Build the new one-shot tool now; reduce the scope, be precise about what we can do; if it works here, that is the start; keep power-to-weight high — all substance, no fluff." (Answers Q-0003.)
+
+- **Folded Q-0003** (answered & folded): build now → YES, as a minimal seed built **here** (not a fork — the lighter reversible start; full fork deferred until it proves out); pause/parallel → moot (AFK backlog 21/21 done); name/positioning → operator's open call, deferred (builds under the neutral dir `src/oneshot/`).
+- **Groomed a 2-feature minimal loop** — the whole MVP ("gate what you attempt → prove the result") — added via `update-state.ts --add` (sole writer), Tier B, priority 1, isolated in `src/oneshot/`:
+  - **F-0040** — one-shot **solvability admission gate**: ADMIT only when acceptance is a single machine-checkable command AND the assembled context fits a configurable working-set token budget; else REJECT with a named reason. Defines the task-descriptor shape.
+  - **F-0041** — **evidence-gated verdict**: PASS only on a captured exit-0 on disk; the agent's self-claim is ignored; NOT-DONE reports claim-vs-evidence (the "possible false positive" signal). Depends on F-0040 (shared descriptor).
+- **Power-to-weight choices:** reuse the existing `verify.sh` `src/` test-coverage guard (code lives in `src/oneshot/` → no touching the shared safety core); **no new dependencies** (node builtins only → the `package.json` touch is test-wiring, not a deps change → Tier B, no mandatory security-reviewer).
+- **Pre-add fresh-context evaluator:** F-0040 PASS, F-0041 NEEDS_WORK → fixed before adding (tightened the negative test so it can't pass vacuously; bound the F-0040→F-0041 dependency to a real shared-descriptor contract + test; builder told to mirror the engine's existing capture semantics, not diverge).
+- **Deliberately deferred** (reduce-scope): the richer human-referee / calibrated-doubt UX (strategy §5.4) waits until this core proves out.
+
+State: backlog 21 → 23 (F-0040, F-0041 pending); `update-state.ts --validate` green (23 features, 21 passing). Next: `/work` F-0040, then F-0041.
+
 ## 2026-06-18 (phase 6, cycle 3) — Strategy pivot recorded: two products (bounded "LLM-wheelhouse" vs the AFK engine)
 
 Operator /goal: reflecting on a direction pivot — "branch or fork when really pivoting," toward a *non-Ralph* overhaul that works **within the agent's context window** for **known-solvable 1-shot** tasks, where the human is a skilled **agent-manager** and the system **flags likely false positives**; larger/longer projects still need tools+tests+LLM intertwined ("teamwork makes the dream work"). Two genuinely different approaches; current focus = staying inside the LLM wheelhouse. Must-read: `AI-Operations-Loop-20260618.md` (operator Desktop).
