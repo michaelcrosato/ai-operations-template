@@ -154,7 +154,7 @@ This repo is a **template**. Adopters take the factory and replace this README w
 
 ## Documentation map
 
-New here? Read in this order: **README** (this file) → **OPERATOR_GUIDE.md** (if you're the operator) → **AI_OPERATIONS_PLAN.md** + **CLAUDE.md** (if you're an agent or maintainer). Agents should load only what the current task needs — everything else is reachable by path. `<PLACEHOLDER>` tokens in the docs are **intentional** adopter-substitution markers (you replace them at install time per `install-into.sh` step 1), not unfinished text.
+New here? Read in this order: **README** (this file) → **OPERATOR_GUIDE.md** (if you're the operator) → **AI_OPERATIONS_PLAN.md** + **CLAUDE.md** (if you're an agent or maintainer). To prove the engine actually works — run the gate, the non-vacuousness check, and the benchmark yourself — follow **[`docs/how-it-proves-itself.md`](docs/how-it-proves-itself.md)**. Agents should load only what the current task needs — everything else is reachable by path. `<PLACEHOLDER>` tokens in the docs are **intentional** adopter-substitution markers (you replace them at install time per `install-into.sh` step 1), not unfinished text.
 
 | Doc | What it is | Why it exists | Status |
 |---|---|---|---|
@@ -169,6 +169,7 @@ New here? Read in this order: **README** (this file) → **OPERATOR_GUIDE.md** (
 | `.claude/model-policy.json` | The only place model names live | Single source of truth for agent→model | ✅ Enforced by gate |
 | `.claude/agents/` · `skills/` · `rules/` · `hooks/` | Sub-agents, slash-command loops, path rules, mechanical guards | The runnable engine | ✅ Operational |
 | `scripts/verify.sh` | The single quality gate | One command, identical for agents and CI | ✅ Operational |
+| `docs/how-it-proves-itself.md` | How the gate, mutation-smoke, guard tests + benchmark prove the engine works — with runnable commands | Hands-on "verify it yourself" tutorial + explanation | ✅ Current |
 | `bench/README.md` | Atomic golden-task probes | Fast quality/token/cost/speed measurement | ✅ Current |
 | `bench/suite/README.md` | As-built end-to-end oracle suite | The real capability + gauntlet benchmark | ✅ Current |
 | `bench/HARNESS-RESEARCH.md` | Verified 2026 citations | Grounds the gauntlet design | ✅ Current |
