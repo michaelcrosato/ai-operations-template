@@ -1,3 +1,17 @@
+## 2026-07-01 (phase 6, cycle 8) — Killer Foundation research + roadmap; GitHub synced; F-0045 shipped; build-conditions kaizen
+
+Operator /goal: sync with github, then /deep-research a "Killer Foundation Roadmap: less is more" (prune/token-optimize/harden), then build it. Delivered the research + roadmap and shipped the highest-leverage *safe* items; the rest is honestly triaged.
+
+- **GitHub fully synced.** Pruned 71 dead local branches; reviewed (security-reviewer: all APPROVE) and merged the 4 open Dependabot PRs (#137–#140: claude-code-action, actions/checkout v7, biome 2.5.1, @types/node 26) on green CI; pulled the operator's `feat/refactor-benchmark` locally.
+- **56-agent deep-research pass → `roadmap/KILLER_FOUNDATION_ROADMAP.md` (PR #141, merged).** 6 repo-audit + 7 web-research agents + adversarial hype-vs-proven verification + synthesis (~2.4M tokens). **Key call:** the machine audit (fast model) OVERSTATED several "free prunes" — a hand ground-truth pass caught them: `.agents/`/`tmp/`(284M)/`tmp-feedback-2.md` are already untracked+gitignored (zero repo impact); `model-policy.json` already uses the `effort` dial; the "AGENTS.md → @CLAUDE.md import" idea would REGRESS the deliberate cross-tool pointer. Net finding: the foundation is already lean and on the frontier pattern; genuine backlog is a few Tier-C guard de-dups + surgical doc trims.
+- **Groomed the cleanly-buildable items (PR #142):** F-0044 (doctrine de-dup, A), F-0045 (OPERATOR_GUIDE trim, A), F-0046 (test-hooks modularization, B). The Tier-C guard items (R1/R3) were deliberately NOT groomed — the path-guard forbids scoped-builder edits of `.claude/**` (forbidden-wins + `--add` collision check), so they are orchestrator-owned dedicated-cycle work.
+- **F-0045 SHIPPED (PR #143, merged).** OPERATOR_GUIDE.md 79→40 lines: kept every operator action, points to PLAN §8 instead of duplicating it. Fresh-context evaluator PASS (4/4). Evidence: `roadmap/evidence/F-0045/verify.log`.
+- **F-0044 DEFERRED (blocked, documented).** Engineering judgment (less-is-more): CLAUDE.md §3 is already a terse skeleton pointing to the /work skill; the only overlap is with PLAN §5.1 at a different altitude. Trimming CLAUDE.md loses the skeleton; trimming PLAN saves no per-session tokens. Not worth a constitution edit. Revisit only if CLAUDE.md nears the 150-line cap.
+- **Build-conditions kaizen SHIPPED (PR #144, merged).** Three agent-runs were wasted today on two traps: capturing evidence via `tee` into `roadmap/evidence` trips the F-DM1 hermeticity guard (false red — one builder misread it as a "broken baseline" with invented SHAs); and worktree-isolated builds lack `node_modules` so verify.sh can't run. Fixed the conditions: both builder cards now mandate `scripts/capture.sh` + forbid tee + state the baseline is green; the /work BUILD step forbids worktree-isolated builds.
+- **F-0046 QUEUED (pending).** Modularizing the 1685-line safety-test suite is genuine but risky work; deferred to a fresh, focused session (not rushed in a saturated context) now that the build conditions are fixed.
+
+State: 26 done, 1 pending (F-0046), 1 blocked (F-0044 — deferred). develop green throughout; 3 process restarts survived without losing committed work.
+
 ## 2026-06-18 (phase 6, cycle 7) — Shipped F-0042 + F-0043 (Tier-C engine fixes) + docs reconciled
 
 Completed the two queued Tier-C engine fixes and reconciled all docs to reflect the current state.
