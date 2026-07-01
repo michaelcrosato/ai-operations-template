@@ -1,79 +1,40 @@
-# Operator Guide — running the AI factory
+# Operator Guide — quick reference
 
-Welcome to your AI-coded repository! You do not need to run commands or read code. The AI workforce handles the execution, and you act as the planner and the final release authority.
+You do not need to run commands or read code. This page is a cheat sheet for the day-to-day. For the full picture of how the daily routine, status reports, and PR reviews work, see the operations plan's Human Interface section — ask an agent to "explain the human interface section in plain English" if you want it read aloud to you.
 
-> **What's wired in *this* repo today vs. what you set up per product.** This guide describes the factory's full intended operating model. In the engine-only template the GitHub and Claude Code surfaces and the `@claude` PR-fix lane are live, but a **staging/preview deployment** (Vercel/Netlify/etc.) and **scheduled nightly Routines** are **product-specific surfaces you wire once** — see the one-time operator setup steps in `AI_OPERATIONS_PLAN.md` §11. Wherever this guide says "click the staging link" or "nightly Routines run," read it as *once you have wired those surfaces for your product.*
-
----
-
-## 1. The Three Surfaces
-
-You will interact with the system via these three main interfaces:
-
-1. **GitHub Dashboard**: 
-   - Edit the roadmap (`roadmap/ROADMAP.md`) and answer questions (`roadmap/QUESTIONS.md`) directly in the browser.
-   - Review and merge pull requests (PRs) opened by the agents.
-2. **Staging / QA URL** (once your product has a deployable surface wired):
-   - Every PR generates a click-through link (e.g. Vercel Preview, Netlify Preview). 
-   - Staging (from `develop` branch) is a persistent staging site running with seeded mock data.
-3. **Claude Code / cloud settings**:
-   - Start sessions by typing "Continue the roadmap" or let scheduled nightly Routines run autonomously in the cloud.
+> **Heads up:** some things below (a staging preview link, nightly automatic runs) only work once your product has those set up. Ask an agent if you're not sure they're wired up yet.
 
 ---
 
-## 2. Your Daily 20-Minute Routine
+## The three places you look
 
-### Morning (5–10 minutes)
-1. **Check Status**: Open `roadmap/STATUS.md` in your repository. Check which features were completed, which are in progress, and if any are blocked.
-2. **Update Priorities**: If you want to change what is built next, edit `roadmap/ROADMAP.md` and reorder the bullet points.
-3. **Answer Blockers**: Open `roadmap/QUESTIONS.md`. If the agents logged any questions, answer them inline in plain English.
-4. **Trigger Session**: (If not using automated routines) open claude.ai/code and enter: `"Continue the roadmap"`.
+1. **GitHub** — edit your wish list and answer any open questions, and review/merge pull requests.
+2. **Staging preview link** — click through and try out what's new, using safe practice data.
+3. **Claude Code (web or app)** — start a work session by typing "Continue the roadmap," or let it run automatically overnight.
 
-### Evening / Release Time (10 minutes)
-1. **Click preview link**: Go to the open Pull Request for the feature or the integration branch.
-2. **Follow the QA script**: Find the QA pack generated in the PR comments. Follow the click-by-click instructions.
-3. **Approve or Comment**:
-   - If everything works: Approve the PR and merge it.
-   - If something is broken: Write a plain-English comment in the PR (e.g., `@claude the submit button on page X doesn't do anything when clicked`). The agents will automatically wake up and fix it.
+## Morning checklist (5–10 min)
 
----
+1. Read the status update to see what shipped, what's in progress, and what's stuck.
+2. Reorder or add to your wish list if priorities changed.
+3. Answer any open questions in plain English.
+4. If nothing runs automatically yet, start a session by typing "Continue the roadmap."
 
-## 3. The Kill Switches (If things look wrong)
+## Evening / QA checklist (10 min)
 
-If you see an agent doing something unexpected, or if you want to stop work immediately:
-- **Pause/Stop**: Click the "Stop" button in the claude.ai/code UI or mobile app.
-- **Git comment**: Comment `@claude stop work on this` on the open Pull Request.
-- **Emergency stop file**: Create a blank file named `AGENT_STOP` in the root of the repository. The agents will immediately stop executing any shell commands and shut down the session safely.
+1. Open the pull request for the newest work and click the preview link.
+2. Follow the step-by-step try-it-out instructions.
+3. Works? Approve and merge. Broken? Leave a plain-English comment describing what went wrong — it will be picked up and fixed automatically.
 
----
+## Kill switches — stop work immediately
 
-## 4. Disaster Recovery (The Reset Button)
+- Click "Stop" in the app or on your phone.
+- Leave a comment telling the agents to stop.
+- Create a blank file to trigger an emergency stop (an agent can do this for you if you just say "stop everything").
 
-If staging gets into a messy state and you want to restore the last known working version, you have two clicks-only options — you never need to run commands:
+## Undo a bad release
 
-1. **Ask the agents (easiest):** comment on any open pull request, or open a new GitHub issue, with:
-   `@claude restore the last working version and explain in plain English what went wrong.`
-   The agents will revert the bad change, get staging green again, and reply with a plain-English summary.
-2. **One-click revert (do it yourself):** open the pull request that introduced the problem (the newest one on the "Pull requests → Closed" list), and click GitHub's **Revert** button at the bottom. That opens a ready-made undo PR — merge it and staging rolls back.
-
-Either way, the next agent session treats the rollback as a signal (its state-drift check notices the reverted feature) and puts that work back into the backlog as "needs another attempt."
+Ask the agents to restore the last working version and explain what went wrong in plain English, or use the one-click "undo" button on the pull request that caused the problem.
 
 ---
 
-## 5. Local Windows CLI Recovery (Maintainers Only)
-
-If you personally run Claude Code or another local agent CLI on Windows and see repeated `PostToolUse hook (failed)` messages, or the prompt fills with `[I[O[I[O` text and stops accepting input, close the stuck terminal tab. The usual cause is PowerShell resolving `bash` to WSL instead of Git Bash.
-
-Launch the CLI from Git Bash, or run this in PowerShell before starting the CLI:
-
-```powershell
-$env:Path = 'C:\Program Files\Git\bin;' + $env:Path
-claude
-```
-
-If the shell still accepts commands but keeps echoing focus-event text, run:
-
-```powershell
-[Console]::Write("$([char]27)[?1004l")
-cls
-```
+*Where things live: the full model is in `AI_OPERATIONS_PLAN.md` §8.*
