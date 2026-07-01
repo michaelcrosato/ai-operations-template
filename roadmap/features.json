@@ -853,11 +853,11 @@
     },
     {
       "dependencies": [],
-      "status": "pending",
+      "status": "blocked",
       "passes": false,
       "evidence": [],
       "attempts": 0,
-      "blocked_reason": null,
+      "blocked_reason": "Deferred by engineering judgment - less is more. CLAUDE.md sec3 is already a terse skeleton pointing to the work skill, and the only overlap is with PLAN sec5.1 at a different altitude - blueprint detail vs always-loaded skeleton. Trimming CLAUDE.md would lose the skeleton, trimming PLAN saves no per-session tokens since it is not always loaded. Not worth a constitution edit. Revisit only if CLAUDE.md grows toward the 150-line cap.",
       "tier": "A",
       "id": "F-0044",
       "epic": "foundation-lean",
