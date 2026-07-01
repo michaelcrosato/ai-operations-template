@@ -850,6 +850,100 @@
         ".github/workflows/**",
         "roadmap/features.json"
       ]
+    },
+    {
+      "dependencies": [],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "A",
+      "id": "F-0044",
+      "epic": "foundation-lean",
+      "title": "Surgical doctrine de-duplication - session loop single source of truth",
+      "spec_ref": "roadmap/KILLER_FOUNDATION_ROADMAP.md R5",
+      "description": "The autonomous session loop is described in full detail in BOTH CLAUDE.md section 3 and AI_OPERATIONS_PLAN.md section 5.1. Make one canonical and have the other point to it by name, removing only duplicated detail. Preserve every rule and enforcement note in the canonical location. Do NOT collapse README or OPERATOR_GUIDE - they serve different readers. Net effect is fewer always-loaded tokens per session with zero loss of doctrine.",
+      "acceptance": [
+        "The session loop detail exists in exactly one canonical location with the other doc pointing to it by name and section",
+        "Every rule gate and enforcement note present before the change is still present in the canonical location - no rule weakened or dropped, verified by diff",
+        "CLAUDE.md stays within its 150-line cap and the section 9 self-edit checklist is followed",
+        "bash scripts/verify.sh exits 0 with evidence under roadmap/evidence/F-0044/"
+      ],
+      "authorized_paths": [
+        "CLAUDE.md",
+        "AI_OPERATIONS_PLAN.md",
+        "roadmap/evidence/F-0044/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "roadmap/features.json"
+      ],
+      "priority": 2
+    },
+    {
+      "dependencies": [],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "A",
+      "id": "F-0045",
+      "epic": "foundation-lean",
+      "title": "Trim OPERATOR_GUIDE.md to a cheat sheet that points to the plan",
+      "spec_ref": "roadmap/KILLER_FOUNDATION_ROADMAP.md R6",
+      "description": "OPERATOR_GUIDE.md re-extracts AI_OPERATIONS_PLAN.md section 8. Keep the operator-facing cheat sheet - the three surfaces, morning and evening checklists, kill switches - and point to plan section 8 for the full model. Preserve plain-English accessibility per CLAUDE.md section 8. No loss of any action the operator actually needs.",
+      "acceptance": [
+        "OPERATOR_GUIDE.md duplicates no prose from AI_OPERATIONS_PLAN.md section 8 and instead points to it",
+        "Every operator action - morning checklist, evening QA, kill switches, the three surfaces - is still present or clearly linked",
+        "Language stays plain-English with no file paths or jargon in operator-facing lines",
+        "bash scripts/verify.sh exits 0 with evidence under roadmap/evidence/F-0045/"
+      ],
+      "authorized_paths": [
+        "OPERATOR_GUIDE.md",
+        "roadmap/evidence/F-0045/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "roadmap/features.json"
+      ],
+      "priority": 2
+    },
+    {
+      "dependencies": [],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "B",
+      "id": "F-0046",
+      "epic": "foundation-lean",
+      "title": "Modularize test-hooks.sh into a fixture lib plus per-contract files",
+      "spec_ref": "roadmap/KILLER_FOUNDATION_ROADMAP.md R4",
+      "description": "scripts/test-hooks.sh is 1685 lines and recreates fixtures many times. Extract a test-lib.sh of fixture factories plus one file per contract group and a thin runner. Same coverage and same assertion count - the evaluator must confirm the passing test count is unchanged. Goal is far less to read and load with identical behavior.",
+      "acceptance": [
+        "test-hooks.sh is decomposed into a shared fixture library plus per-contract test files driven by a thin runner",
+        "The total number of hook-contract tests reported is unchanged from before the change, confirmed in evidence",
+        "No assertion is deleted or weakened - the assertion-shield and evaluator test-diff both pass",
+        "bash scripts/verify.sh exits 0 with evidence under roadmap/evidence/F-0046/"
+      ],
+      "authorized_paths": [
+        "scripts/test-hooks.sh",
+        "scripts/test-lib.sh",
+        "scripts/hook-tests/**",
+        "scripts/verify.sh",
+        "roadmap/evidence/F-0046/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "roadmap/features.json"
+      ],
+      "priority": 2
     }
   ]
 }
