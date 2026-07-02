@@ -128,3 +128,66 @@ test('AC5: verdict consumes the F-0040 descriptor shape (ADMIT -> verdict round-
     cleanUp([evidencePath]);
   }
 });
+
+// F-0047: spawn-level error (output larger than the 16MB maxBuffer) maps to
+// exitCode 127 and NOT-DONE, with the evidence file recording 127.
+test('F-0047: spawn error (maxBuffer exceeded) -> exitCode 127, NOT-DONE, evidence records 127', () => {
+  const evidencePath = tempEvidencePath();
+  try {
+    const descriptor = {
+      acceptanceCommand: "node -e \"process.stdout.write('x'.repeat(17*1024*1024))\"",
+      contextPaths: []
+    };
+    const result = verdict(descriptor, { evidencePath });
+    assert.equal(result.verdict, 'NOT-DONE', 'verdict must be NOT-DONE on spawn-level error');
+    assert.equal(result.report.evidence.exitCode, 127, 'report evidence must record exitCode 127');
+
+    assert.ok(fs.existsSync(evidencePath), 'evidence file must be written to disk');
+    const evidence = JSON.parse(fs.readFileSync(evidencePath, 'utf8'));
+    assert.equal(evidence.exitCode, 127, 'evidence file on disk must record exitCode 127');
+  } finally {
+    cleanUp([evidencePath]);
+  }
+});
+
+// F-0047: verdict must never return PASS when the evidence file cannot be
+// persisted — writing into a nonexistent directory must throw, fail-closed.
+test('F-0047: evidence-write failure is fail-closed (throws, never PASS)', () => {
+  const missingDirEvidencePath = path.join(
+    os.tmpdir(),
+    `no-such-dir-${Date.now()}`,
+    'sub',
+    'evidence.json'
+  );
+  // Deliberately do NOT create the directory — fs.writeFileSync must fail.
+  const descriptor = {
+    acceptanceCommand: 'node -e "process.exit(0)"',
+    contextPaths: []
+  };
+  assert.throws(
+    () => verdict(descriptor, { evidencePath: missingDirEvidencePath }),
+    'verdict must throw when the evidence file cannot be written, never silently return PASS'
+  );
+  assert.ok(!fs.existsSync(missingDirEvidencePath), 'evidence file must not exist after a failed write');
+});
+
+// F-0047: the evidence file must record the stdout and stderr produced by
+// the acceptance command.
+test('F-0047: evidence file records stdout and stderr of the acceptance command', () => {
+  const evidencePath = tempEvidencePath();
+  try {
+    const descriptor = {
+      acceptanceCommand: "node -e \"console.log('out-marker-f0047'); console.error('err-marker-f0047')\"",
+      contextPaths: []
+    };
+    const result = verdict(descriptor, { evidencePath });
+    assert.equal(result.verdict, 'PASS');
+
+    assert.ok(fs.existsSync(evidencePath), 'evidence file must be written to disk');
+    const evidence = JSON.parse(fs.readFileSync(evidencePath, 'utf8'));
+    assert.ok(evidence.stdout.includes('out-marker-f0047'), 'evidence file stdout must contain the stdout marker');
+    assert.ok(evidence.stderr.includes('err-marker-f0047'), 'evidence file stderr must contain the stderr marker');
+  } finally {
+    cleanUp([evidencePath]);
+  }
+});

@@ -9,7 +9,7 @@
  * @property {string}   acceptanceCommand
  *   A single, machine-runnable shell command that verifies task completion.
  *   Must be exactly one command — no newlines, no shell-chaining operators
- *   (`;`, `&&`, `||`) and no pipes (`|`).
+ *   (`;`, `&&`, `||`, `&`) and no pipes (`|`).
  * @property {string[]} contextPaths
  *   Relative (or absolute) file paths whose contents form the working-context
  *   for the task. Token estimates are computed over the concatenated contents.
@@ -50,8 +50,12 @@ function charsToTokens(totalChars) {
  *   - semicolons (;)
  *   - logical AND (&&) or OR (||)
  *   - a bare pipe (|)
+ *   - a single ampersand (&) — on Windows this chains via cmd.exe
+ *     (`echo a & echo b`); on POSIX it backgrounds the command. Both
+ *     violate the "exactly one command" contract, so `&` is subsumed
+ *     into the same character class as `&&`.
  */
-const CHAINING_RE = /[\n;]|&&|\|\||\|/;
+const CHAINING_RE = /[\n;&|]/;
 
 /**
  * Resolve the working-set token budget from options -> env -> default.

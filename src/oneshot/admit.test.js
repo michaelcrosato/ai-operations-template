@@ -83,6 +83,12 @@ test("REJECT no-verifiable-criterion: command with embedded newline", () => {
   assert.equal(result.reason, "no-verifiable-criterion");
 });
 
+test("REJECT no-verifiable-criterion: chained with single ampersand", () => {
+  const result = admit({ acceptanceCommand: "echo a & echo b", contextPaths: [] });
+  assert.equal(result.verdict, "REJECT");
+  assert.equal(result.reason, "no-verifiable-criterion");
+});
+
 test("REJECT over-budget: context exceeds tiny budget of 1 token", () => {
   const f = makeTempFile("abcdefgh");
   try {
@@ -183,4 +189,35 @@ test("Budget: unreadable path counts as 0 chars (deterministic)", () => {
     { budget: 1 }
   );
   assert.equal(result.verdict, "ADMIT");
+});
+
+test("Budget boundary: measured exactly equal to budget is ADMIT", () => {
+  // 40 chars -> ceil(40/4) = 10 measured tokens. budget: 10 -> not > budget -> ADMIT.
+  const f = makeTempFile("a".repeat(40));
+  try {
+    const result = admit(
+      { acceptanceCommand: "node --version", contextPaths: [f] },
+      { budget: 10 }
+    );
+    assert.equal(result.verdict, "ADMIT", "measured === budget must ADMIT (rejection is strictly measured > budget)");
+  } finally {
+    cleanUp([f]);
+  }
+});
+
+test("Budget boundary: one token over budget is REJECT over-budget", () => {
+  // 41 chars -> ceil(41/4) = 11 measured tokens. budget: 10 -> 11 > 10 -> REJECT.
+  const f = makeTempFile("a".repeat(41));
+  try {
+    const result = admit(
+      { acceptanceCommand: "node --version", contextPaths: [f] },
+      { budget: 10 }
+    );
+    assert.equal(result.verdict, "REJECT");
+    assert.equal(result.reason, "over-budget");
+    assert.equal(result.tokens.measured, 11);
+    assert.equal(result.tokens.budget, 10);
+  } finally {
+    cleanUp([f]);
+  }
 });
