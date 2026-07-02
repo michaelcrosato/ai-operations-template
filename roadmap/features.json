@@ -946,6 +946,40 @@
         "roadmap/features.json"
       ],
       "priority": 2
+    },
+    {
+      "dependencies": [],
+      "status": "in_progress",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "B",
+      "id": "F-0047",
+      "epic": "oneshot-harness",
+      "title": "Close the single-ampersand chaining hole in the admission gate and pin untested verdict failure paths",
+      "spec_ref": "docs/bounded-vs-afk-strategy.md section 5",
+      "description": "The admission gate rejects chained acceptance commands but a single ampersand slips through - on Windows cmd.exe, which verdict.js uses via shell true, an ampersand chains two commands, so the one-command contract is violated. Tighten CHAINING_RE in admit.js to also reject a single ampersand and update its doc comment to match. Then pin the untested failure paths with deterministic cross-platform tests - spawn-level error maps to exit 127 and NOT-DONE, evidence-write failure must throw rather than return PASS, stdout and stderr are captured into the evidence file, and the admit budget boundary is exact. Tests only for verdict.js - its source is correct and stays untouched.",
+      "acceptance": [
+        "admit rejects an acceptanceCommand containing a single ampersand with reason no-verifiable-criterion and a test proves it",
+        "a test proves verdict maps a spawn-level error to exitCode 127 and NOT-DONE with the evidence file recording 127 - triggered deterministically with output larger than the 16MB maxBuffer",
+        "a test proves verdict never returns PASS when the evidence file cannot be written - writing to a missing directory must throw",
+        "a test proves the evidence file records the stdout and stderr of the acceptance command",
+        "a test pins the budget boundary - measured exactly equal to budget is ADMIT and one token over is REJECT",
+        "bash scripts/verify.sh exits 0 with evidence under roadmap/evidence/F-0047/"
+      ],
+      "priority": 1,
+      "authorized_paths": [
+        "src/oneshot/admit.js",
+        "src/oneshot/admit.test.js",
+        "src/oneshot/verdict.test.js",
+        "roadmap/evidence/F-0047/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "roadmap/features.json"
+      ]
     }
   ]
 }
