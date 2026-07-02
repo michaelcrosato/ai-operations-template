@@ -1,25 +1,24 @@
-# Status Report — 2026-07-01 — Foundation research done; two lean wins shipped; everything green
+# Status Report — 2026-07-02 — Big question answered: keep this project; one real hole found and fixed; everything green
 
-> Plain-English summary for the business owner. You asked me to sync with GitHub, deeply research how to make this project a "killer foundation" (lean, built by AI for AI, using the latest proven practices), and then build it. Here's what happened. Bottom line: the foundation is already in good shape — the honest work was tidying, not rebuilding — and I shipped the clean wins.
+> Plain-English summary for the business owner. You asked two things today: a deep-dive on whether this project is worth pursuing or whether an existing system would do the same job, and then a checkup — verify what actually works, add good tests, prune dead weight. Both are done. Bottom line: keep it — nothing on the market does this job — and the checkup found and fixed one real gap.
 
 ## Shipped this session
-- **Everything is synced with GitHub.** Cleaned out 71 dead leftover branches, and reviewed + merged four routine dependency updates (each passed a safety check and the automated tests).
-- **A deep research report — the "Killer Foundation Roadmap."** I ran a large research pass (dozens of AI agents at once) across the best public projects, the official lab guidance, and the current tools, and fact-checked the findings to separate hype from what actually works. The verdict: **your foundation already matches the current best-practice pattern.** The plan is mostly subtraction and tidying, not a rebuild.
-- **I caught my own research tool overselling.** The fast first-pass audit flagged several "quick deletions" that turned out to already be handled (files that only exist on my machine, settings already correct). I corrected those before writing anything down — the same "trust nothing without proof" rule the engine runs on.
-- **Two lean improvements shipped and merged:**
-  1. **The operator guide is now a one-page cheat sheet** (down from two pages) — every action you take is still there, just without the repeated explanation. An independent reviewer confirmed nothing you need was lost.
-  2. **A fix to how the AI builders prove their work** — two build attempts today were tripped up by a subtle tooling trap (a builder even misread it as a "broken project" when nothing was wrong). I fixed the root cause so it can't happen again.
+- **The build-vs-buy answer: keep this project.** A large fact-checked research pass (over a hundred AI agents; every key claim independently challenged before being believed) compared this project against the official tooling, the popular open-source systems, and the commercial "AI developer" products. Three findings: (1) the AI lab's own published guidance recommends almost exactly the design this project already uses — ours is the stricter, machine-enforced version; (2) the official tooling is steadily absorbing the *generic* parts (loops, code review, some safety blocks), so the smart move is to keep deleting what they now cover rather than maintaining duplicates; (3) none of the alternatives have this project's core: proof-on-disk before anything counts as done, tests that are themselves tested, and tiered human sign-off. One famous pro-"big system" statistic actually failed our fact-check, so we no longer rely on it.
+- **A real hole found and fixed, with an independent reviewer's PASS.** The one-shot tool's front door is only supposed to accept a single check command. It turned out a command joined with an "&" sign could sneak two commands through as one. The rule is now stricter — everything it rejected before is still rejected, plus the trick — and six new tests pin down what happens when things go wrong (huge output, an unwritable proof file, tasks sitting exactly at the size limit).
+- **A full health checkup, watched directly, not taken on faith.** All 367 safety checks pass, the "do the tests actually catch bugs?" proof passes (it deliberately breaks the code and requires a test to notice), and the project ledger matches reality.
+- **Dead weight pruned.** One orphaned report file that nothing referenced was removed (history keeps a copy forever). The sweep confirmed the rest of the project is genuinely lean — no hidden clutter.
+- **Daily 1% improvement.** One of the AI builders discovered that one of my own instructions could trigger about 20 false alarms in future builds — and proved the cause with a controlled experiment. The instruction cards now carry the corrected rule, so that time is never wasted again.
 
 ## In progress / planned
-- **One tidy-up is queued** (splitting a very large internal test file into smaller readable pieces). It's low-risk but touches the safety tests, so I deliberately left it for a fresh, focused session rather than rushing it — that's the careful-with-safety-things rule.
+- The queued tidy-up (splitting a very large internal test file into smaller pieces) still waits for its own fresh, focused session — the careful-with-safety-things rule.
+- Next research priority: the one measurement nobody in the field has — hard proof of how much this whole system improves results versus a plain setup. Our measuring harness exists; it needs harder tasks before a difference can show.
 
 ## Blocked / needs you
-- **Nothing is blocking you.**
-- One planned item was **deliberately dropped** as not worth doing: trimming a duplicated paragraph out of the core rules would have saved almost nothing and risked touching the constitution — so I left the core alone (less is more).
-- One older open question still stands whenever you want it: **a name and audience** for the one-shot tool. Not blocking.
+- **Nothing is blocking you.** No open questions.
+- Still open whenever you want it (not blocking): a name and audience for the one-shot tool.
 
 ## Health
-- **All automated checks pass. The main line is clean and green.**
-- **26 items finished, 1 queued, 1 intentionally deferred.**
-- The full research roadmap is saved in the project for you to skim whenever you like; you can pull any of its items into your wish list to have them built.
-- **Cost:** this session was research-heavy (a large one-time fact-finding pass) plus two small shipped improvements. No new recurring costs.
+- **All automated checks pass; the main line is clean and green.** Every change today went through independent review and green checks before merging.
+- **27 items finished, 1 queued, 1 intentionally deferred.**
+- Product tests grew from 25 to 31; all 367 safety checks intact; zero retries needed today (everything shipped on the first attempt).
+- **Cost:** one research-heavy pass (it briefly hit the day's usage ceiling and resumed after the reset), then normal small build sessions. No new recurring costs.
