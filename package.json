@@ -14,7 +14,7 @@
     "state:validate": "ts-node scripts/update-state.ts --validate"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.1",
+    "@biomejs/biome": "^2.5.3",
     "@types/node": "^26.0.1",
     "shellcheck": "^4.1.0",
     "ts-node": "^10.9.2",
