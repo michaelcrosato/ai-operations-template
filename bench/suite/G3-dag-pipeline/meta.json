@@ -1,0 +1,15 @@
+{
+  "id": "G3-dag-pipeline",
+  "tier": "G3",
+  "category": "tool_sequencing",
+  "prompt_mode": "thick",
+  "entrypoint": "src/DataImporter.mjs",
+  "fixtures": ["docs/import-format.md"],
+  "oracle": "oracle/verify.mjs",
+  "validity_gate": "oracle/validate.mjs",
+  "weights": { "plan": 0.25, "primary": 0.4, "heldout": 0.35 },
+  "anti_cheat": "held-out scenarios ARE the anti-cheat (no fixture to tamper, dq always false): duplicate-by-case dedup, all-invalid -> failed, header-only -> failed, non-digit phone, mixed -> completed_with_errors, and name+email both bad -> reason missing_name by precedence. These kill a hardcoded, naive split-only (no dedup/validation), or all-or-nothing importer; the module missing or import throwing scores 0 naturally.",
+  "pass_threshold": 1.0,
+  "budget": { "model": "sonnet", "expected_usd": "0.05-0.6", "max_turns": 14 },
+  "notes": "Gauntlet Layer 3 (operator suggestedtests.md) — the TRAJECTORY-discipline test, a mandated sequential tool chain / DAG, NOT just a capability test. The agent must follow Read(docs/import-format.md) -> Plan(IMPLEMENTATION_PLAN.md) -> Write(src/DataImporter.mjs) -> Validate, without skipping straight to implementation. The TRUE tool-ordering signal rides the runner's iteration/turn telemetry (a disciplined run is a short forward Read->Plan->Write->Validate trajectory; backtracking shows up as extra turns) — the oracle cannot see tool order, so it scores a DETERMINISTIC PROXY for the Plan phase (the `plan` group: IMPLEMENTATION_PLAN.md exists at workspace root, is substantive, names importCustomers and the status states) plus the actual capability. PRIMARY imports importCustomers from --server and feeds the CSVs stated in task.md; HELD-OUT feeds altered inputs the agent never saw (the anti-overfit / anti-cheat). entrypoint=src/DataImporter.mjs is imported by the oracle; IMPLEMENTATION_PLAN.md is found via --workdir. dq is always false (no fixture to tamper) — a hardcoded/naive/all-or-nothing importer is killed by held-out, not DQ'd. validate.mjs proves: reference -> 1.0; removing IMPLEMENTATION_PLAN.md -> plan<1 and score<1; a naive split-only importer (no dedup, no validation) -> heldout<1; an all-or-nothing importer (any invalid row rejects everything) -> heldout<1; a hardcoded-answers importer -> heldout<1."
+}

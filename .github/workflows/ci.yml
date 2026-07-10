@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # assertion-shield diffs against origin/develop
 
@@ -31,6 +31,12 @@ jobs:
       - name: Install
         run: npm ci --no-audit --no-fund
 
+      - name: Dependency vulnerability audit (prod deps; fail on high/critical)
+        # Closes the "no dependency scanning" review gap. --omit=dev scopes to shipped deps
+        # (dev-only tooling like the shellcheck wrapper doesn't ship); --audit-level=high keeps
+        # it high-signal. Baseline is 0 vulnerabilities, so this is gating (not advisory).
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Install actionlint (pinned v1.7.12, checksum-verified)
         run: |
           mkdir -p "$HOME/.local/bin"
@@ -38,6 +44,19 @@ jobs:
           echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  /tmp/actionlint.tar.gz" | sha256sum -c -
           tar -C "$HOME/.local/bin" -xzf /tmp/actionlint.tar.gz actionlint
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Pre-fetch shellcheck binary (npm wrapper fetches it lazily; retry transient CDN 504s)
+        run: |
+          # The `shellcheck` npm wrapper downloads its binary on first run; a GitHub-CDN 504 on
+          # that fetch flaked verify.sh's shellcheck stage twice. Warm it here with retries so the
+          # binary is cached before verify runs — same pinned version (no skew), just resilient.
+          for i in 1 2 3 4 5; do
+            if npx --no-install shellcheck --version; then exit 0; fi
+            echo "shellcheck binary fetch attempt $i failed; retrying in 10s..."
+            sleep 10
+          done
+          echo "::error::shellcheck binary could not be fetched after 5 attempts (CDN outage?)"
+          exit 1
 
       - name: Verify (typecheck + lint + tests + static analysis + state validation + shield)
         run: bash scripts/verify.sh

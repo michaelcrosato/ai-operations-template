@@ -5,6 +5,8 @@
 set -u
 cd "$(dirname "$0")/.." || exit 1
 
+bash scripts/local-cli-preflight.sh || exit 1
+
 E2E=false
 [ "${1:-}" = "--e2e" ] && E2E=true
 
@@ -87,7 +89,7 @@ fi
 if $PRODUCT_MODE && [ -f package.json ]; then
   PKG_NAME="$(node -e "console.log(require('./package.json').name || '')")"
   if [ "$PKG_NAME" != "ai-operations-template" ]; then
-    if grep -nE '<[A-Z_]{3,}>' CLAUDE.md AI_OPERATIONS_PLAN.md OPERATOR_GUIDE.md README.md 2>/dev/null; then
+    if grep -nE '<[A-Z][A-Z0-9_]{2,}>' CLAUDE.md AI_OPERATIONS_PLAN.md OPERATOR_GUIDE.md README.md 2>/dev/null; then
       echo "──── placeholder check: FAILED (replace the <PLACEHOLDER> tokens above — see README drop-in step 2)"
       FAILED=1
     else
@@ -100,6 +102,7 @@ fi
 
 # ---- engine meta-gates (always) ----
 step "features.json schema + invariants" npx ts-node scripts/update-state.ts --validate
+step "model-policy ↔ agent frontmatter (no drift)" npx ts-node scripts/check-model-policy.ts --check
 step "assertion shield" npx ts-node scripts/assertion-shield.ts
 
 # Static analysis on the guardrail layer itself (F-0008): the hooks and gate
@@ -115,7 +118,14 @@ elif [ "${CI:-}" = "true" ]; then
 else
   echo "(actionlint not installed locally — enforced in CI)"
 fi
-step "hook contract tests" bash scripts/test-hooks.sh
+step "hook contract tests" "$BASH" scripts/test-hooks.sh
+
+# Mutation smoke (F-TC4): a green suite is necessary, not sufficient. Apply known mutations to
+# safety-critical engine code in-tree — the state writer (update-state.ts) and the assertion
+# shield — run the guarding tests, and require each mutant to be KILLED; a surviving mutant means
+# a vacuous/tautological test. Restores the tree (cp-backup + trap). Targets always-present engine
+# code, so it runs every cycle.
+step "mutation smoke" bash scripts/mutation-smoke.sh
 
 # ---- E2E (opt-in) ----
 if $E2E; then

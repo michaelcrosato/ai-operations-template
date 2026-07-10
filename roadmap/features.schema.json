@@ -73,7 +73,7 @@
           },
           "status": {
             "type": "string",
-            "enum": ["pending", "in_progress", "blocked", "done"]
+            "enum": ["pending", "in_progress", "blocked", "done", "awaiting_approval"]
           },
           "passes": {
             "type": "boolean"
@@ -90,8 +90,13 @@
           },
           "blocked_reason": {
             "type": ["string", "null"]
+          },
+          "tier": {
+            "type": "string",
+            "enum": ["A", "B", "C"]
           }
-        }
+        },
+        "additionalProperties": false
       }
     }
   }

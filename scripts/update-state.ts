@@ -8,11 +8,12 @@ import * as path from 'node:path';
  * Usage:
  *   ts-node scripts/update-state.ts --validate
  *   ts-node scripts/update-state.ts --add '<feature-json>'
- *   ts-node scripts/update-state.ts --status F-0001 in_progress|pending|blocked|done [reason]
+ *   ts-node scripts/update-state.ts --status F-0001 in_progress|pending|blocked|done|awaiting_approval [reason]
  *   ts-node scripts/update-state.ts --attempt F-0001
  *   ts-node scripts/update-state.ts --evidence F-0001 <path> [<path>...]
  *   ts-node scripts/update-state.ts --passes F-0001 true
  *   ts-node scripts/update-state.ts --paths F-0001 '<json-string-array>'   (replace authorized_paths — groom corrections)
+ *   ts-node scripts/update-state.ts --remove F-0001 [F-0002 ...]   (delete feature rows; cascade-strip the removed ids from any remaining feature's dependencies)
  */
 
 // STATE_FILE override exists for contract tests (scripts/test-hooks.sh) so they
@@ -20,17 +21,36 @@ import * as path from 'node:path';
 const FILE = process.env.STATE_FILE
   ? path.resolve(process.env.STATE_FILE)
   : path.join(process.cwd(), 'roadmap', 'features.json');
-const STATUSES = ['pending', 'in_progress', 'blocked', 'done'];
+// 'awaiting_approval' (F-AP1): a feature that is built + verified + reviewed but whose
+// irreversible/operator-visible MERGE is held for human sign-off (Tier C / REQUIRE_APPROVAL,
+// TASK_AUTONOMY_TRIAGE §3). It is PARKED — it does not occupy the single in_progress slot, so
+// the loop keeps moving on other features (the gate never blocks the loop).
+const STATUSES = ['pending', 'in_progress', 'blocked', 'done', 'awaiting_approval'];
 const REQUIRED = [
   'id', 'epic', 'title', 'spec_ref', 'description', 'acceptance',
   'authorized_paths', 'forbidden_paths', 'priority', 'status', 'passes',
   'evidence', 'attempts', 'blocked_reason'
 ];
+// Closed-shape allow-list (F-SM2): the only keys a feature row may carry. Adding a new
+// field (e.g. a future `tier`) is a deliberate act — extend this AND features.schema.json
+// together; a cross-check contract test (test-hooks.sh) keeps the two in lockstep so the
+// schema is no longer decorative. An unknown key (typo or injection) is rejected by validate().
+const KNOWN_KEYS = new Set([...REQUIRED, 'dependencies', 'tier']);
+// Task-autonomy tier (TASK_AUTONOMY_TRIAGE.md): A=delegable / B=supervised / C=human-directed.
+// Optional (groom assigns it; legacy rows omit it); when present it must be one of these. The
+// /work loop switches review depth by tier (A=spot-check, B=mandatory evaluator, C=+security
+// reviewer +human-approval gate) — the loop-switching the operator asked for.
+const TIERS = ['A', 'B', 'C'];
+// The build agents a metrics record may name (cost dimension). Keep in sync with the
+// builder entries in .claude/model-policy.json `agents`. Used to validate metrics.jsonl.
+const BUILDERS = ['builder', 'builder-strong'];
+// forbidden_paths defaults that --add must never let a caller clear (guardrail surfaces).
+const SAFETY_FORBIDDEN = ['.claude/**', '.github/workflows/**'];
 
 interface Feature {
   id: string; epic: string; title: string; spec_ref: string; description: string;
   acceptance: string[]; authorized_paths: string[]; forbidden_paths: string[];
-  dependencies?: string[]; priority: number; status: string; passes: boolean;
+  dependencies?: string[]; tier?: string; priority: number; status: string; passes: boolean;
   evidence: string[]; attempts: number; blocked_reason: string | null;
 }
 
@@ -61,8 +81,42 @@ function validate(features: Feature[]): string[] {
   const errors: string[] = [];
   const ids = new Set<string>();
   for (const f of features) {
+    const rec = f as unknown as Record<string, unknown>;
+    if (typeof f !== 'object' || f === null) { errors.push('a feature entry is not an object'); continue; }
+    const idLabel = typeof rec.id === 'string' ? rec.id : '?';
+    // Required-key presence.
     for (const key of REQUIRED) {
-      if (!(key in (f as unknown as Record<string, unknown>))) errors.push(`${f.id ?? '?'}: missing field "${key}"`);
+      if (!(key in rec)) errors.push(`${idLabel}: missing field "${key}"`);
+    }
+    // Closed shape (F-SM2): reject any field outside KNOWN_KEYS so a typo (e.g. "passe")
+    // or an injected key cannot silently survive and corrupt a later reader's decision.
+    for (const key of Object.keys(rec)) {
+      if (!KNOWN_KEYS.has(key)) errors.push(`${idLabel}: unknown field "${key}" — add it to features.schema.json + KNOWN_KEYS deliberately`);
+    }
+    // Per-field type guards (F-SM2): reject malformed-but-present fields the presence check
+    // alone passes, and prevent type-confusion crashes in the value checks below.
+    if (typeof rec.id !== 'string') errors.push('feature id must be a string');
+    for (const k of ['epic', 'title', 'spec_ref', 'description', 'status'] as const) {
+      if (typeof rec[k] !== 'string') errors.push(`${idLabel}: "${k}" must be a string`);
+    }
+    if (typeof rec.passes !== 'boolean') errors.push(`${idLabel}: "passes" must be a boolean`);
+    if (!(typeof rec.blocked_reason === 'string' || rec.blocked_reason === null)) errors.push(`${idLabel}: "blocked_reason" must be a string or null`);
+    for (const k of ['acceptance', 'authorized_paths', 'forbidden_paths', 'evidence'] as const) {
+      if (!Array.isArray(rec[k]) || (rec[k] as unknown[]).some((x) => typeof x !== 'string')) errors.push(`${idLabel}: "${k}" must be an array of strings`);
+    }
+    if (rec.dependencies !== undefined && (!Array.isArray(rec.dependencies) || (rec.dependencies as unknown[]).some((x) => typeof x !== 'string'))) {
+      errors.push(`${idLabel}: "dependencies" must be an array of strings`);
+    }
+    if (!Number.isInteger(rec.attempts)) errors.push(`${idLabel}: "attempts" must be an integer`);
+    if (!Number.isInteger(rec.priority)) errors.push(`${idLabel}: "priority" must be an integer`);
+    if (rec.tier !== undefined && !(typeof rec.tier === 'string' && TIERS.includes(rec.tier))) {
+      errors.push(`${idLabel}: "tier" must be one of ${TIERS.join('/')} when present`);
+    }
+    // If a field the value checks below rely on has the wrong type, skip them for this
+    // feature so a malformed hand-edit reports cleanly instead of throwing on CI.
+    if (typeof rec.id !== 'string' || typeof rec.status !== 'string' || !Array.isArray(rec.evidence)
+      || !Array.isArray(rec.acceptance) || !Number.isInteger(rec.attempts) || !Number.isInteger(rec.priority)) {
+      continue;
     }
     if (!/^F-\d{4}$/.test(f.id)) errors.push(`invalid id "${f.id}" (want F-XXXX)`);
     if (ids.has(f.id)) errors.push(`duplicate id ${f.id}`);
@@ -74,15 +128,27 @@ function validate(features: Feature[]): string[] {
     if (f.status === 'blocked' && !f.blocked_reason) errors.push(`${f.id}: blocked without blocked_reason`);
     if (f.passes && f.evidence.length === 0) errors.push(`${f.id}: passes:true with no evidence (default-FAIL contract)`);
     if (f.status === 'done' && !f.passes) errors.push(`${f.id}: status:done requires passes:true (evidence-gated flow)`);
+    // F-AP1: a feature can only await approval AFTER it was built + verified — never a way to
+    // park an unbuilt feature in a human-gated limbo. The merge/passes still happens on approval.
+    if (f.status === 'awaiting_approval' && f.evidence.length === 0) errors.push(`${f.id}: status:awaiting_approval requires evidence (built + verified, pending operator sign-off)`);
+  }
+  // F-0025: single-in_progress invariant. The path-authorization guard (F-0007/F-0022)
+  // derives the active feature from the lone in_progress row; 2+ in_progress makes that
+  // ambiguous and (pre-F-0025) flipped the guard to permissive — a self-bypass. Reject it.
+  {
+    const wip = features.filter((f) => f.status === 'in_progress');
+    if (wip.length > 1) {
+      errors.push(`only one feature may be in_progress at a time (found ${wip.length}: ${wip.map((f) => f.id).join(', ')}) — the path guard derives scope from the single in_progress row`);
+    }
   }
   for (const f of features) {
-    for (const dep of f.dependencies ?? []) {
+    for (const dep of (Array.isArray(f.dependencies) ? f.dependencies : [])) {
       if (!ids.has(dep)) errors.push(`${f.id}: dependency ${dep} does not exist`);
       if (dep === f.id) errors.push(`${f.id}: depends on itself`);
     }
   }
   // Dependency cycle detection (DFS with three colors)
-  const deps = new Map(features.map((f) => [f.id, f.dependencies ?? []]));
+  const deps = new Map(features.map((f) => [f.id, Array.isArray(f.dependencies) ? f.dependencies : []]));
   const state = new Map<string, 'visiting' | 'done'>();
   const walk = (id: string, trail: string[]): void => {
     if (state.get(id) === 'done') return;
@@ -121,11 +187,17 @@ function collectEvidenceErrors(f: Feature): string[] {
     const stat = fs.statSync(p);
     if (stat.isFile() && stat.size === 0) errors.push(`${f.id}: evidence file is empty: ${rel}`);
     if (/verify.*\.log$/i.test(rel)) {
-      const content = fs.readFileSync(p, 'utf8');
+      const lines = fs.readFileSync(p, 'utf8').split(/\r?\n/);
       // Exact-line match, not substring: a failed run's log QUOTES the marker
       // inside this very audit's error message, which once self-satisfied the
       // check (found via PR #14). A quoted occurrence is never a whole line.
-      if (content.split(/\r?\n/).some((l) => l.trim() === 'VERIFY: PASS (exit 0)')) hasGreenVerifyLog = true;
+      const hasMarker = lines.some((l) => l.trim() === 'VERIFY: PASS (exit 0)');
+      // F-EC1 (security review): if this log was produced by scripts/capture.mjs, the
+      // captured command's REAL exit code is authoritative — a PASS marker merely echoed
+      // by a FAILING command must NOT count as green. The CAPTURE-EXIT header is the truth.
+      const fromCapture = lines.some((l) => l.trim() === 'CAPTURED-BY: scripts/capture.mjs');
+      const captureGreen = lines.some((l) => l.trim() === 'CAPTURE-EXIT: 0');
+      if (hasMarker && (!fromCapture || captureGreen)) hasGreenVerifyLog = true;
     }
   }
   if (!hasGreenVerifyLog) {
@@ -173,6 +245,7 @@ switch (cmd) {
       : path.join(process.cwd(), 'roadmap', 'metrics.jsonl');
     if (fs.existsSync(metricsFile)) {
       const recordLines = fs.readFileSync(metricsFile, 'utf8').split(/\r?\n/).filter((l) => l.trim());
+      const seenFeatures = new Set<string>();
       recordLines.forEach((l, idx) => {
         // Bounded-injection rule (plan §9): metrics feed /kaizen and /status
         // context, so an oversized record is a prompt-injection channel.
@@ -184,10 +257,26 @@ switch (cmd) {
           const rec = JSON.parse(l);
           if (!/^\d{4}-\d{2}-\d{2}$/.test(rec.date ?? '')) errors.push(`metrics.jsonl line ${idx + 1}: missing/invalid "date" (YYYY-MM-DD)`);
           if (typeof rec.feature !== 'string' || !rec.feature) errors.push(`metrics.jsonl line ${idx + 1}: missing "feature"`);
+          else seenFeatures.add(rec.feature);
+          // Cost/quality fields (F-CG1) are OPTIONAL (legacy records predate them) but must be
+          // well-formed WHEN PRESENT, so /kaizen's cost scan reads trustworthy data, not free-text.
+          if (rec.tier !== undefined && !(typeof rec.tier === 'string' && TIERS.includes(rec.tier))) errors.push(`metrics.jsonl line ${idx + 1}: "tier" must be one of ${TIERS.join('/')} when present`);
+          if (rec.builder !== undefined && !(typeof rec.builder === 'string' && BUILDERS.includes(rec.builder))) errors.push(`metrics.jsonl line ${idx + 1}: "builder" must be one of ${BUILDERS.join('/')} when present`);
+          if (rec.attempts !== undefined && !Number.isInteger(rec.attempts)) errors.push(`metrics.jsonl line ${idx + 1}: "attempts" must be an integer when present`);
         } catch {
           errors.push(`metrics.jsonl line ${idx + 1}: not valid JSON`);
         }
       });
+      // Completeness (kaizen, DECISIONS 2026-06-12): /kaizen + /status sample metrics.jsonl, so a
+      // shipped feature with NO record is silently excluded from their cost/pass-rate scans. WARN —
+      // never fail (mirrors the model-policy-staleness precedent above; a hard fail would block on
+      // pre-existing legacy gaps) — listing every done feature missing a record so a session backfills it.
+      const missingMetrics = data.features
+        .filter((f) => f.status === 'done' && !seenFeatures.has(f.id))
+        .map((f) => f.id);
+      if (missingMetrics.length) {
+        console.warn(`[update-state] WARN: ${missingMetrics.length} done feature(s) have no metrics.jsonl record (${missingMetrics.join(', ')}) — /kaizen + /status sample only recorded features; append one metrics line per shipped feature.`);
+      }
     }
     if (errors.length) fail(`invalid backlog:\n  - ${errors.join('\n  - ')}`);
     console.log(`[update-state] valid: ${data.features.length} features, ` +
@@ -199,11 +288,30 @@ switch (cmd) {
     let incoming: Partial<Feature>;
     try { incoming = JSON.parse(args[0]); } catch (e) { fail(`--add argument is not valid JSON: ${e}`); }
     const feature: Feature = {
+      // tier defaults to 'B' (supervised — the safe operating point): an untiered feature must
+      // never silently route to the weak builder / skip the Tier-C gate (audit finding). groom
+      // should still set tier explicitly per TASK_AUTONOMY_TRIAGE §1; this is the fail-safe floor.
       dependencies: [], status: 'pending', passes: false, evidence: [],
-      attempts: 0, blocked_reason: null, forbidden_paths: ['.claude/**', '.github/workflows/**'],
-      ...incoming
+      attempts: 0, blocked_reason: null, tier: 'B',
+      ...incoming,
+      // F-SM2: the guardrail-surface forbidden_paths can NEVER be cleared by caller input.
+      // Placed AFTER ...incoming and unioned, so a caller-supplied forbidden_paths can only
+      // ADD entries, never drop .claude/** or .github/workflows/**.
+      forbidden_paths: Array.from(new Set([...SAFETY_FORBIDDEN, ...(Array.isArray(incoming.forbidden_paths) ? incoming.forbidden_paths : [])])),
     } as Feature;
+    // Reserved fixture range (kaizen 2026-06-11): contract tests use F-9xxx ids,
+    // so a writer call that escapes its STATE_FILE fixture fails loudly here
+    // instead of silently planting fixture rows in the real backlog (incident
+    // found on PR #24: fixture mutations leaked into the live features.json).
+    if (!process.env.STATE_FILE && /^F-9\d{3}$/.test(feature.id ?? '')) {
+      fail(`${feature.id} is in the reserved contract-test fixture range (F-9xxx); it cannot be added to the real backlog`);
+    }
     if (feature.passes) fail('new features are born failing (default-FAIL contract); cannot --add with passes:true');
+    // F-AP1 (security review): a feature must be BORN `pending` — the lifecycle (in_progress →
+    // built+verified → awaiting_approval / done) runs only through --status, which enforces the
+    // transition guards. Without this, `...incoming` could override the pending default to birth a
+    // feature directly in in_progress/blocked/done/awaiting_approval, skipping every build gate.
+    if (feature.status !== 'pending') fail(`new features are born status:pending (the lifecycle runs via --status); cannot --add with status:"${feature.status}"`);
     data.features.push(feature);
     save(data);
     break;
@@ -212,6 +320,28 @@ switch (cmd) {
     const [id, status, ...reason] = args;
     if (!id || !status) fail('--status requires <id> <status>');
     const f = find(data, id);
+    // F-0025: single-in_progress invariant — refuse to open a 2nd concurrent
+    // in_progress feature, which would make the path guard go permissive (self-bypass).
+    if (status === 'in_progress') {
+      const other = data.features.find((x) => x.id !== id && x.status === 'in_progress');
+      if (other) {
+        fail(`cannot set ${id} in_progress: ${other.id} is already in_progress (single-in_progress invariant — finish, block, or revert it first)`);
+      }
+    }
+    // F-AP1: the only forward path into the human-approval hold is from an in_progress feature
+    // that already has build evidence. This keeps awaiting_approval a real post-build gate (not a
+    // way to skip the build) while leaving it OUT of the single-in_progress slot (loop keeps moving).
+    if (status === 'awaiting_approval') {
+      if (f.status !== 'in_progress') fail(`cannot set ${id} awaiting_approval: only an in_progress feature can be parked for sign-off (current: ${f.status})`);
+      if (f.evidence.length === 0) fail(`cannot set ${id} awaiting_approval: no evidence — build + verify before requesting operator sign-off`);
+    }
+    // F-TH1 (audit finding): a Tier-C feature can only reach `done` THROUGH the operator-approval
+    // hold — it must transition awaiting_approval → done, never in_progress → done directly. This
+    // turns the prose Tier-C merge gate into a state-machine gate: the state record cannot mark a
+    // Tier-C feature done without the awaiting_approval park having happened first.
+    if (status === 'done' && f.tier === 'C' && f.status !== 'awaiting_approval') {
+      fail(`cannot set Tier-C feature ${id} done directly (current: ${f.status}): it must pass through awaiting_approval (operator sign-off) first`);
+    }
     f.status = status;
     f.blocked_reason = status === 'blocked' ? (reason.join(' ') || 'unspecified') : null;
     save(data);
@@ -250,9 +380,20 @@ switch (cmd) {
     const GUARD_SURFACES = /^(\.claude|\.github|scripts)(\/|$)/;
     const BROAD = new Set(['*', '**', '**/*', '**/**', './**', '/**']);
     for (const p of paths) {
-      if (p.includes('..')) fail(`--paths rejects parent-traversal glob: "${p}"`);
-      if (BROAD.has(p.trim())) fail(`--paths rejects catch-all glob "${p}" — scope must be explicit`);
-      if (GUARD_SURFACES.test(p.trim())) fail(`--paths rejects guardrail surface "${p}" (.claude/, .github/, scripts/ are never feature scope)`);
+      // Normalize BEFORE the guardrail checks so no path-spelling is a bypass — matching what the
+      // guards enforce against (verify-gate.sh strips a leading "/" and drive letter; path-guard.js
+      // strips "./"). "./scripts/**", "/scripts/**", and "\\scripts\\**" all reach scripts/ once a
+      // guard normalizes them, so they must be rejected here too. (.. is checked on the normal form.)
+      const norm = p.trim()
+        .replace(/\\/g, '/')        // backslashes -> /
+        .replace(/^[A-Za-z]:/, '')  // strip a Windows drive letter
+        .replace(/\/+/g, '/')       // collapse //
+        .replace(/^(\.\/)+/, '')    // strip leading ./
+        .replace(/^\/+/, '');       // strip leading / (absolute)
+      if (!norm) fail(`--paths rejects a glob that normalizes to empty: "${p}"`);
+      if (norm.includes('..')) fail(`--paths rejects parent-traversal glob: "${p}"`);
+      if (BROAD.has(norm)) fail(`--paths rejects catch-all glob "${p}" — scope must be explicit`);
+      if (GUARD_SURFACES.test(norm)) fail(`--paths rejects guardrail surface "${p}" (.claude/, .github/, scripts/ are never feature scope)`);
     }
     const f = find(data, id);
     if (f.status !== 'pending' && f.status !== 'in_progress') fail(`${f.id}: can only rescope pending/in_progress features (status: ${f.status})`);
@@ -273,6 +414,30 @@ switch (cmd) {
     if (evidenceErrors.length) fail(evidenceErrors.join('\n  - '));
     f.passes = true;
     save(data);
+    break;
+  }
+  case '--remove': {
+    if (args.length === 0) fail('--remove requires at least one <id>');
+    const removeSet = new Set(args);
+    // Every id must exist (fail loudly on a typo rather than silently no-op).
+    for (const id of args) find(data, id);
+    // Cascade: a removed feature can no longer be depended upon, so strip the removed ids from
+    // every remaining feature's dependencies. Otherwise save()'s validate() rejects the dangling
+    // edge ("dependency X does not exist"). Report each rewire so the deletion is auditable.
+    const rewired: string[] = [];
+    const remaining = data.features.filter((f) => !removeSet.has(f.id));
+    for (const f of remaining) {
+      if (!Array.isArray(f.dependencies)) continue;
+      const dropped = f.dependencies.filter((d) => removeSet.has(d));
+      if (dropped.length) {
+        rewired.push(`${f.id} (dropped ${dropped.join(', ')})`);
+        f.dependencies = f.dependencies.filter((d) => !removeSet.has(d));
+      }
+    }
+    data.features = remaining;
+    save(data); // re-validates the whole backlog (ids, deps, cycles, invariants)
+    console.log(`[update-state] removed ${args.length} feature(s): ${args.join(', ')}.` +
+      (rewired.length ? ` Rewired dependencies: ${rewired.join('; ')}.` : ''));
     break;
   }
   default:

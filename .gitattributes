@@ -6,3 +6,14 @@
 *.json text eol=lf
 *.md text eol=lf
 *.yml text eol=lf
+
+# Evidence/log artifacts are the audit trail; pin them to LF so they don't churn
+# CRLF<->LF on Windows checkouts (which made every Windows session start "dirty"
+# and tripped the commit-on-stop hook over zero content changes).
+*.txt text eol=lf
+*.log text eol=lf
+Dockerfile text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.mjs text eol=lf
+*.css text eol=lf

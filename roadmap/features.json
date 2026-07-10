@@ -114,11 +114,13 @@
         "F-0001"
       ],
       "priority": 2,
-      "status": "blocked",
-      "passes": false,
-      "evidence": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0004/verify.log"
+      ],
       "attempts": 0,
-      "blocked_reason": "Requires human operator actions (GitHub settings, secrets, claude.ai configuration) — see QUESTIONS.md"
+      "blocked_reason": null
     },
     {
       "dependencies": [
@@ -198,9 +200,12 @@
       "dependencies": [
         "F-0001"
       ],
-      "status": "pending",
-      "passes": false,
-      "evidence": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0007/contract-tests.log",
+        "roadmap/evidence/F-0007/verify.log"
+      ],
       "attempts": 0,
       "blocked_reason": null,
       "forbidden_paths": [
@@ -354,6 +359,629 @@
         ".claude/rules/**"
       ],
       "priority": 2
+    },
+    {
+      "dependencies": [
+        "F-0001"
+      ],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0012/verify.log",
+        "roadmap/evidence/F-0012/seed-shim-demo.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**"
+      ],
+      "id": "F-0012",
+      "epic": "hardening",
+      "title": "seed.ts delegating shim - E2E gate must not pass unseeded in product mode",
+      "spec_ref": "roadmap/DECISIONS.md",
+      "description": "Adoption trial #1 (agy-software-2) surfaced an engine defect: verify.sh --e2e hard-codes scripts/seed.ts, and the template stub exits 0 unconditionally after the prod guard, so the E2E gate can go green against an unseeded database in every adopter repo. Rewrite the stub as a delegating shim: keep the prod-refusal guard; delegate to the package.json seed script when one is defined, propagating its exit status; hard-fail in product mode (src/ exists) when no seed script is defined; keep exit-0 stub behavior in template mode. Proven fix verified green in the adopter; adapt to template idiom.",
+      "acceptance": [
+        "seed.ts keeps the prod-refusal guard: exits 1 when DATABASE_URL matches /prod/i, before any delegation",
+        "When package.json defines a seed script, seed.ts runs npm run --silent seed and exits with the child exit status (success and failure both propagate)",
+        "Product mode (src/ exists) with no seed script defined exits 1 with a clear message - the E2E gate cannot pass unseeded",
+        "Template mode (no src/, no seed script) logs the stub message and exits 0",
+        "Circular delegation (a seed script that re-invokes scripts/seed.ts) fails fast with a clear error instead of looping",
+        "Contract tests in scripts/test-hooks.sh cover the five behaviors above; bash scripts/verify.sh exits 0"
+      ],
+      "authorized_paths": [
+        "scripts/seed.ts",
+        "scripts/test-hooks.sh",
+        "roadmap/evidence/F-0012/**"
+      ],
+      "priority": 1
+    },
+    {
+      "dependencies": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0013/verify.log",
+        "roadmap/evidence/F-0013/install-demo.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/**",
+        "package.json",
+        "package-lock.json",
+        "src/**"
+      ],
+      "id": "F-0013",
+      "epic": "adoption",
+      "title": "Adopter-clean install path - scripts/install-into.sh + drop-in docs",
+      "spec_ref": "roadmap/DECISIONS.md",
+      "description": "Installs #1 (agy-software-2, fixed in its commit af92153) and #2 (BayLine) both had to hand-strip template self-proving artifacts from package.json: the test script points at src/health.test.js (adopters do not copy src/, so verify fails out of the box; copying src/ instead would flip product mode prematurely) and lint includes the not-yet-existing src path (Biome internal-error noise). Ship an adopter-clean install path: scripts/install-into.sh copies the documented drop-in set EXCLUDING roadmap state and self-test artifacts, transforms/merges package.json (no test script, lint scripts-only, placeholder-or-preserved name), seeds fresh roadmap state, and prints the remaining manual steps. Contract: a fresh adopter passes verify immediately after the documented procedure with zero hand-fixes. Also names the record-PR pattern (state flips ride the feature PR; post-merge records land via chore/ branch PRs because develop blocks direct pushes) in README + plan section 6.4.",
+      "acceptance": [
+        "bash scripts/install-into.sh <target> installs the documented drop-in set into the target and EXCLUDES template self-state and self-test artifacts: no src/, no template package.json/package-lock.json, no roadmap state content (backlog entries, progress/decisions/questions/status history, metrics records, evidence files, F-*.md briefs), no docs/feedback-* files",
+        "The target package.json ends with NO test script and lint exactly biome lint scripts when the target had no lint of its own; an existing target package.json is merged, never clobbered (its name and scripts kept, engine scripts and devDependencies added); a created package.json gets an obvious placeholder name that is not ai-operations-template",
+        "The installed roadmap/ is freshly seeded (empty backlog valid against features.schema.json, fresh PROGRESS/DECISIONS/QUESTIONS/ROADMAP headers, empty metrics.jsonl, evidence dir) and re-running the installer never overwrites existing roadmap state in the target (idempotent upgrade path)",
+        "The script finishes by printing the remaining manual steps (placeholders, package name, init.sh + verify.sh, default branch + protection, /groom backlog seeding) and prints a loud warning when the target already has src/ (product mode demands the adopter-defined test and lint gates)",
+        "README drop-in step 1 documents scripts/install-into.sh as the supported path with the manual copy list kept as fallback; README step 4 area and AI_OPERATIONS_PLAN section 6.4 name the record-PR pattern (state flips ride the feature PR; post-merge records land via chore/ branch PRs since develop blocks direct pushes)",
+        "Contract tests in scripts/test-hooks.sh cover: exclusions, package.json transform (fresh and merge cases), fresh-state seeding, idempotent re-run, product-mode warning; evidence includes a real end-to-end install into a scratch repo with bash scripts/verify.sh green INSIDE the target; bash scripts/verify.sh exits 0 in the template repo"
+      ],
+      "authorized_paths": [
+        "scripts/install-into.sh",
+        "scripts/test-hooks.sh",
+        "README.md",
+        "AI_OPERATIONS_PLAN.md",
+        "roadmap/briefs/F-0013.md",
+        "roadmap/evidence/F-0013/**"
+      ],
+      "priority": 1
+    },
+    {
+      "dependencies": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0014/verify.log",
+        "roadmap/evidence/F-0014/lane-parity-tests.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/ci.yml",
+        ".github/workflows/claude.yml",
+        "scripts/verify.sh",
+        "src/**",
+        "package.json",
+        "package-lock.json"
+      ],
+      "id": "F-0014",
+      "epic": "hardening",
+      "title": "E2E workflow lane parity - e2e.yml must satisfy the gate it runs",
+      "spec_ref": "roadmap/DECISIONS.md",
+      "description": "Second field defect, hit independently by both adopters (agy-software-2 PR #18; claude-software-3 commit d234838): e2e.yml runs bash scripts/verify.sh --e2e, and verify.sh hard-fails when CI=true and actionlint is absent - but e2e.yml never installs actionlint, so the E2E lane breaks the moment an adopter defines an e2e script. The same lane also diverges from ci.yml on shallow checkout (assertion-shield diffs against origin/develop and needs fetch-depth 0) and Node version (20 vs 24 - that divergence already bit once, DECISIONS 2026-06-10), and its paths filter omits both e2e.yml itself and other verify.sh inputs. Port the union of the two proven adopter fixes and add a lane-parity contract test so workflows invoking verify.sh cannot silently diverge again.",
+      "acceptance": [
+        "e2e.yml installs actionlint before invoking verify.sh, using the identical pinned, checksum-verified step as ci.yml (same version, same sha256)",
+        "e2e.yml checkout uses fetch-depth 0 so the assertion shield can diff against origin/develop",
+        "e2e.yml pins node-version 24, matching ci.yml and the development environment",
+        "The e2e.yml pull_request paths filter includes .github/workflows/e2e.yml itself plus tests/**, package.json and package-lock.json alongside the existing src/e2e/config entries",
+        "Lane-parity contract tests in scripts/test-hooks.sh fail when a workflow that invokes verify.sh lacks the pinned actionlint install used by ci.yml, lacks fetch-depth 0, or pins a node-version different from ci.yml (negative-tested against a broken fixture workflow), and pass against the real .github/workflows",
+        "bash scripts/verify.sh exits 0"
+      ],
+      "authorized_paths": [
+        ".github/workflows/e2e.yml",
+        "scripts/test-hooks.sh",
+        "roadmap/briefs/F-0014.md",
+        "roadmap/evidence/F-0014/**"
+      ],
+      "priority": 1
+    },
+    {
+      "dependencies": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0015/verify.log",
+        "roadmap/evidence/F-0015/ship-tests.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "scripts/update-state.ts",
+        "scripts/verify.sh"
+      ],
+      "id": "F-0015",
+      "epic": "factory-hardening",
+      "title": "Adopt ship.sh — mechanize the CI-watch-then-merge rule (CLAUDE.md section 6)",
+      "spec_ref": "CLAUDE.md section 6; roadmap/DECISIONS.md",
+      "description": "Port claude-software-3 scripts/ship.sh <pr#> [--merge]: block on gh pr checks --watch until terminal, wait bounded for checks to REGISTER post-creation and FAIL CLOSED if none appear (refuse to merge an unchecked PR), merge only on green, never merge a PR based on master/main. Add a contract-test section (stubbed gh on PATH). Reference it from CLAUDE.md section 6 as the preferred mechanism.",
+      "acceptance": [
+        "scripts/ship.sh exists and takes a PR number plus an optional --merge flag; it rejects a missing or non-numeric PR number and an unknown flag with a non-zero exit and a usage message",
+        "ship.sh waits a bounded time for checks to register on the PR after creation and, if no check ever registers, FAILS CLOSED — non-zero exit with no merge attempted (refusing to merge an unchecked PR)",
+        "ship.sh blocks on the PR checks until a terminal state and treats only an all-green result as success; a failing (or pending-then-failing) result exits non-zero and does not merge",
+        "with --merge and an all-green result ship.sh merges the PR; without --merge it reports green and exits 0 without merging; it never merges a PR whose base branch is master or main",
+        "scripts/test-hooks.sh gains a ship.sh contract-test section of at least 9 checks using a stubbed gh on PATH, covering arg validation, fail-closed-on-no-checks, green+merge, green+no-merge, failing-checks-no-merge, delayed registration, base-branch refusal, and merge-command-failure propagation; no existing test is weakened",
+        "CLAUDE.md section 6 references scripts/ship.sh as the preferred mechanism for the CI-watch-then-merge rule",
+        "bash scripts/verify.sh exits 0"
+      ],
+      "authorized_paths": [
+        "scripts/ship.sh",
+        "scripts/test-hooks.sh",
+        "CLAUDE.md",
+        "roadmap/briefs/F-0015.md",
+        "roadmap/evidence/F-0015/**"
+      ],
+      "priority": 1
+    },
+    {
+      "dependencies": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0016/verify.log",
+        "roadmap/evidence/F-0016/field-fix-tests.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "scripts/update-state.ts",
+        "scripts/verify.sh",
+        "scripts/ship.sh"
+      ],
+      "id": "F-0016",
+      "epic": "factory-hardening",
+      "title": "Smooth three field-reported adoption rough edges (doctrine + installer seed + shield noise)",
+      "spec_ref": "department brief 2026-06-12; roadmap/DECISIONS.md",
+      "description": "Three independent field-reported defects fixed together as adopter-experience polish. (a) AI_OPERATIONS_PLAN.md record-PR doctrine bullet references this repo specific history (installs #1-#2) which adopters cannot inherit verbatim — reword template-neutral. (b) install-into.sh seeded ROADMAP.md emits a duplicate ## Now heading (head -5 of the template captured its own ## Now, then the skeleton appended another) — reported by 3/9 fleet installs 2026-06-11; seed the preamble before the first section heading then append the canonical skeleton, one heading each. (c) assertion-shield.ts emits git fatal: ambiguous argument origin/develop...HEAD on the first commit before origin/develop exists — reported by all 9 fleet installs + curbcall 2026-06-11; detect the missing upstream and print one calm line instead. Contract tests for (b) seeded shape and (c) no-upstream fixture.",
+      "acceptance": [
+        "AI_OPERATIONS_PLAN.md record-PR doctrine bullet no longer references this repo specific adoption history (e.g. installs #1-#2) and reads as template-neutral doctrine an adopter can inherit verbatim",
+        "install-into.sh seeded roadmap/ROADMAP.md contains each section heading exactly once with no duplicate ## Now, and a contract test asserts the seeded file has exactly one ## Now (and one each of Next/Later/Ideas)",
+        "assertion-shield.ts detects a missing base upstream (origin/develop) on a first commit and prints one calm informational line instead of git fatal: ambiguous argument, still exiting 0; a contract test with a no-upstream fixture asserts exit 0, no fatal in output, and the calm line present",
+        "no existing contract test is weakened or removed; bash scripts/verify.sh exits 0"
+      ],
+      "authorized_paths": [
+        "AI_OPERATIONS_PLAN.md",
+        "scripts/install-into.sh",
+        "scripts/assertion-shield.ts",
+        "scripts/test-hooks.sh",
+        "roadmap/briefs/F-0016.md",
+        "roadmap/evidence/F-0016/**"
+      ],
+      "priority": 1
+    },
+    {
+      "dependencies": [
+        "F-0007"
+      ],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0022/verify.log",
+        "roadmap/evidence/F-0022/hook-tests.txt"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        "roadmap/features.json",
+        ".github/workflows/**"
+      ],
+      "id": "F-0022",
+      "epic": "factory-hardening",
+      "priority": 1,
+      "title": "Arm the F-0007 path-authorization guard mechanically (set CLAUDE_ACTIVE_FEATURE outside prompts) or honestly scope the claim",
+      "description": "verify-gate.sh and path-guard.js enforce authorized_paths/forbidden_paths only when CLAUDE_ACTIVE_FEATURE is set, but that variable is set nowhere in executable code (only requested in briefs), so the guard is a no-op in real sessions and fails open. Inject CLAUDE_ACTIVE_FEATURE from the spawn/settings layer so the guard fires, or correct the docs and STATUS claims to describe the real evaluator-diff backstop.",
+      "authorized_paths": [
+        ".claude/hooks/verify-gate.sh",
+        ".claude/hooks/path-guard.js",
+        ".claude/settings.json",
+        "scripts/**",
+        "docs/**",
+        "roadmap/evidence/F-0022/**"
+      ],
+      "spec_ref": "docs/feedback-3-verification.md; briefs/F-0007.md",
+      "acceptance": [
+        "CLAUDE_ACTIVE_FEATURE is set by a mechanical layer (settings.json env, a wrapper, or the spawn step) for BUILD work rather than only requested in prose, OR the docs and STATUS are corrected to describe the real enforcement",
+        "a contract test in test-hooks.sh proves the guard blocks an out-of-scope edit under the mechanical mechanism, not only when the variable is manually exported",
+        "bash scripts/verify.sh returns VERIFY: PASS (exit 0) and the decision is recorded in DECISIONS.md"
+      ]
+    },
+    {
+      "dependencies": [
+        "F-0022"
+      ],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0025/verify.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        "roadmap/features.json"
+      ],
+      "id": "F-0025",
+      "epic": "factory-hardening",
+      "priority": 1,
+      "title": "Enforce single in_progress feature so the path-guard cannot be self-bypassed",
+      "description": "Security-reviewer follow-up from F-0022: the path-authorization guard falls back to permissive when zero OR multiple features are in_progress, and update-state.ts does not prevent 2+ in_progress. An agent could set a second feature in_progress to disable the guard. Add a single-in_progress invariant in update-state.ts (validate + a status guard rejecting a 2nd concurrent in_progress) and make the hooks fail-closed (block writes) on multiple-in_progress instead of permissive.",
+      "authorized_paths": [
+        "scripts/update-state.ts",
+        "scripts/test-hooks.sh",
+        ".claude/hooks/verify-gate.sh",
+        ".claude/hooks/path-guard.js",
+        "roadmap/evidence/F-0025/**"
+      ],
+      "spec_ref": "docs/feedback-3-verification.md; F-0022 security review",
+      "acceptance": [
+        "update-state.ts status command rejects setting a feature in_progress when another is already in_progress; validate flags more-than-one in_progress as invalid",
+        "the hooks fail-closed (block write-like ops) when 2+ in_progress rather than allowing everything",
+        "contract tests in test-hooks.sh prove the 2nd in_progress is rejected by the writer and the multiple-in_progress hook path blocks; no existing assertion removed",
+        "bash scripts/verify.sh returns VERIFY PASS exit 0; evidence saved"
+      ]
+    },
+    {
+      "dependencies": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0026/verify.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        "roadmap/features.json",
+        ".claude/agents/**"
+      ],
+      "id": "F-0026",
+      "epic": "factory-hardening",
+      "priority": 2,
+      "title": "Test the judges: deterministic behavioral fixtures for the evaluator and security-reviewer",
+      "description": "feedback-2 and the 5-source review both flag that there are zero behavioral tests for the prompts that grade everything else. Add the lean slice: deterministic fixtures (a weakened-assertion diff must be caught; a seeded access-control hole must be blocked; irrelevant evidence must be flagged NEEDS_WORK; a guard-evasion corpus) wired into the contract-test suite, advisory-first, so the judgment layer is itself tested against known-bad inputs.",
+      "authorized_paths": [
+        "scripts/test-hooks.sh",
+        "tests/judges/**",
+        "roadmap/evidence/F-0026/**"
+      ],
+      "spec_ref": "docs/feedback-2-verification.md item 29; docs/feedback-3-verification.md",
+      "acceptance": [
+        "a deterministic fixture set encodes known-bad inputs with expected verdicts",
+        "fixtures run in the contract suite or a documented advisory lane and pass; failures are loud",
+        "bash scripts/verify.sh returns VERIFY PASS exit 0; evidence saved"
+      ]
+    },
+    {
+      "dependencies": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0027/verify.log"
+      ],
+      "attempts": 1,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        "roadmap/features.json"
+      ],
+      "id": "F-0027",
+      "epic": "factory-hardening",
+      "priority": 2,
+      "title": "AST-based assertion-shield (structural assertion counting; keep regex fallback)",
+      "description": "The assertion-shield uses keyword/line-diff matching, which false-positives on test renames (driving local bypass fatigue) and misses non-keyword assertions. Upgrade to parse test files with an AST (typescript or babel parser) and compare assertion-node counts/structure between BASE and HEAD; keep the regex shield as a fallback for unparseable diffs; CI still refuses any local bypass override.",
+      "authorized_paths": [
+        "scripts/assertion-shield.ts",
+        "scripts/test-hooks.sh",
+        "package.json",
+        "package-lock.json",
+        "roadmap/evidence/F-0027/**"
+      ],
+      "spec_ref": "docs/feedback-3-verification.md; docs/ai-capabilities-research-2026-06.md",
+      "acceptance": [
+        "assertion-shield parses test files into an AST and compares assertion counts/structure; a genuine rename no longer false-positives while a real deletion or weakening is still blocked",
+        "the regex approach remains a fallback for unparseable diffs; CI still refuses any bypass override",
+        "contract tests cover both the no-false-positive-on-rename case and the still-blocks-deletion case; bash scripts/verify.sh PASS"
+      ]
+    },
+    {
+      "dependencies": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0030/verify.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "forbidden_paths": [
+        "roadmap/features.json"
+      ],
+      "id": "F-0030",
+      "epic": "factory-hardening",
+      "priority": 2,
+      "title": "Harden command guards for cross-shell and indirection, or move to capability sandboxing",
+      "description": "The guard denylist misses PowerShell cmdlets, dotNET file APIs, and Unix indirection (hex-dump/octal-dump/dd, while-read redirection) for secret reads and exfil. Best fixed by capability sandboxing (read-only mounts, network egress control) per Claude Code native sandbox; the lean slice is to broaden the deterministic patterns and document that the deterrent is not the boundary.",
+      "authorized_paths": [
+        ".claude/hooks/guard-bash.sh",
+        ".claude/claude-security-guidance.md",
+        ".claude/security-patterns.json",
+        "scripts/test-hooks.sh",
+        "docs/**",
+        "roadmap/evidence/F-0030/**"
+      ],
+      "spec_ref": "docs/feedback-3-verification.md; docs/ai-capabilities-research-2026-06.md",
+      "acceptance": [
+        "either capability-sandbox enforcement is documented and wired, OR the deterministic guard patterns cover cross-shell and indirection equivalents for secret-file reads and exfil",
+        "contract tests cover the new patterns; the docs state plainly that guards are a deterrent layer, not the security boundary",
+        "bash scripts/verify.sh returns VERIFY PASS exit 0; security-reviewer APPROVE"
+      ]
+    },
+    {
+      "dependencies": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0040/verify.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "B",
+      "id": "F-0040",
+      "epic": "oneshot-harness",
+      "priority": 1,
+      "title": "One-shot solvability admission gate (single acceptance criterion + working-set token budget)",
+      "description": "A bounded single-shot tool must refuse tasks that are not known-solvable in one context window - being precise about what we can do is the product core. Add src/oneshot/ admission logic that, given a task descriptor (a single acceptance command plus the list of context file paths), returns ADMIT only when the acceptance is a single machine-checkable command AND the assembled context fits a configurable working-set token budget; otherwise REJECT with the specific reason. This feature DEFINES the task-descriptor shape that the verdict (F-0041) consumes.",
+      "spec_ref": "docs/bounded-vs-afk-strategy.md section 5 (admission gate + working-set budget)",
+      "acceptance": [
+        "Given a well-scoped descriptor (one runnable acceptance command plus context files whose estimated tokens are under the budget), the gate returns ADMIT (exit 0); covered by a unit test.",
+        "Given a descriptor whose acceptance is missing/empty or is not a single runnable command, the gate returns REJECT with reason no-verifiable-criterion; covered by a unit test.",
+        "Given a descriptor whose assembled context exceeds the configured working-set token budget, the gate returns REJECT with reason over-budget and reports measured-vs-budget token counts; covered by a unit test.",
+        "The working-set budget is one configurable value with a documented default (not hardcoded per call); the token estimate is a deterministic local heuristic introducing no new dependencies (node builtins only).",
+        "The task-descriptor shape (acceptance command plus context paths) is defined and documented here so F-0041 can consume it; new tests live under src/oneshot/ and are wired into the npm test script; bash scripts/verify.sh PASS."
+      ],
+      "authorized_paths": [
+        "src/oneshot/**",
+        "package.json",
+        "roadmap/evidence/F-0040/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "roadmap/features.json"
+      ]
+    },
+    {
+      "dependencies": [
+        "F-0040"
+      ],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0041/verify.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "B",
+      "id": "F-0041",
+      "epic": "oneshot-harness",
+      "priority": 1,
+      "title": "Evidence-gated one-shot verdict (PASS only on exit-0 proof; ignores the agent self-claim)",
+      "description": "After a bounded attempt on an admitted task, the tool must never report success on the agent say-so - the verification gap persists even single-shot. Add src/oneshot/ verdict logic that runs the descriptor acceptance command, captures the REAL exit code to an evidence file (mirroring the engine existing capture semantics - real exit code authoritative), and returns PASS only when that captured exit code is 0; any done or tests-pass claim in the input is ignored. On non-zero it returns NOT-DONE with a structured report contrasting the input claim against the captured evidence.",
+      "spec_ref": "docs/bounded-vs-afk-strategy.md section 5 (reuse evidence-on-disk; surface calibrated doubt)",
+      "acceptance": [
+        "The verdict is a pure function of the acceptance command CAPTURED exit code; any done or tests-pass or PASS claim in the input is ignored - covered by a negative test where the input claims success but the command exits non-zero, yielding NOT-DONE.",
+        "When the acceptance command exits 0, the verdict is PASS and an evidence file on disk records the captured exit code 0; covered by a unit test.",
+        "When the acceptance command exits non-zero, the verdict is NOT-DONE and the evidence file on disk records that non-zero exit; covered by a unit test.",
+        "The NOT-DONE report names what the input claimed vs what the captured evidence shows; the capture semantics mirror the engine existing real-exit-code-authoritative approach, not a divergent scheme; introduces no new dependencies (node builtins only).",
+        "The verdict consumes the same task-descriptor shape the admission gate (F-0040) defines - covered by a test that feeds an ADMITted descriptor straight into the verdict; new tests live under src/oneshot/ and are wired into the npm test script; bash scripts/verify.sh PASS."
+      ],
+      "authorized_paths": [
+        "src/oneshot/**",
+        "package.json",
+        "roadmap/evidence/F-0041/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "roadmap/features.json"
+      ]
+    },
+    {
+      "dependencies": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0042/verify.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "C",
+      "id": "F-0042",
+      "epic": "factory-hardening",
+      "priority": 1,
+      "title": "Fix verify-gate.sh Windows absolute-path normalization (in-scope writes wrongly blocked)",
+      "description": "On a Windows/Git-Bash local build, the verify-gate.sh PreToolUse hook normalizes an absolute path like C:/dev/<repo>/src/oneshot/x.js to a parent-prefixed dev/<repo>/src/oneshot/x.js instead of the repo-relative src/oneshot/x.js, so it never matches repo-relative authorized_paths globs (e.g. src/oneshot/**) and BLOCKS legitimate in-scope Write/Edit calls. Builders are forced to bypass via the Bash tool, which is not path-scoped - defeating the path-guard on Windows (observed building F-0040). Fix the normalization to resolve paths relative to the repo root the same way .claude/hooks/path-guard.js does (path.relative), so in-scope absolute paths are authorized while out-of-scope paths stay fail-closed.",
+      "spec_ref": "roadmap/PROGRESS.md (F-0040 build report); .claude/hooks/path-guard.js (correct relative-path approach)",
+      "acceptance": [
+        "An in-scope absolute Windows path (e.g. an absolute path under src/<feature-dir>) is ALLOWED (exit 0) by verify-gate.sh after normalization to the repo-relative path; covered by a contract test in scripts/test-hooks.sh.",
+        "An out-of-scope absolute path is still BLOCKED (exit non-zero) - fail-closed behavior preserved; covered by a contract test.",
+        "verify-gate.sh and path-guard.js agree on the same path for the same input (consistent normalization); bash scripts/verify.sh PASS with the new contract tests wired in."
+      ],
+      "authorized_paths": [
+        ".claude/hooks/verify-gate.sh",
+        "scripts/test-hooks.sh",
+        "roadmap/evidence/F-0042/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "roadmap/features.json"
+      ]
+    },
+    {
+      "dependencies": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0043/verify.log",
+        "roadmap/evidence/F-0043/in-progress-demo.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "C",
+      "id": "F-0043",
+      "epic": "factory-hardening",
+      "priority": 1,
+      "title": "Isolate hook-contract tests from live features.json so verify works while a feature is in_progress",
+      "description": "Six tests in scripts/test-hooks.sh exercise the path-guard against the LIVE roadmap/features.json and assume zero in_progress features, i.e. permissive mode. When the /work loop marks a feature in_progress in step 1, as required before BUILD and VERIFY, the path-guard correctly derives that feature as active and those tests get exit 2 instead of exit 0, so bash scripts/verify.sh FAILS for the whole duration of every build. This blocks the loop own mark-in_progress-then-verify sequence, observed building F-0040 and worked around by capturing evidence while the feature was pending. Fix by pointing those tests at an isolated STATE_FILE fixture, a seam the engine already has, so they assert the permissive and fail-closed contracts against controlled state, independent of the live backlog.",
+      "spec_ref": "roadmap/PROGRESS.md F-0040 build report; scripts/test-hooks.sh the six failing cases",
+      "acceptance": [
+        "Running scripts/test-hooks.sh while a real feature is marked in_progress yields 0 failures, because the previously-failing six permissive-mode cases now read an isolated STATE_FILE fixture instead of the live features.json - verified by the test run itself.",
+        "bash scripts/verify.sh PASS while a feature is in_progress, which is the loop intended state during a build - demonstrated in this feature evidence.",
+        "The isolated tests still assert the SAME permissive contract for zero in_progress and fail-closed contract for multi in_progress or unknown id - no guard behavior is weakened, only the state source is isolated."
+      ],
+      "authorized_paths": [
+        "scripts/test-hooks.sh",
+        ".claude/hooks/path-guard.js",
+        "roadmap/evidence/F-0043/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "roadmap/features.json"
+      ]
+    },
+    {
+      "dependencies": [],
+      "status": "blocked",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": "Deferred by engineering judgment - less is more. CLAUDE.md sec3 is already a terse skeleton pointing to the work skill, and the only overlap is with PLAN sec5.1 at a different altitude - blueprint detail vs always-loaded skeleton. Trimming CLAUDE.md would lose the skeleton, trimming PLAN saves no per-session tokens since it is not always loaded. Not worth a constitution edit. Revisit only if CLAUDE.md grows toward the 150-line cap.",
+      "tier": "A",
+      "id": "F-0044",
+      "epic": "foundation-lean",
+      "title": "Surgical doctrine de-duplication - session loop single source of truth",
+      "spec_ref": "roadmap/KILLER_FOUNDATION_ROADMAP.md R5",
+      "description": "The autonomous session loop is described in full detail in BOTH CLAUDE.md section 3 and AI_OPERATIONS_PLAN.md section 5.1. Make one canonical and have the other point to it by name, removing only duplicated detail. Preserve every rule and enforcement note in the canonical location. Do NOT collapse README or OPERATOR_GUIDE - they serve different readers. Net effect is fewer always-loaded tokens per session with zero loss of doctrine.",
+      "acceptance": [
+        "The session loop detail exists in exactly one canonical location with the other doc pointing to it by name and section",
+        "Every rule gate and enforcement note present before the change is still present in the canonical location - no rule weakened or dropped, verified by diff",
+        "CLAUDE.md stays within its 150-line cap and the section 9 self-edit checklist is followed",
+        "bash scripts/verify.sh exits 0 with evidence under roadmap/evidence/F-0044/"
+      ],
+      "authorized_paths": [
+        "CLAUDE.md",
+        "AI_OPERATIONS_PLAN.md",
+        "roadmap/evidence/F-0044/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "roadmap/features.json"
+      ],
+      "priority": 2
+    },
+    {
+      "dependencies": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0045/verify.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "A",
+      "id": "F-0045",
+      "epic": "foundation-lean",
+      "title": "Trim OPERATOR_GUIDE.md to a cheat sheet that points to the plan",
+      "spec_ref": "roadmap/KILLER_FOUNDATION_ROADMAP.md R6",
+      "description": "OPERATOR_GUIDE.md re-extracts AI_OPERATIONS_PLAN.md section 8. Keep the operator-facing cheat sheet - the three surfaces, morning and evening checklists, kill switches - and point to plan section 8 for the full model. Preserve plain-English accessibility per CLAUDE.md section 8. No loss of any action the operator actually needs.",
+      "acceptance": [
+        "OPERATOR_GUIDE.md duplicates no prose from AI_OPERATIONS_PLAN.md section 8 and instead points to it",
+        "Every operator action - morning checklist, evening QA, kill switches, the three surfaces - is still present or clearly linked",
+        "Language stays plain-English with no file paths or jargon in operator-facing lines",
+        "bash scripts/verify.sh exits 0 with evidence under roadmap/evidence/F-0045/"
+      ],
+      "authorized_paths": [
+        "OPERATOR_GUIDE.md",
+        "roadmap/evidence/F-0045/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "roadmap/features.json"
+      ],
+      "priority": 2
+    },
+    {
+      "dependencies": [],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "B",
+      "id": "F-0046",
+      "epic": "foundation-lean",
+      "title": "Modularize test-hooks.sh into a fixture lib plus per-contract files",
+      "spec_ref": "roadmap/KILLER_FOUNDATION_ROADMAP.md R4",
+      "description": "scripts/test-hooks.sh is 1685 lines and recreates fixtures many times. Extract a test-lib.sh of fixture factories plus one file per contract group and a thin runner. Same coverage and same assertion count - the evaluator must confirm the passing test count is unchanged. Goal is far less to read and load with identical behavior.",
+      "acceptance": [
+        "test-hooks.sh is decomposed into a shared fixture library plus per-contract test files driven by a thin runner",
+        "The total number of hook-contract tests reported is unchanged from before the change, confirmed in evidence",
+        "No assertion is deleted or weakened - the assertion-shield and evaluator test-diff both pass",
+        "bash scripts/verify.sh exits 0 with evidence under roadmap/evidence/F-0046/"
+      ],
+      "authorized_paths": [
+        "scripts/test-hooks.sh",
+        "scripts/test-lib.sh",
+        "scripts/hook-tests/**",
+        "scripts/verify.sh",
+        "roadmap/evidence/F-0046/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "roadmap/features.json"
+      ],
+      "priority": 2
+    },
+    {
+      "dependencies": [],
+      "status": "done",
+      "passes": true,
+      "evidence": [
+        "roadmap/evidence/F-0047/verify.log"
+      ],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "B",
+      "id": "F-0047",
+      "epic": "oneshot-harness",
+      "title": "Close the single-ampersand chaining hole in the admission gate and pin untested verdict failure paths",
+      "spec_ref": "docs/bounded-vs-afk-strategy.md section 5",
+      "description": "The admission gate rejects chained acceptance commands but a single ampersand slips through - on Windows cmd.exe, which verdict.js uses via shell true, an ampersand chains two commands, so the one-command contract is violated. Tighten CHAINING_RE in admit.js to also reject a single ampersand and update its doc comment to match. Then pin the untested failure paths with deterministic cross-platform tests - spawn-level error maps to exit 127 and NOT-DONE, evidence-write failure must throw rather than return PASS, stdout and stderr are captured into the evidence file, and the admit budget boundary is exact. Tests only for verdict.js - its source is correct and stays untouched.",
+      "acceptance": [
+        "admit rejects an acceptanceCommand containing a single ampersand with reason no-verifiable-criterion and a test proves it",
+        "a test proves verdict maps a spawn-level error to exitCode 127 and NOT-DONE with the evidence file recording 127 - triggered deterministically with output larger than the 16MB maxBuffer",
+        "a test proves verdict never returns PASS when the evidence file cannot be written - writing to a missing directory must throw",
+        "a test proves the evidence file records the stdout and stderr of the acceptance command",
+        "a test pins the budget boundary - measured exactly equal to budget is ADMIT and one token over is REJECT",
+        "bash scripts/verify.sh exits 0 with evidence under roadmap/evidence/F-0047/"
+      ],
+      "priority": 1,
+      "authorized_paths": [
+        "src/oneshot/admit.js",
+        "src/oneshot/admit.test.js",
+        "src/oneshot/verdict.test.js",
+        "roadmap/evidence/F-0047/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "roadmap/features.json"
+      ]
     }
   ]
 }

@@ -8,26 +8,91 @@ import { execFileSync } from 'node:child_process';
 
 const BASE_BRANCH = process.env.BASE_BRANCH || 'origin/develop';
 
+// A real git diff never approaches this. The execFileSync default (1 MB) silently THREW on a larger
+// diff and the error was swallowed below — blanking the entire scan, the exact fail-open this gate
+// exists to prevent. Raise the ceiling; a diff that still overflows fails CLOSED in getGitDiff().
+const DIFF_MAXBUF = 256 * 1024 * 1024;
+
+function inGitRepo(): boolean {
+  try {
+    execFileSync('git', ['rev-parse', '--git-dir'], { stdio: 'pipe' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function refExists(ref: string): boolean {
+  // --verify --quiet resolves the ref without printing anything; stdio 'pipe'
+  // keeps git's stderr off the console so a missing upstream is silent.
+  try {
+    execFileSync('git', ['rev-parse', '--verify', '--quiet', ref], { stdio: 'pipe' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function getGitDiff(): string {
   // execFileSync with arg arrays: BASE_BRANCH is env-supplied, so it must
   // never pass through a shell (security-guidance plugin finding).
+  // --src-prefix=a/ --dst-prefix=b/ FORCE the "a/"/"b/" path prefixes the parser
+  // keys on (scanDiffForWeakening matches "--- a/" / "+++ b/"). A user gitconfig
+  // diff.noprefix=true or diff.mnemonicPrefix=true would otherwise drop/rename those
+  // prefixes, blanking currentFile so a gutted assertion slips through — a silent
+  // fail-open of this gate. Each diff option neutralizes a different gitconfig/attribute that
+  // mutates the header shape: -c core.quotepath=false (non-ASCII octal-quoting), --no-color
+  // (color.ui=always injects ANSI before "--- a/", honored even on a non-TTY pipe), --no-ext-diff
+  // + --text (external diff drivers and .gitattributes "-diff"/binary emit no "-" content lines).
+  // The parser additionally strips git's trailing TAB on space-containing paths. (test-hooks.sh
+  // covers noprefix, mnemonicPrefix, non-ASCII, color, space-in-path, and -diff.)
   const diffs: string[] = [];
-  try {
-    // Committed work on this branch vs base
-    diffs.push(execFileSync('git', ['diff', `${BASE_BRANCH}...HEAD`], { encoding: 'utf8' }));
-  } catch {
+  if (refExists(BASE_BRANCH)) {
+    // Committed work on this branch vs base.
+    // -M (--find-renames) enables git rename detection: a pure .test.js→.test.ts
+    // rename emits only a "rename from/to" header with no "-expect(...)" content
+    // lines, so the shield sees no deleted assertions and correctly passes.
+    // A rename that ALSO removes/weakens an assertion still emits the "-expect(...)"
+    // deletion line in the diff hunk, so the parser flags it as usual (BLOCK).
+    // Laundering is not enabled: removing an assertion always surfaces a "-" line
+    // (whether in a rename hunk or a plain deletion). A deletion too dissimilar to
+    // pair as a rename is shown as a full file delete (all assertions flagged).
     try {
-      // Fallback: diff last commit if base branch is not fetched or available
-      diffs.push(execFileSync('git', ['diff', 'HEAD~1'], { encoding: 'utf8' }));
-    } catch {
-      // no usable history — staged check below may still apply
+      diffs.push(execFileSync('git', ['-c', 'core.quotepath=false', 'diff', '-M', '--no-ext-diff', '--no-color', '--text', '--src-prefix=a/', '--dst-prefix=b/',`${BASE_BRANCH}...HEAD`], { encoding: 'utf8', maxBuffer: DIFF_MAXBUF }));
+    } catch (e) {
+      // Base resolved but the diff could not be read (e.g. it exceeded the buffer). We cannot tell
+      // what changed, so fail CLOSED — never silently skip. (Scar: a >1 MB diff once threw here on
+      // the default buffer and was swallowed, blanking the entire scan — a fail-open.)
+      console.error(`\x1b[31m[Assertion Shield] ERROR: could not read the ${BASE_BRANCH}...HEAD diff — failing closed.\x1b[0m`);
+      console.error(String(e));
+      process.exit(1);
     }
+  } else if (refExists('HEAD~1')) {
+    // base not fetched/available but prior history exists — diff the last commit
+    try {
+      diffs.push(execFileSync('git', ['-c', 'core.quotepath=false', 'diff', '-M', '--no-ext-diff', '--no-color', '--text', '--src-prefix=a/', '--dst-prefix=b/','HEAD~1'], { encoding: 'utf8', maxBuffer: DIFF_MAXBUF }));
+    } catch (e) {
+      console.error('\x1b[31m[Assertion Shield] ERROR: could not read the HEAD~1 diff — failing closed.\x1b[0m');
+      console.error(String(e));
+      process.exit(1);
+    }
+  } else {
+    // First commit before the upstream base exists yet — not an error, just no
+    // base to diff against. The staged check below still guards this commit.
+    console.log(`[Assertion Shield] No '${BASE_BRANCH}' upstream and no prior commit yet (first commit) — auditing staged changes only.`);
   }
   try {
     // Staged-but-uncommitted changes — what a pre-commit hook is actually
     // gating. Without --cached the hook only ever saw prior commits.
-    diffs.push(execFileSync('git', ['diff', '--cached'], { encoding: 'utf8' }));
-  } catch {
+    diffs.push(execFileSync('git', ['-c', 'core.quotepath=false', 'diff', '-M', '--no-ext-diff', '--no-color', '--text', '--src-prefix=a/', '--dst-prefix=b/','--cached'], { encoding: 'utf8', maxBuffer: DIFF_MAXBUF }));
+  } catch (e) {
+    // A staged-diff failure INSIDE a real repo means we cannot verify the commit → fail CLOSED.
+    // Only a genuine not-a-git-repo is a benign skip (there is nothing to gate).
+    if (inGitRepo()) {
+      console.error('\x1b[31m[Assertion Shield] ERROR: could not read the staged (--cached) diff — failing closed.\x1b[0m');
+      console.error(String(e));
+      process.exit(1);
+    }
     console.log('Not in a git repository. Skipping assertion check.');
   }
   return diffs.join('\n');
@@ -44,6 +109,29 @@ function scanDiffForWeakening(diffText: string): Violation[] {
   const lines = diffText.split('\n');
   let currentFile = '';
   let currentNewFile = '';
+
+  // F-0027: distinguish "a pre-existing test lost coverage" (a real weakening, block)
+  // from "a test file created in THIS branch is being removed/edited" (removes no
+  // pre-existing coverage, so not a weakening). We only relax when BASE is available
+  // to compare against — with no upstream we cannot tell, so we stay strict.
+  const baseAvailable = refExists(BASE_BRANCH);
+  const baseExistsCache = new Map<string, boolean>();
+  const existedOnBase = (file: string): boolean => {
+    if (!file) return false;
+    const cached = baseExistsCache.get(file);
+    if (cached !== undefined) return cached;
+    let exists = false;
+    try {
+      // git cat-file -e BASE:path exits 0 iff the path exists on BASE. BASE_BRANCH is
+      // env-supplied → execFileSync arg array (no shell), same hardening as getDiff().
+      execFileSync('git', ['cat-file', '-e', `${BASE_BRANCH}:${file}`], { stdio: 'pipe' });
+      exists = true;
+    } catch {
+      exists = false;
+    }
+    baseExistsCache.set(file, exists);
+    return exists;
+  };
   // Added-line weakening (F-0009): skipping a test mutes it as effectively as
   // deleting its assertions.
   const skipPatterns = [/\.(only|skip)\s*\(/, /\b(xit|xdescribe|xtest)\s*\(/];
@@ -51,10 +139,17 @@ function scanDiffForWeakening(diffText: string): Violation[] {
   const testFileRegex = /\.(test|spec)\.(ts|js|py|rs|go|cpp|java)$|__tests__/;
   const assertionKeywords = [
     'expect(',
+    'expect ',      // chai/jest `expect (x)` with a space before the paren — normalizes the spaced spelling of expect(
     'assert.',
     'assert_eq!',
     'self.assert',
     'assert ',
+    // chai/should + must.js method-call chains that carry no `expect(` of their own:
+    // `result.should.equal(42)`, `x.should.be.true`, `value.must.equal(y)`. The LEADING DOT
+    // is deliberate — it matches the `.should`/`.must` accessor, never the bare English word
+    // "should"/"must" in a string (comment-only lines are already skipped below).
+    '.should',
+    '.must',
     'it(',
     'test(',
     'describe('
@@ -67,7 +162,7 @@ function scanDiffForWeakening(diffText: string): Violation[] {
     // alone made wholesale test-file deletions invisible: a deleted file's
     // new side is "+++ /dev/null", so the old path was never tracked.
     if (line.startsWith('--- a/')) {
-      currentFile = line.substring(6);
+      currentFile = line.substring(6).replace(/\t.*$/, ''); // strip git's trailing TAB for space-paths
       continue;
     }
     if (line.startsWith('--- ')) {
@@ -75,7 +170,7 @@ function scanDiffForWeakening(diffText: string): Violation[] {
       continue;
     }
     if (line.startsWith('+++ b/')) {
-      currentNewFile = line.substring(6);
+      currentNewFile = line.substring(6).replace(/\t.*$/, ''); // strip git's trailing TAB for space-paths
       continue;
     }
     if (line.startsWith('+++ ')) {
@@ -104,8 +199,28 @@ function scanDiffForWeakening(diffText: string): Violation[] {
           continue;
         }
 
+        // Skip CJS module import/require declarations (CJS→ESM migration boilerplate, not assertions):
+        // 'const|let|var X = require(...);' or a destructuring 'const { a, b } = require(...);',
+        // plus a bare 'use strict' pragma. These carry no test coverage.
+        // SECURITY (security-review): the pattern is anchored at BOTH ends — require(...) must be
+        // the ENTIRE right-hand side and the line must END there (optional ';'). Without the end
+        // anchor, a line like `const _ = require('x'); expect(role).toBe('admin');` would match the
+        // prefix and let a real deleted assertion slip past. A single LHS binding only (a bare
+        // identifier or one {...} destructure) — no ','-chained second binding, no trailing code.
+        const isModuleDecl =
+          /^(?:const|let|var)\s+(?:[A-Za-z_$][\w$]*|\{[^}]*\})\s*=\s*require\([^)]*\)\s*;?\s*$/.test(cleanedLine)
+          || cleanedLine === "'use strict';";
+        if (isModuleDecl) {
+          continue;
+        }
+
         const containsAssertion = assertionKeywords.some(keyword => cleanedLine.includes(keyword));
-        if (containsAssertion) {
+        // F-0027: only a deletion from a file that EXISTED on BASE is a weakening
+        // (when base is unavailable, stay strict and flag). A branch-new test file
+        // being removed/edited removes no pre-existing coverage → not flagged. The
+        // strict scan is otherwise unchanged, so content-gutting in an existing test
+        // (a deleted assertion line) is still blocked.
+        if (containsAssertion && (!baseAvailable || existedOnBase(currentFile))) {
           violations.push({
             file: currentFile,
             line: cleanedLine

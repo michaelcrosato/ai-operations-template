@@ -1,0 +1,16 @@
+account_id,email,plan,enabled
+a001,alice@example.com,free,TRUE
+a002,bob@example.com,pro,true
+a003,carol@example.com,enterprise,1
+a004,dave@example.com,free,yes
+a005,erin@example.com,pro,FALSE
+a006,frank@example.com,free,0
+a007,grace-at-example.com,pro,TRUE
+a008,heidi@@example.com,free,1
+a009,ivan@example.com,premium,yes
+,judy@example.com,free,TRUE
+a011,bad-email,premium,no
+a012,karl@example.com,enterprise,
+a013,liam@example.com,pro,no
+,nobody-at-x,premium,1
+a015,no-at-sign,premium,TRUE

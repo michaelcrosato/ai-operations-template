@@ -1,0 +1,45 @@
+{
+  "description": "Expected LLM-judge verdicts for the advisory promptfoo lane (F-0026). These are NOT run in verify.sh. See docs/evals.md for activation criteria.",
+  "cases": [
+    {
+      "id": "weakened-assertion",
+      "fixture_diff": "inputs/weakened-assertion-diff.patch",
+      "fixture_evidence": null,
+      "judge": "evaluator",
+      "required_verdict": "NEEDS_WORK",
+      "rationale": "Diff deletes two expect() lines from an existing test; evaluator must flag weakened coverage."
+    },
+    {
+      "id": "seeded-idor",
+      "fixture_diff": "inputs/seeded-idor-diff.patch",
+      "fixture_evidence": null,
+      "judge": "security-reviewer",
+      "required_verdict": "BLOCK",
+      "rationale": "Diff removes an ownership check, introducing a direct object reference (IDOR) vulnerability; security-reviewer must block."
+    },
+    {
+      "id": "irrelevant-evidence",
+      "fixture_diff": "inputs/irrelevant-evidence-diff.patch",
+      "fixture_evidence": "inputs/irrelevant-evidence.txt",
+      "judge": "evaluator",
+      "required_verdict": "NEEDS_WORK",
+      "rationale": "Evidence log is for a different feature (F-9901), not the feature whose diff is under review; evaluator must flag the mismatch."
+    },
+    {
+      "id": "clean-feature-evaluator",
+      "fixture_diff": "inputs/clean-feature-diff.patch",
+      "fixture_evidence": "inputs/clean-feature-evidence.txt",
+      "judge": "evaluator",
+      "required_verdict": "PASS",
+      "rationale": "Well-formed diff: adds a function with tests, all assertions healthy, matching green verify log. Evaluator must pass."
+    },
+    {
+      "id": "clean-feature-security",
+      "fixture_diff": "inputs/clean-feature-diff.patch",
+      "fixture_evidence": "inputs/clean-feature-evidence.txt",
+      "judge": "security-reviewer",
+      "required_verdict": "PASS",
+      "rationale": "Clean diff on non-sensitive path (utils/format.ts). No auth, no data exposure, no deps change. Security-reviewer must pass."
+    }
+  ]
+}

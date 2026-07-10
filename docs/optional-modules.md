@@ -1,6 +1,6 @@
 # Optional Modules — NOT part of the core engine
 
-> **Everything in this file is optional.** None of it ships active, none of it is loaded into agent context, and none of it belongs to the drop-in core that every adopting repo wants. Each module activates only when its **trigger condition** becomes true for *your* repo — until then it costs nothing. All entries were verified against current sources on 2026-06-10 (details + source URLs: [`feedback-2-verification.md`](feedback-2-verification.md)).
+> **Everything in this file is optional.** None of it ships active, none of it is loaded into agent context, and none of it belongs to the drop-in core that every adopting repo wants. Each module activates only when its **trigger condition** becomes true for *your* repo — until then it costs nothing. All entries were verified against current sources on 2026-06-10 (details + source URLs: [`docs/archive/feedback-2-verification.md`](archive/feedback-2-verification.md) — a template-internal record, not shipped to adopters).
 >
 > **How this file is used:** the orchestrator's `/downtime` sentinel scan checks these triggers against the repo's actual state. When a trigger fires, the matching module is groomed into `roadmap/features.json` (or raised in `QUESTIONS.md` if it's an operator call) — it is never adopted silently.
 
@@ -15,8 +15,12 @@
 | Env-var documentation | Plain-markdown list of required env-var **names** (never values) | NOT a literal `.env.example` — the engine's own deny rules would make that file unreadable to agents (#73, reshaped) |
 | semgrep / CodeQL | Deep static analysis fleet | Explicitly deferred until real product source exists (J-23, fork-3) |
 | Layout decision | src/packages structure | Decided by the product, never imposed by the template (#74, fork-6) |
+| `db-engineer` agent + `database.md` rule | The migration/schema specialist sub-agent (the only agent that writes migrations) + its path-scoped rule (`schema/**`, `migrations/**`) | Removed from the active engine in the lean pass — the engine-only template has no data layer, so neither ever fired. Re-add `.claude/agents/db-engineer.md` (+ its `model-policy.json` `agents` entry → `reasoning`) and `.claude/rules/database.md` when a DB lands. Recoverable from git history |
+| `frontend.md` rule | Path-scoped UI rule (`app/**`, `components/**`): loading/empty/error/success states, accessibility floor, E2E-is-mandatory | Removed in the lean pass — no UI code ships in the engine-only template, so it never fired. Re-add `.claude/rules/frontend.md` when frontend code lands. Recoverable from git history |
 
 ## Trigger: the repo goes public
+
+> **Status (2026-06-16): this trigger has FIRED — the repo is public.** `SECURITY.md`, the three issue templates, `CONTRIBUTING.md`, and `CODE_OF_CONDUCT.md` have **shipped** (rows below kept for provenance). Still deferred: the community-library split and the responsible-AI note.
 
 | Module | What it adds | Notes |
 |---|---|---|
@@ -67,7 +71,8 @@
 | Devcontainer parity | Heavy local/maintainer development (the documented Windows hook-testing pain) | Copy Anthropic's reference `.devcontainer` (Dockerfile + init-firewall.sh — verified current) nearly verbatim; the operator never opens this (#43) |
 | Native sandboxing | Untrusted-code review work or local unattended runs | Use **Claude Code's first-party OS-level sandbox** (bubblewrap/seatbelt, sandbox-runtime) — never bespoke Docker (fork-4) |
 | Full eval suite (gating/nightly) | The loop is proven on real product work AND eval budget is accepted | The lean slice (deterministic fixtures in contract tests + advisory promptfoo set for evaluator/security-reviewer) comes first; gating thresholds, nightly benchmarks, fixture-corpus repos only after (#29) |
-| zizmor workflow audit | Next substantive CI-workflow change | Configure `unpinned-uses` to respect the documented tag-pin decision (its default since v1.20 hash-pins everything) (B-11 rider) |
+| zizmor workflow audit | Next substantive CI-workflow change | Configure `unpinned-uses` to respect the documented tag-pin decision (its default since v1.20 hash-pins everything) (B-11 rider). **Trigger fired 2026-06-16** by the e2e-paths/npm-audit CI change — groom next pass. |
+| SBOM generation (CycloneDX / syft) | A deployable/distributable artifact ships (release CI) | Nothing to attest until the adopter's production artifact exists; generate at release once a real artifact exists (review feedback 2026-06-16) |
 | Provider gateway / spend limits | Multiple providers or real spend caps needed | Until then `model-policy.json` stays the declarative indirection (J-20) |
 
 ## The decision rule (mirrors plan §2.1)

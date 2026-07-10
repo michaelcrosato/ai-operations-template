@@ -3,19 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
-  "description": "Drop-in AI operations engine: orchestrator-managed, evidence-gated autonomous coding factory",
+  "description": "An autonomous, Claude-Code-driven AI coding factory: a file-based control plane — state machine, mechanical guardrail hooks, and an adversarial review loop — that lets frontier AI agents write and ship code semi-autonomously while staying auditable.",
   "scripts": {
-    "test": "node --test src/health.test.js",
     "lint": "biome lint scripts src",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test src/health.test.js src/oneshot/admit.test.js src/oneshot/verdict.test.js",
     "verify": "bash scripts/verify.sh",
     "shield": "ts-node scripts/assertion-shield.ts",
     "state": "ts-node scripts/update-state.ts",
-    "state:validate": "ts-node scripts/update-state.ts --validate",
-    "typecheck": "tsc --noEmit"
+    "state:validate": "ts-node scripts/update-state.ts --validate"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.16",
-    "@types/node": "^25.9.2",
+    "@biomejs/biome": "^2.5.1",
+    "@types/node": "^26.0.1",
     "shellcheck": "^4.1.0",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"

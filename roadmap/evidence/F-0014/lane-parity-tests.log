@@ -1,0 +1,11 @@
+── workflow lane parity (F-0014)
+  [PASS] lane parity: every verify.sh workflow conforms
+  [PASS] lane parity: refs extracted from ci.yml
+  [PASS] lane parity: broken fixture workflow rejected
+  [PASS] e2e.yml triggers on its own changes
+
+hook contract tests: 139 passed, 0 failed
+──── hook contract tests: OK
+
+VERIFY-COMMIT: 940a146df807ebb2a0e50300778cb75e43ed4e30 @ 2026-06-11T16:32:06Z
+VERIFY: PASS (exit 0)

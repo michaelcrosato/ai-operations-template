@@ -10,6 +10,7 @@ You are the manager walking the factory floor. Product features are NOT in scope
 ## Procedure
 1. **Gather signals** (15 min of reading, fan out explorers if useful):
    - `roadmap/metrics.jsonl` — the measurable feed: first-attempt pass rate (attempts==0 vs total), recurring NEEDS_WORK/BLOCK verdicts, findings_fixed trend. This is where "check that metric next kaizen" (step 4) reads from.
+   - **Cost/quality scan (advisory cost governor)** — from the same metrics feed, look at the cost dimension: the `tier` distribution and per-tier first-attempt rate (a tier with a poor rate usually means thin briefs, not a model problem); `builder` usage (a high `builder-strong`/opus share may mean features are over-tiered — re-check the groom tiering against `TASK_AUTONOMY_TRIAGE.md §1`'s consequences test); attempts clustering on a tier/epic. There is **no token telemetry** (the harness gives none at SubagentStop), so this is **strictly advisory**: propose a re-tiering, a sharper brief template, or a cheaper-agent default for a pattern — **never** skip, gate, or down-tier a feature to save cost, and **never** economize the evaluator (mandatory every tier) or the Tier-C security-reviewer (`TASK_AUTONOMY_TRIAGE.md §7` cost rule).
    - PROGRESS.md since the last kaizen entry: where did sessions lose time? What surprised agents?
    - Evaluator/security findings: any *category* that recurred?
    - CI history (`gh run list`): flaky steps, slow steps?
@@ -21,7 +22,8 @@ You are the manager walking the factory floor. Product features are NOT in scope
    - Remove a recurring failure cause permanently (lint rule, hook pattern, CI cache).
    - Tighten a gate that let something mediocre through; loosen one producing only false alarms.
 3. **Ship it** through the normal loop: branch, implement, verify, PR → develop. Small is fine — 1% compounds to ~37× in a year; 0% compounds to nothing.
-4. **Record** in PROGRESS.md under a `### kaizen` heading: the signal, the change, and the metric you expect to move (and check that metric next kaizen).
+   - **Measure the effect, don't assume it (`bench/`).** If the change could move output quality, tokens, cost, or speed — a prompt/agent edit, a `CLAUDE.md`/context change, a model-policy or loop change — take a bench reading BEFORE and AFTER: `node bench/micro.mjs` (free, local) for speed/throughput, and `node bench/run.mjs --baseline` then `--compare` for token/cost/quality. For a context (CLAUDE.md/hooks) change, run `--ctx engine` both times — the delta is the context-tax change. **A change that doesn't move a measured number (and isn't a pure correctness fix) is not a 1% improvement — it's churn.** Quality regressions (✓→✗) veto the change regardless of token/speed wins.
+4. **Record** in PROGRESS.md under a `### kaizen` heading: the signal, the change, the **measured before→after delta** (from `bench/`, where applicable), and the metric you expect to keep moving (check it next kaizen).
 
 ## Guardrails
 - One improvement per day — no improvement sprees that starve the roadmap.

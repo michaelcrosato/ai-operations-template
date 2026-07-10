@@ -1,0 +1,15 @@
+{
+  "id": "H2-shared-docs",
+  "tier": "H2",
+  "category": "headroom (engine-effect)",
+  "prompt_mode": "thick",
+  "entrypoint": "src/docs.mjs",
+  "fixtures": [],
+  "oracle": "oracle/verify.mjs",
+  "validity_gate": "oracle/validate.mjs",
+  "weights": { "primary": 0.35, "access": 0.65 },
+  "anti_cheat": "access is a GATING group — dropping any access-control rule (view can edit / non-owner deletes / non-owner shares / listDocs leaks) => gated_fail=['access'], score 0",
+  "pass_threshold": 1.0,
+  "budget": { "model": "sonnet", "expected_usd": "0.15-0.6", "max_turns": 16 },
+  "notes": "ENGINE-EFFECT larger headroom task (bench/ENGINE-EFFECT-PLAN.md §8). H1 (small, single ownership rule) was baseline-ceiling for sonnet AND haiku — modern models don't drop a clearly-stated rule on a small task. H2 widens the surface to ~8 stated rules across 6 functions so a one-shot is statistically likely to drop at least one as an ATTENTION lapse (the kind a same-family reviewer CAN recover, vs a knowledge gap it can't). Droppable gated cruxes: view-shared CANNOT update (view!=edit); only the OWNER deletes (edit-shared cannot); only the OWNER shares; listDocs must not leak docs the user can't access. PRIMARY (.35, partial): create/validate, owner CRUD, owner share, a shared user reads, edit-shared updates. ACCESS (.65, GATING): the four cruxes + no-access getDoc->forbidden. validate.mjs proves reference 1.0 and each crux-drop -> gated 0. Run A0(baseline) vs A3(review-fix) with run-effect.mjs; a categorical flip (A0 fail -> A3 pass) is the first real engine-effect signal."
+}

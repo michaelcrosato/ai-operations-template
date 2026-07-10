@@ -1,0 +1,10 @@
+{
+  "id": "judge-good",
+  "category": "judge",
+  "tier": "reasoning",
+  "model": "opus",
+  "max_turns": 1,
+  "prompt": "You are a code reviewer. SPEC: `isEven(n)` must return true for even integers and false for odd. DIFF (new code):\n```js\nfunction isEven(n) { return n % 2 === 0; }\n```\nDoes the code correctly and safely implement the spec? Respond with exactly one token and nothing else: PASS or NEEDS_WORK.",
+  "grader": { "type": "exact", "expected": "pass" },
+  "notes": "Labeled-GOOD case for the evaluator's discrimination. Pairs with judge-bad: together they measure judge precision/recall. A judge that flips either label is a real regression (the engine's whole 'fresh-context reviewer' value rests on this)."
+}

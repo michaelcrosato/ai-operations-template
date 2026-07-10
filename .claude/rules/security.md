@@ -1,8 +1,6 @@
 ---
 paths:
-  - "src/api/**"
-  - "src/auth/**"
-  - "src/server/**"
+  - "src/**"
 ---
 
 # Security rules (loaded only when touching API/auth/server paths)

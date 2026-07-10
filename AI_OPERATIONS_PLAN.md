@@ -6,6 +6,10 @@
 
 > All tooling claims below were verified against official Anthropic documentation and engineering publications on **2026-06-09**. Sources are listed in [§13](#13-sources-verified-2026-06-09). Pre-2026 patterns (e.g., hand-rolled cron + bash agent loops, prompt-stuffed mega-contexts, "autonomous mode" via unsupervised `--dangerously-skip-permissions` on a laptop) were evaluated and rejected in favor of the current first-party primitives.
 
+> **How to read this (status & scope).** This is the **adopter blueprint** for the engine, written to be generic across stacks — so it deliberately carries `<PLACEHOLDER>` tokens (`<REPOSITORY_NAME>`, `<DATABASE_SERVICE>`, `<QA_DEPLOYMENT_SURFACE>`, `<E2E_TEST_FRAMEWORK>`, …) that an adopter replaces at install time (`install-into.sh` step 1). They are **substitution markers, not unfinished work** — do not "fill them in" in the template itself.
+>
+> **Built vs. planned in *this* repo:** the engine layer (§3–§8 — state machine, gates, hooks, agents, skills, CI) is **built and enforced** — that is "Phase 0" in §10, and it is done. The product-build ladder in **§10 Phases 1–5 is the generic adopter path, not this repo's as-built state**: the adopter brings their own stack, so this repo has no real database, no staging deploy, and no Phases 2–5 backend. Read §2.1 surfaces and §10 phases as "what an adopter wires," not "what runs here." As of 2026-06-18, this repo additionally develops the bounded one-shot tool in `src/oneshot/` — our own product built with the factory (see `docs/bounded-vs-afk-strategy.md`). That product path is distinct from the "adopter brings their own stack" path described here.
+
 ---
 
 ## 0. Executive Summary (plain English — read this first)
@@ -47,12 +51,12 @@ These five rules are binding on every agent session and every file added to this
 
 ### 2.2 Model assignment — capability tiers, never hardcoded names
 
-Roles bind to **capability tiers**, not to specific model names. The live tier→model mapping is a checked-in, machine-readable policy file — **`.claude/model-policy.json`** (`{tier: {model, effort, last_verified, notes}}`) — which is the single source of truth: the hygiene routine syncs sub-agent frontmatter `model:` fields from it whenever it changes, and the `/research` skill may update a mapping only after verifying the official model catalog, stamping `last_verified`. This keeps the factory model-agnostic: when a new model ships (or access changes), one file changes — no prompt or agent definition ever hardcodes a stale model name.
+Roles bind to **capability tiers**, not to specific model names. The live mapping is a checked-in, machine-readable policy file — **`.claude/model-policy.json`** — which is the single source of truth: `tiers` maps each capability tier to `{model, effort, last_verified, notes}`, and `agents` maps each `.claude/agents/*.md` to a tier. This binding is **enforced, not decorative**: `scripts/check-model-policy.ts --check` runs inside `verify.sh` and **fails the gate** if any sub-agent's frontmatter `model:` drifts from the policy; `--write` is the hygiene routine that rewrites frontmatter from the policy (and fails closed on any agent that hardcodes an unmanaged model name). The `/research` skill may update a tier→model mapping only after verifying the official model catalog, stamping `last_verified`, then runs `--write` to propagate it. This keeps the factory model-agnostic: when a new model ships (or access changes), one file changes — no prompt or agent definition ever carries a stale, unenforced model name.
 
 | Tier | Used by | Current mapping (2026-06-09) | Notes |
 |---|---|---|---|
-| `reasoning` | Orchestrator, planner (`/groom`), evaluator, security-reviewer, db-engineer | Claude Code default Opus tier (Opus 4.8), `high`/`xhigh` effort | Long-horizon autonomous execution; review quality is the last line of defense — never economize here. **Fable 5** (released 2026-06-09, Mythos-class) is a valid mapping for the hardest planning/evaluation passes: included on subscription plans through Jun 22, 2026, then usage credits at $10/$50 per MTok (2× Opus) — the cost line in STATUS.md flags this transition (§8.2). |
-| `builder` | Builder sub-agent (routine implementation) | Sonnet 4.6, `high` effort | Best speed/intelligence balance for well-specified single features, at exactly 60% of Opus per-token price ($3/$15 vs $5/$25 per MTok). |
+| `reasoning` | Orchestrator, planner (`/groom`), evaluator, security-reviewer, db-engineer, **builder-strong** (Tier C builds) | Claude Code default Opus tier (Opus 4.8), `high`/`xhigh` effort | Long-horizon autonomous execution; review quality is the last line of defense — never economize here. **Fable 5** (released 2026-06-09, Mythos-class) is a valid mapping for the hardest planning/evaluation passes: included on subscription plans through Jun 22, 2026, then usage credits at $10/$50 per MTok (2× Opus) — the cost line in STATUS.md flags this transition (§8.2). |
+| `builder` | Builder sub-agent (Tier A/B routine implementation) | Sonnet 4.6, `high` effort | Best speed/intelligence balance for well-specified single features, at exactly 60% of Opus per-token price ($3/$15 vs $5/$25 per MTok). |
 | `fast` | Explorer / search / triage sub-agents | Haiku 4.5, `low`/`medium` effort | Cheap fan-out for "find where X lives" work; returns conclusions, not file dumps. |
 
 Per current model guidance, more effort up front on planning typically *reduces* total tokens by cutting retry loops.
@@ -84,7 +88,7 @@ Phase 0 (§10) builds exactly this tree. One-line purpose per entry; detailed sp
 ├── roadmap/                      # ALL durable state shared between human and agents
 │   ├── ROADMAP.md                # Human-owned priorities, plain English bullets
 │   ├── features.json             # Machine backlog: every feature, default passes:false (§4.2)
-│   ├── features.schema.json      # JSON Schema for features.json — validated in CI (§4.2)
+│   ├── features.schema.json      # Closed-shape contract: key set + additionalProperties:false enforced by update-state validate() (run in CI) and cross-checked in test-hooks.sh; full ajv validation deliberately not in the gate (§4.2)
 │   ├── PROGRESS.md               # Agent-maintained session log / handoff notes (§4.3)
 │   ├── QUESTIONS.md              # Non-blocking escalations for the human (§6.1)
 │   ├── DECISIONS.md              # Append-only log of decisions agents made autonomously
@@ -102,7 +106,7 @@ Phase 0 (§10) builds exactly this tree. One-line purpose per entry; detailed sp
 │   │   ├── builder.md            #   implements ONE feature (builder tier)
 │   │   ├── evaluator.md          #   fresh-context, read-only grader → PASS/NEEDS_WORK
 │   │   ├── security-reviewer.md  #   security-focused review (Auth, PII, dependencies)
-│   │   ├── db-engineer.md        #   migrations, schema updates, query plans
+│   │   ├── db-engineer.md        #   migrations, schema updates, query plans (optional; adopter-added — docs/optional-modules.md)
 │   │   └── explorer.md           #   cheap read-only codebase search (fast tier)
 │   ├── skills/                   # Reusable procedures (§5.4)
 │   │   ├── work/SKILL.md         #   /work — the main autonomous loop
@@ -113,9 +117,9 @@ Phase 0 (§10) builds exactly this tree. One-line purpose per entry; detailed sp
 │   │   ├── kaizen/SKILL.md       #   /kaizen — daily ≥1% system improvement (§5.5)
 │   │   └── downtime/SKILL.md     #   /downtime — idle protocol: sentinel scan, pre-briefs (§5.5)
 │   ├── rules/                    # Path-scoped rules, loaded only when touching matches
-│   │   ├── database.md           #   paths: schema/**, migrations/**
+│   │   ├── database.md           #   paths: schema/**, migrations/** (optional; adopter-added)
 │   │   ├── security.md           #   paths: src/api/**, src/auth/**
-│   │   └── frontend.md           #   paths: src/components/**, src/views/**
+│   │   └── frontend.md           #   paths: src/components/**, src/views/** (optional; adopter-added)
 │   └── hooks/                    # Hook scripts (§6.3)
 │       ├── verify-gate.sh        #   blocks direct features.json edits → update-state.ts only (§6.3)
 │       ├── guard-bash.sh         #   deny destructive/forbidden commands
@@ -136,11 +140,14 @@ Phase 0 (§10) builds exactly this tree. One-line purpose per entry; detailed sp
 │   ├── dependabot.yml            # Weekly dependency/action update PRs (§7.2)
 │   └── workflows/
 │       ├── ci.yml                # verify.sh + security jobs on every PR (§7.2)
-│       ├── e2e.yml               # E2E test runs against preview deployments
+│       ├── e2e.yml               # E2E runs — optional; adopter-added (not shipped in engine-only; docs/optional-modules.md)
 │       └── claude.yml            # claude-code-action: @claude mentions + CI-failure autofix
 │
+├── bench/ ...                    # Effect-measurement harness: golden tasks scored on quality/tokens/cost/speed (bench/README.md); wired into /kaizen
 └── src/ ...                      # Product source code (organized by components)
 ```
+
+**Self-measurement (`bench/`).** The engine measures whether its own changes help rather than guessing: `bench/run.mjs` scores a fixed set of golden tasks on output quality (deterministic graders, incl. executing generated code), token consumption, cost, and speed via `claude -p --output-format json`, with a free local micro-bench for pure-function/gate-latency regression. `/kaizen` runs it before/after a change so a "1% improvement" must show up as a moved number. Authoritative cost reconciles against the Anthropic Usage/Cost API; live-loop telemetry is available via `CLAUDE_CODE_ENABLE_TELEMETRY=1` (OpenTelemetry). Measured baseline (2026-06-15): suite passes 7/7; the engine's loaded context costs ≈$0.0094/agent-call (the de-fluff payoff target).
 
 **Always-loaded context is tiny by design:** `CLAUDE.md` (≤150 lines) plus whichever single `rules/*.md` file matches the files being touched. Everything else — including this plan — is read on demand.
 
@@ -269,7 +276,7 @@ Long single sessions are *allowed* (cloud sessions persist after the browser clo
 | `builder` | `builder` | full edit/bash in sandbox | Implement exactly one briefed feature + its tests; no scope creep; stay inside the feature's `authorized_paths`; report evidence paths |
 | `evaluator` | `reasoning` | **read-only** (no Write/Edit) | Grade diff + evidence against acceptance; output `PASS` or `NEEDS_WORK` + findings; never trust claims without opening evidence; **always diff the test files for deleted/weakened assertions** — the known failure-loop cheat — before any PASS |
 | `security-reviewer` | `reasoning` | read-only | Authorization models, Data Access Layer checks, PII handling/encryption, secrets in diffs; mandatory for sensitive API and auth paths |
-| `db-engineer` | `reasoning` | edit/bash | Migrations, database performance, index/EXPLAIN validation |
+| `db-engineer` | `reasoning` | edit/bash | Migrations, database performance, index/EXPLAIN validation — *optional module, ships only when an adopter adds a data layer (docs/optional-modules.md)* |
 | `explorer` | `fast` | read-only | Fan-out codebase/docs searches; return conclusions only |
 
 ### 5.4 Skills (`.claude/skills/`)
@@ -327,7 +334,7 @@ Written into `CLAUDE.md` verbatim (this is the single highest-leverage instructi
 | `Stop` | `commit-on-stop.sh` | Block session end if uncommitted changes or unpushed branch exists; instruct the agent to commit/push and prepend the PROGRESS entry first |
 | `Pre-Commit` (Git Hook) | `assertion-shield.ts` | Run `npx ts-node scripts/assertion-shield.ts` to block commits that delete or weaken test assertions compared to `origin/develop` |
 
-Hook mechanics follow the current hooks reference: simple denials use exit code 2; richer control (allow/deny/ask + feedback to the model) uses the JSON `hookSpecificOutput.permissionDecision` output. `commit-on-stop.sh` registers on `Stop` only — per the hooks reference (verified 2026-06-10), `StopFailure` fires on API-error turn ends and **cannot block** (its output and exit code are ignored), so registering enforcement there is useless. A PreToolUse edit guard enforcing the active feature's `authorized_paths`/`forbidden_paths` from `features.json` (§4.2) is **planned, not yet shipped** (backlog F-0007; design must resolve which feature is "active" when several are in progress) — until then scope discipline relies on the evaluator's path check (§5.3). Phase 0 ships **contract tests with fixtures for every hook script** — the safety net is tested code, not vibes.
+Hook mechanics follow the current hooks reference: simple denials use exit code 2; richer control (allow/deny/ask + feedback to the model) uses the JSON `hookSpecificOutput.permissionDecision` output. `commit-on-stop.sh` registers on `Stop` only — per the hooks reference (verified 2026-06-10), `StopFailure` fires on API-error turn ends and **cannot block** (its output and exit code are ignored), so registering enforcement there is useless. A PreToolUse edit guard enforcing the active feature's `authorized_paths`/`forbidden_paths` from `features.json` (§4.2) is **shipped and enforced** (F-0007, hardened by F-0034): `.claude/hooks/path-guard.js` fails closed on an unknown/duplicate active-feature id and canonicalizes `..` before matching, so an out-of-scope or traversal edit is blocked at tool-use time. The "which feature is active" question is resolved by the single-`in_progress` invariant (F-0025) plus an explicit `CLAUDE_ACTIVE_FEATURE` override (F-0022). The evaluator's path check (§5.3) is now a second layer, not the only one. Every hook script also ships **contract tests with fixtures** — the safety net is tested code, not vibes.
 
 **Operator kill switches** (documented in OPERATOR_GUIDE.md): pause/stop the session from claude.ai/code or the mobile app; or comment `@claude stop work on this` on the PR. A repo-level `AGENT_STOP` file is also honored by `guard-bash.sh` (any session halts work and exits cleanly when it exists).
 
@@ -337,6 +344,7 @@ Hook mechanics follow the current hooks reference: simple denials use exit code 
 - **Branch invariant (hard rule):** `develop` (or your staging/integration branch) is the repository's **default branch** on GitHub (§11) — cloud sessions and Routines clone the default branch, so this makes every tool land on the right base automatically. Every autonomous run additionally begins with `git fetch origin develop` and branches from `origin/develop`; every PR targets `develop`. Work discovered to be based on the wrong branch is redone from `develop`, not force-rebased.
 - **Revert-first (code), roll-forward (database):** if `develop` CI breaks, the fixing session's first move is `git revert` of the offending merge (restore green), then re-attempt on a new branch. **Exception:** merges containing applied database migrations are never git-reverted — reverting deletes migration files while the staging schema stays mutated, desynchronizing ORM/client state from the database. Schema problems roll *forward* with a new corrective migration. Staging never stays red overnight either way.
 - **Branch protection (GitHub settings):** default stable branch (`master`/`main`) — no direct pushes, PR + human approval required; integration branch (`develop`) — no direct pushes, PR + green CI required (agents may merge). All agent branches are `feat/F-XXXX` or `fix/...`; cloud sessions default to `claude/`-prefixed branches, which is acceptable for ad-hoc fixes.
+- **Record-PR pattern (state under branch protection):** with `develop` push-protected nothing writes to it directly — feature state (`features.json` entry, `--status`/`--passes` flips, evidence) rides the feature PR itself (per the state-flip convention, DECISIONS 2026-06-09), and post-merge records (PROGRESS/STATUS/metrics/kaizen notes) land via short-lived `chore/` branch PRs merged on green CI. This is the designed shape under branch protection — the direct consequence of `develop` rejecting direct pushes — not a workaround.
 - **Disaster floor:** worst case is always "revert to last green commit on the stable branch" — which the human can do with one click, documented in OPERATOR_GUIDE.md.
 
 ---
@@ -352,7 +360,7 @@ One command, used identically by agents and CI: compiles/typechecks -> lints -> 
 ### 7.2 CI (`.github/workflows/`)
 
 - **ci.yml (every PR):** runs `verify.sh` and `npx ts-node scripts/assertion-shield.ts` along with security checks: authorization rules validation, secrets checking, database index checks, and validation of environment separation constraints.
-- **e2e.yml:** Runs E2E tests against the PR's preview deployment using seeded data.
+- **e2e.yml (optional; adopter-added — not shipped in the engine-only template; cataloged as the "E2E / staging lane" in `docs/optional-modules.md`):** Runs E2E tests against the PR's preview deployment using seeded data.
 - **claude.yml (claude-code-action, pinned to an exact commit SHA, rolled forward by Dependabot):** responds to `@claude` comments and, on CI failures on agent PRs, triages and pushes fix commits to the PR branch (capped `--max-turns`, concurrency-limited). It pushes commits; opening PRs remains the orchestrator session's job — no workflow assumes the action creates PRs. Two disclosed incidents make the hardening rules above load-bearing (verified 2026-06-10): ① **GHSA-8q5r-mmjf-575q** (published 2026-05-20) — claude-code-action **< 1.0.74** allowed a malicious MCP server configuration in PRs to achieve remote code execution and secret exfiltration; ② Microsoft-documented prompt-injection research (2026-06-05) showed untrusted issue/PR text could drive the un-sandboxed Read tool to exfiltrate `/proc/self/environ` (API keys, OIDC credentials) — fixed in **Claude Code 2.1.128** (2026-05-05), which blocks sensitive `/proc` reads. Consequences for this repo: pin at or beyond the current v1 SHA (≫1.0.74), keep workflows on a current action release so the bundled CLI is ≥2.1.128, never check `.mcp.json` changes in from untrusted PRs without review, and follow the "Agents Rule of Two" — no workflow simultaneously processes untrusted input, holds secrets, and mutates state. Billing note: from **Jun 15, 2026**, GitHub Actions agent runs bill against the separate per-user agent credit pool included with the plan, not subscription session usage (§5.2). **Auth is subscription-first (verified 2026-06-10):** the workflow authenticates with `CLAUDE_CODE_OAUTH_TOKEN` (Pro/Max token from `claude setup-token`, drawing the included credit pool) — an `ANTHROPIC_API_KEY` is an optional alternative, never a requirement. This engine requires **no paid API key from any provider** in any lane: cloud sessions, Routines, and local sessions are subscription login; the Actions lane is the subscription token.
 - **CI hardening (all workflows):** every action pinned to a release tag or commit SHA; least-privilege `permissions:` blocks and explicit `timeout-minutes` on every job; `concurrency` groups keyed by PR/branch; `@claude` triggers restricted to actors with write access (no bot or non-write-user allowances of any kind); PR/issue/vendor-feed text always framed as untrusted input in prompts; no debug or full-tool-output logging into public logs; a leak check fails CI if production configurations or secret-shaped strings appear in config or workflow files; agent pushes use the GitHub App token. Dependency gates: Dependabot alerts on; lockfile audits as a required check; every new runtime dependency requires a `DECISIONS.md` entry; lockfile-heavy PRs get the security-reviewer.
 - **In-session security tooling:** the official **security-guidance plugin** is enabled at **project scope** via checked-in settings — `"enabledPlugins": {"security-guidance@claude-plugins-official": true}` in `.claude/settings.json` — because user-scoped installs do **not** carry into Claude Code web sessions (our primary surface). Its two checked-in config files: `.claude/claude-security-guidance.md` (this project's threat model: security controls, credentials policy, DAL/auth guidelines; ≤8 KB combined cap) and `.claude/security-patterns.json` (deterministic per-edit rules; schema per the plugin docs, verified 2026-06-10: `patterns[]` of `rule_name`/`reminder`(≤1 KB)/`regex`(Python flavor)|`substrings`, optional `paths`/`exclude_paths` globs, ≤50 rules; YAML is the plugin's native format — JSON is used here deliberately so the check works without PyYAML). Plugin prerequisites: Claude Code ≥2.1.144, Python ≥3.8 on PATH. Cost profile: the pattern layer is zero-token; the end-of-turn and commit reviews are model-backed and consume usage. All findings are **advisory** — they re-prompt the writing agent but block nothing — so anything that must be a hard gate is expressed as a deny-hook or CI check instead. It complements the security-reviewer agent and CI security jobs.
@@ -414,7 +422,7 @@ Each phase ends with a promotion PR (`develop → master`) and a human QA gate. 
 
 | Phase | Scope | Exit criteria (human QA gate) |
 |---|---|---|
-| **0 — Build the factory** | Everything in §3–§8 of this plan: CLAUDE.md, roadmap/ files seeded (~20–50 features from requirements via `/groom`), features.schema.json + update-state.ts, model-policy.json, agents, skills, rules, hooks with contract tests, settings, security-guidance plugin configuration, scripts, CI workflows, branch protection + `develop` as default branch, PR/STATUS templates, OPERATOR_GUIDE.md | Operator can read STATUS.md, ROADMAP.md, OPERATOR_GUIDE.md and confirm they make sense; a deliberately-trivial demo feature (e.g. health-check / ping page) flows the entire loop: brief → build → verify → evaluate → PR → CI → develop, with correct PROGRESS/evidence artifacts |
+| **0 — Build the factory** | Everything in §3–§8 of this plan: CLAUDE.md, roadmap/ files seeded (~20–50 features from requirements via `/groom`), features.schema.json + update-state.ts, model-policy.json, agents, skills, rules, hooks with contract tests, settings, security-guidance plugin configuration, scripts, CI workflows, branch protection + `develop` as default branch, PR/STATUS templates, OPERATOR_GUIDE.md | Operator can read STATUS.md, ROADMAP.md, OPERATOR_GUIDE.md and confirm they make sense; a deliberately-trivial feature (e.g. the `src/health.js` engine health-check CLI) flows the entire loop: brief → build → verify → evaluate → PR → CI → develop, with correct PROGRESS/evidence artifacts |
 | **1 — Foundation** | Project environment, build pipelines, basic project structure, core configuration, test harness, development database wiring, preview setups | Staging shows basic entry page or status indicators; CI fully green |
 | **2 — Core Features & Data Layer** | Primary backend components, API structures, data modeling and migration pipelines, caching layers | Operator QA: verify primary backend components can process mock inputs; schemas and tables verify cleanly |
 | **3 — User Interfaces / Clients** | Primary frontends, components layout, navigation layers, styling systems integration | Operator QA: walk through key views on staging via qa-pack script |
@@ -436,7 +444,7 @@ The only technical-adjacent actions the operator ever performs; each is a guided
 5. claude.ai/code: create the repo **environment** (network policy: Trusted + the domains from §6.2; setup script `scripts/init.sh`). ☐
 6. Enable the nightly + hygiene **Routines** when Phase 1 gate passes (one toggle each): remove all connectors they don't need, leave "Allow unrestricted branch pushes" OFF, and check at claude.ai/settings/usage that your plan's daily routine-run allowance covers the cadence. ☐
 7. Generate a subscription token for the `@claude` PR lane: in a terminal in the project folder run `claude setup-token`, copy the token it prints, and add it as a GitHub Actions secret named `CLAUDE_CODE_OAUTH_TOKEN` (repo → Settings → Secrets and variables → Actions). **No API key required** — this token runs on your Claude subscription's included agent credits. (An `ANTHROPIC_API_KEY` remains an optional alternative, never a requirement.) ☐
-8. After **June 15, 2026**: check Settings → Billing on claude.ai that the separate per-user **agent credit pool** covers the CI-autofix lane (optionally enable overflow billing); after **June 23, 2026**, note Fable 5 usage bills as credits. ☐
+8. After **June 15, 2026**: check Settings → Billing on claude.ai that the separate per-user **agent credit pool** covers the CI-autofix lane (optionally enable overflow billing); from **June 23, 2026**, note Fable 5 usage bills as credits. ☐
 
 ---
 

@@ -1,0 +1,10 @@
+{
+  "id": "rbac-reason-deny",
+  "category": "reasoning",
+  "tier": "builder",
+  "model": "sonnet",
+  "max_turns": 1,
+  "prompt": "RBAC policy: owner allows everything. admin allows everything EXCEPT org/billing resources. editor and viewer are denied org/billing entirely. Question: does a 'viewer' principal get the 'read' action on the 'billing' resource? Respond with exactly one lowercase word and nothing else: allow or deny.",
+  "grader": { "type": "exact", "expected": "deny" },
+  "notes": "Single-hop policy reasoning with a known answer (billing is owner-only). Deterministic. Catches a regression where a prompt/model change degrades careful instruction-following ('one word only')."
+}
