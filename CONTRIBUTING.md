@@ -15,7 +15,7 @@ A PR is mergeable only when **all** of these hold:
 1. **The gate is green.** `bash scripts/verify.sh` passes (add `--e2e` for UI changes). CI re-runs this on every PR; a locally-green log is not enough.
 2. **Tests, not assertions removed.** New behavior ships with tests. The assertion shield blocks PRs that delete or weaken existing test assertions — do not bypass it; fix the underlying issue.
 3. **State is not hand-edited.** Never edit `roadmap/features.json` by hand — use `scripts/update-state.ts`.
-4. **It targets `develop`.** All PRs go to `develop`, never `main`/`master`. Branches are named `feat/F-XXXX` or `fix/...`.
+4. **It targets `main`.** No direct pushes: all changes arrive through short-lived `feat/F-XXXX` or `fix/...` branches and a green PR.
 5. **Plain-English PR description.** Use the PR template: what it does, how to see it (click-by-click), what could be risky, and the machine checks that passed.
 6. **No new secrets, no production access, synthetic data only.**
 

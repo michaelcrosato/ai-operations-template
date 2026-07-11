@@ -106,10 +106,11 @@ step "model-policy ↔ agent frontmatter (no drift)" npx ts-node scripts/check-m
 step "assertion shield" npx ts-node scripts/assertion-shield.ts
 
 # Static analysis on the guardrail layer itself (F-0008): the hooks and gate
-# scripts ARE this engine's product surface. biome + shellcheck ship as npm
-# devDependencies (hard everywhere); actionlint is CI-hard, local-soft.
+# scripts ARE this engine's product surface. Biome is an npm devDependency;
+# ShellCheck is an official version+checksum-pinned binary cached by its launcher.
+# Both are hard everywhere; actionlint is CI-hard, local-soft.
 step "engine lint (biome)" npx --no-install biome lint scripts
-step "shellcheck (hooks + gate scripts)" npx --no-install shellcheck .claude/hooks/*.sh scripts/*.sh
+step "shellcheck (hooks + gate scripts)" bash scripts/shellcheck.sh .claude/hooks/*.sh scripts/*.sh
 if command -v actionlint >/dev/null 2>&1; then
   step "actionlint (workflows)" actionlint
 elif [ "${CI:-}" = "true" ]; then

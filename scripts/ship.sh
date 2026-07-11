@@ -28,13 +28,19 @@ case "$TIMEOUT" in ''|*[!0-9]*) TIMEOUT=180 ;; esac
 case "$INTERVAL" in ''|*[!0-9]*) INTERVAL=6 ;; esac
 if [ "$INTERVAL" -lt 1 ]; then INTERVAL=1; fi
 
-if [ "$MERGE" = true ]; then
+require_main_base() {
   # Fail closed on an empty/errored base too: a transient `gh pr view` failure
-  # must never let a master/main-based PR slip through (security review).
+  # must never let a PR targeting anything other than main slip through.
   BASE="$(gh pr view "$PR" --json baseRefName --jq .baseRefName 2>/dev/null || echo '')"
   case "$BASE" in
-    ''|main|master) echo "ERROR: PR #$PR base is '$BASE' — refusing to merge (need a confirmed non-master/main base; §6)." >&2; exit 1 ;;
+    main) ;;
+    '') echo "ERROR: could not determine PR #$PR base — refusing to merge (§6)." >&2; exit 1 ;;
+    *) echo "ERROR: PR #$PR base is '$BASE' — refusing to merge (expected main; §6)." >&2; exit 1 ;;
   esac
+}
+
+if [ "$MERGE" = true ]; then
+  require_main_base
 fi
 
 echo "Waiting for checks to register on PR #$PR..."
@@ -56,6 +62,9 @@ done
 echo "Checks registered. Watching to terminal..."
 if gh pr checks "$PR" --watch; then
   if [ "$MERGE" = true ]; then
+    # Checks can run for minutes and a PR can be retargeted during that window.
+    # Re-read the base immediately before the irreversible merge.
+    require_main_base
     echo "PR #$PR is green. Merging..."
     gh pr merge "$PR" --merge
   else

@@ -24,11 +24,11 @@ Six principles govern everything in this repository. Every agent session is boun
 
 > **Read this first.** This repository is **not a product** — it is a *control plane* for building software with frontier AI agents: a state machine, a set of mechanical guardrails, and an adversarial review loop that let AI write and ship code semi-autonomously while staying auditable. The factory remains the core asset. The repo now also hosts the first slice of a second product built **with** that factory — the bounded one-shot tool (`src/oneshot/`): a deliberately-scoped, single-context-window, human-supervised coding harness (see [`docs/bounded-vs-afk-strategy.md`](docs/bounded-vs-afk-strategy.md)). An adopter can still drop the factory into their own repo and point it at their spec.
 
-**Operational status — last verified 2026-06-18 (`develop`):**
+**Operational status — last verified 2026-07-10 (`main`):**
 
 | Layer | Status |
 |---|---|
-| Engine — state machine, gates, `.claude/hooks/`, **367** hook-contract tests, mutation gate, CI | ✅ **Working** |
+| Engine — state machine, gates, `.claude/hooks/`, **464** hook-contract tests, mutation gate, CI | ✅ **Working** |
 | Risk-tier adaptive layer (A/B/C → builder model, review depth, approval gate) | ✅ **now exercised end-to-end** — F-0040/F-0041 (Tier B) + F-0042/F-0043 (Tier C, incl. the mandatory security-reviewer + the awaiting_approval gate) |
 | One-shot tool (`src/oneshot/`) — admission gate + evidence-gated verdict | ✅ **MVP shipped** (F-0040/F-0041) — first slice of the bounded-single-shot product; early MVP, not a finished product |
 | Benchmark (`bench/`) | ✅ Built & validity-gated — atomic **7/7**; `L1 pass^5`, `L4/G1–G4 pass^2` dogfooded |
@@ -63,7 +63,7 @@ SELECT a pending feature (priority, deps met, attempts < 2)
            + mutation-smoke + guards; evidence captured to roadmap/evidence/<id>/)
 → JUDGE   (a fresh-context evaluator on EVERY feature, every tier — never sampled;
            + a security reviewer, mandatory on Tier C or any auth/data/deps/CI/hooks diff)
-→ SHIP    (PR → develop, merge on green CI — EXCEPT a Tier-C/irreversible surface, which
+→ SHIP    (PR → main, merge on green CI — EXCEPT a Tier-C/irreversible surface, which
            parks `awaiting_approval` for human sign-off while the loop keeps moving)
 → RECORD  (progress / decisions / metrics) → KAIZEN (one ≥1% system improvement) → LOOP
 ```
@@ -126,7 +126,7 @@ The loop is closing: change the engine → the suite says, with numbers, whether
 - **Guardrails are deterrents + mechanical catches, not sandboxing.** A builder agent technically has shell/edit access; the hooks *catch* out-of-scope behavior rather than *prevent* it at the OS level. Good for a trusted single-operator setup; not a substitute for real isolation in a hostile multi-tenant context.
 - **The "independent" evaluator is the same model family.** A fresh session reduces context-bias, but correlated blind spots (subtle logic/crypto/concurrency bugs) can carry forward. External multi-source review has found real issues the automated gates missed — the system is useful *and* fallible.
 - **Even this engine can ship on a stale assumption.** A model-switching feature was once justified by a now-false claim about the Claude Code platform (that a subagent's model can't be overridden per-invocation — it can). The freshness rule (`CLAUDE.md §5`) exists precisely to catch this; the lapse was caught in review, corrected, and recorded as a scar. Re-verify AI-tooling facts against live docs.
-- **Test depth is concentrated on the guardrail/state layer.** It has 367 contract tests + a mutation gate + property tests; the engine's own scripts carry targeted contract tests. "25/25 features passing" means *evidence exists on disk and CI ran green*, not "market-validated."
+- **Test depth is concentrated on the guardrail/state layer.** It has 464 contract tests + a mutation gate + property tests; the engine's own scripts carry targeted contract tests. A feature marked passing means *evidence exists on disk and CI ran green*, not "market-validated."
 - **Heavy AI / key-operator dependency.** Built and maintained by the AI orchestrator. Whether a human team can maintain it cold, at speed, is unproven; the ops plan + constitution are real onboarding cost.
 - **Cross-platform fragility.** Hooks are bash; on Windows they need Git Bash (WSL bash misbehaves). CI does not test Windows builds. A Windows path-normalization bug in the path-authorization gate — which had silently forced builders to bypass the guard via unscoped Bash calls — was found and fixed in F-0042 (verify-gate.sh now canonicalizes paths via `path.relative`, matching path-guard.js).
 - **Code formatting is not enforced.** Biome *lint* gates every PR, but auto-format is intentionally off — the engine spends its gate budget on correctness (typecheck, lint, tests, mutation-smoke) over style. A non-writing `biome format --check` is a cheap future add if style drift ever shows up.
@@ -148,7 +148,7 @@ This repo is a **template**. Adopters take the factory and replace this README w
 1. From a clone, run `bash scripts/install-into.sh <path-to-your-repo>` — it copies the engine files (`CLAUDE.md`, `AI_OPERATIONS_PLAN.md`, `OPERATOR_GUIDE.md`, `TASK_AUTONOMY_TRIAGE.md`, `.claude/`, `scripts/`, `.github/`, config), merges (not clobbers) `package.json`/`.gitignore`, and seeds empty roadmap state. (New project? Click **Use this template** on GitHub.)
 2. Replace every `<PLACEHOLDER>` (`grep -rE "<[A-Z][A-Z0-9_]{2,}>" *.md`) and set your `name` in `package.json`.
 3. `bash scripts/init.sh` then `bash scripts/verify.sh` — both must pass before the first agent session.
-4. Set `develop` as default; protect `main`/`master` (PR + approval) and `develop` (PR + green CI).
+4. Set `main` as the default and only long-lived branch; require PRs + green CI, block direct/force pushes, and delete short-lived branches after merge.
 5. Seed the backlog: tell the orchestrator to run `/groom` against your product spec.
 6. Follow the one-time human checklist in `AI_OPERATIONS_PLAN.md` §11.
 

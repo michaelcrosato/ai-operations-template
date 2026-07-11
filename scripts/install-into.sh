@@ -118,12 +118,12 @@ if [ ! -f "$TARGET/.gitignore" ]; then
     cp "$TEMPLATE_ROOT/.gitignore" "$TARGET/.gitignore"
     echo "  copied: .gitignore"
   else
-    printf 'node_modules/\ntmp/\n*.log\n!roadmap/evidence/**\n.claude/settings.local.json\n' > "$TARGET/.gitignore"
+    printf 'node_modules/\ntmp/\n.cache/\n*.log\n!roadmap/evidence/**\n.claude/settings.local.json\n' > "$TARGET/.gitignore"
     echo "  created: .gitignore (from required lines)"
   fi
 else
   echo "  .gitignore exists -- checking for missing load-bearing lines..."
-  for required_line in 'node_modules/' 'tmp/' '*.log' '!roadmap/evidence/**' '.claude/settings.local.json'; do
+  for required_line in 'node_modules/' 'tmp/' '.cache/' '*.log' '!roadmap/evidence/**' '.claude/settings.local.json'; do
     if ! grep -qxF "$required_line" "$TARGET/.gitignore"; then
       printf '\n%s\n' "$required_line" >> "$TARGET/.gitignore"
       echo "    appended missing line: $required_line"
@@ -237,13 +237,15 @@ echo ""
 echo "--- Transforming package.json ---"
 
 PKG_TRANSFORM_SCRIPT="$(mktemp /tmp/install-into-pkg-XXXXXX.js)"
+PKG_TRANSFORM_STATUS="$(mktemp /tmp/install-into-pkg-status-XXXXXX)"
 # Remove the temp script even on early exit (security review, F-0013)
-trap 'rm -f "$PKG_TRANSFORM_SCRIPT"' EXIT
+trap 'rm -f "$PKG_TRANSFORM_SCRIPT" "$PKG_TRANSFORM_STATUS"' EXIT
 
 cat > "$PKG_TRANSFORM_SCRIPT" << 'NODEEOF'
 const fs = require('fs');
 const path = require('path');
 const target = process.argv[2];
+const statusPath = process.argv[3];
 const pkgPath = path.join(target, 'package.json');
 const engineScripts = {
   "verify": "bash scripts/verify.sh",
@@ -256,10 +258,10 @@ const engineScripts = {
 const engineDeps = {
   "@biomejs/biome": "^2.4.16",
   "@types/node": "^25.9.2",
-  "shellcheck": "^4.1.0",
   "ts-node": "^10.9.2",
   "typescript": "^6.0.3"
 };
+const retiredEngineShellcheckSpecs = new Set(['4.1.0', '^4.1.0']);
 
 let pkg;
 if (fs.existsSync(pkgPath)) {
@@ -275,6 +277,14 @@ if (fs.existsSync(pkgPath)) {
   }
   // NEVER add or modify test script
   if (!pkg.devDependencies) pkg.devDependencies = {};
+  const shellcheckSpec = pkg.devDependencies.shellcheck;
+  if (retiredEngineShellcheckSpecs.has(shellcheckSpec)) {
+    delete pkg.devDependencies.shellcheck;
+    fs.writeFileSync(statusPath, 'retired-engine-shellcheck\n');
+    process.stdout.write(`  removed retired engine devDependency: shellcheck@${shellcheckSpec}\n`);
+  } else if (shellcheckSpec) {
+    process.stderr.write(`WARNING: preserved project-owned shellcheck@${shellcheckSpec}; the engine now uses scripts/shellcheck.sh instead. Audit this custom dependency separately.\n`);
+  }
   for (const [k, v] of Object.entries(engineDeps)) {
     if (!(k in pkg.devDependencies)) {
       pkg.devDependencies[k] = v;
@@ -295,8 +305,19 @@ if (fs.existsSync(pkgPath)) {
 }
 NODEEOF
 
-node "$PKG_TRANSFORM_SCRIPT" "$TARGET"
-rm -f "$PKG_TRANSFORM_SCRIPT"
+node "$PKG_TRANSFORM_SCRIPT" "$TARGET" "$PKG_TRANSFORM_STATUS"
+
+# Removing a dependency from package.json makes an existing lockfile invalid for
+# npm ci. Reconcile it through npm's lockfile writer without running any adopter
+# lifecycle scripts; never delete or replace the lockfile by hand.
+if [ -s "$PKG_TRANSFORM_STATUS" ] && [ -f "$TARGET/package-lock.json" ]; then
+  echo "  reconciling package-lock.json after retired ShellCheck removal (scripts disabled)..."
+  (cd "$TARGET" && npm install --package-lock-only --ignore-scripts --no-audit --no-fund)
+  echo "  reconciled: package-lock.json"
+fi
+
+rm -f "$PKG_TRANSFORM_SCRIPT" "$PKG_TRANSFORM_STATUS"
+trap - EXIT
 
 echo ""
 
@@ -342,9 +363,9 @@ echo "     Windows local CLI note: run those commands from Git Bash. If PowerShe
 echo "     resolves 'bash' to WSL, prepend Git Bash before launching Claude/CLI:"
 printf '%s\n' "       \$env:Path = 'C:\\Program Files\\Git\\bin;' + \$env:Path"
 echo ""
-echo "  4. Set 'develop' as the GitHub default branch."
-echo "     Protect master/main (PR + human approval) and develop (PR + green CI)."
-echo "     Because develop blocks direct pushes, roadmap-state updates land via PRs:"
+echo "  4. Set 'main' as the GitHub default and only long-lived branch."
+echo "     Require PRs + green CI; block direct/force pushes and branch deletion."
+echo "     Because main blocks direct pushes, roadmap-state updates land via PRs:"
 echo "     state flips ride the feature PR itself; post-merge records (progress/"
 echo "     status/metrics) go via short-lived chore/ branches -- the record-PR pattern."
 echo ""

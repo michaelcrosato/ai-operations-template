@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
  * of test assertions by AI agents.
  */
 
-const BASE_BRANCH = process.env.BASE_BRANCH || 'origin/develop';
+const BASE_BRANCH = process.env.BASE_BRANCH || 'origin/main';
 
 // A real git diff never approaches this. The execFileSync default (1 MB) silently THREW on a larger
 // diff and the error was swallowed below — blanking the entire scan, the exact fail-open this gate

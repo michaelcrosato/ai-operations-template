@@ -9,7 +9,7 @@ description: The idle protocol — what the orchestrator does when no feature is
 
 1. **Sentinel scan — catch problems before they happen.**
    - `gh run list --limit 20`: new flakiness, slowdowns, red runs nobody triaged.
-   - Staging up? Last deploy matches develop HEAD?
+   - Staging up? Last deploy matches main HEAD?
    - `gh api repos/{owner}/{repo}/dependabot/alerts` (if enabled): new vulnerabilities.
    - Stale branches, green-but-unmerged PRs, `npx ts-node scripts/update-state.ts --validate` drift.
    - `.claude/model-policy.json` entries with `last_verified` older than 30 days → `/research`.

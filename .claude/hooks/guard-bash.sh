@@ -24,16 +24,49 @@ fi
 
 block() { echo "BLOCKED by guard-bash.sh: $1" >&2; exit 2; }
 
-# Push to stable branches / force push.
-# GITPUSH tolerates flags between git and push (git -C . push, git -c k=v push)
-# and the target patterns cover refspec forms (HEAD:main, x:refs/heads/main).
-GITPUSH='git[[:space:]]+((-C[[:space:]]+[^[:space:]]+|-c[[:space:]]+[^[:space:]]+|--(git-dir|work-tree|namespace|exec-path)(=[^[:space:]]+|[[:space:]]+[^[:space:]]+)|--?[A-Za-z][^[:space:]]*)[[:space:]]+)*push'
-# Stable-branch targets: " main", ":main", "+main" (force-refspec), refs/heads/ forms
-echo "$CMD" | grep -qE "${GITPUSH}[^|;&]*[ :+](refs/heads/)?(main|master)([^a-zA-Z0-9_-]|\$)" \
-  && block "pushing to a stable branch (main/master) is prohibited; PRs target develop (CLAUDE.md §5)."
-# Force pushes: --force/--force-with-lease/-f flags AND the +<refspec> syntax
-echo "$CMD" | grep -qE "${GITPUSH}[^|;&]*(--force(-with-lease)?|[[:space:]]-f([[:space:]]|\$)|[[:space:]]\+[^[:space:]])" \
-  && block "force-pushing is prohibited (including +refspec syntax); rebase locally or merge cleanly (CLAUDE.md §6)."
+# Git push policy is a strict allowlist, not a shell parser. Any detected push is
+# blocked unless the ENTIRE command is one canonical, single-line operation to
+# an explicit short-lived branch (or an explicit tag). This fails closed on
+# wrappers, redirections, comments, command chains, force/broad modes, implicit
+# upstreams, dynamic refspecs, and option grammars we have not reviewed.
+# Shell line continuations are joined first; quotes and remaining backslash
+# escapes are then removed only in this non-executing comparison copy. The
+# command itself is never evaluated here.
+PUSH_SCAN_CMD="${CMD//$'\\\r\n'/}"
+PUSH_SCAN_CMD="${PUSH_SCAN_CMD//$'\\\n'/}"
+PUSH_SCAN_CMD="$(printf '%s' "$PUSH_SCAN_CMD" | tr -d "\"'" | tr -d "\\\\")"
+PUSH_DETECT_CMD="$(printf '%s' "$PUSH_SCAN_CMD" | tr '\r\n' '  ')"
+GIT_PUSH_ANY='(^|[[:space:];&|()])[^[:space:];&|()]*git(\.exe)?([[:space:]]+[^[:space:];&|()<>#]+)*[[:space:]]+push([[:space:];&|()<>#]|$)'
+
+# If shell expansion is being used anywhere in a push-shaped Git command, its
+# executable/subcommand/destination cannot be proven literal. Block before the
+# ordinary detector so `$(printf git) push` and `git${IFS}push...` fail closed.
+if printf '%s\n' "$PUSH_DETECT_CMD" | grep -qi 'git' &&
+   printf '%s\n' "$PUSH_DETECT_CMD" | grep -qi 'push' &&
+   printf '%s\n' "$CMD" | grep -qE '(\$|`)'; then
+  block "dynamic construction of a git push command is prohibited; use one canonical literal command."
+fi
+
+if printf '%s\n' "$PUSH_DETECT_CMD" | grep -qiE "$GIT_PUSH_ANY"; then
+  SAFE_PUSH=false
+  case "$PUSH_SCAN_CMD" in
+    *$'\n'*|*$'\r'*|*';'*|*'&'*|*'|'*|*'('*|*')'*|*'<'*|*'>'*|*'#'*|*'`'*|*'$'*|*'{'*|*'}'*|*'*'*|*'?'*|*'['*) ;;
+    *)
+      SAFE_TOKEN='[^[:space:]]+'
+      SAFE_GIT="git(([[:space:]]+-C[[:space:]]+${SAFE_TOKEN})|([[:space:]]+-c[[:space:]]+${SAFE_TOKEN})|([[:space:]]+--(git-dir|work-tree|namespace|exec-path)(=${SAFE_TOKEN}|[[:space:]]+${SAFE_TOKEN})))*[[:space:]]+push"
+      SAFE_BRANCH='(feat|fix|chore|claude|codex|dependabot)/[A-Za-z0-9._/-]+'
+      SAFE_TAG='refs/tags/[A-Za-z0-9._/-]+'
+      if printf '%s\n' "$PUSH_SCAN_CMD" | grep -qE "^${SAFE_GIT}([[:space:]]+(-u|--set-upstream))?[[:space:]]+origin[[:space:]]+(HEAD:|@:)?${SAFE_BRANCH}$" ||
+         printf '%s\n' "$PUSH_SCAN_CMD" | grep -qE "^${SAFE_GIT}[[:space:]]+origin[[:space:]]+--delete[[:space:]]+${SAFE_BRANCH}$" ||
+         printf '%s\n' "$PUSH_SCAN_CMD" | grep -qE "^${SAFE_GIT}[[:space:]]+--delete[[:space:]]+origin[[:space:]]+${SAFE_BRANCH}$" ||
+         printf '%s\n' "$PUSH_SCAN_CMD" | grep -qE "^${SAFE_GIT}[[:space:]]+origin[[:space:]]+:${SAFE_BRANCH}$" ||
+         printf '%s\n' "$PUSH_SCAN_CMD" | grep -qE "^${SAFE_GIT}[[:space:]]+origin[[:space:]]+${SAFE_TAG}(:${SAFE_TAG})?$"; then
+        SAFE_PUSH=true
+      fi
+      ;;
+  esac
+  [ "$SAFE_PUSH" = true ] || block "git push is allowed only as one canonical command to an explicit short-lived branch or tag; direct/implicit/force/wrapped pushes are prohibited."
+fi
 
 # Destructive filesystem operations outside temp
 # shellcheck disable=SC2016  # pattern matches a literal dollar (HOME) — no expansion intended

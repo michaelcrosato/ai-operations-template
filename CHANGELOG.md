@@ -4,17 +4,21 @@ All notable changes to the **ai-operations-engine** template, newest first. **Sc
 changes only — *not* per-feature product delivery** (that history lives in `roadmap/PROGRESS.md`). This is the
 human-readable companion to `roadmap/PROGRESS.md` (narrative) and `roadmap/DECISIONS.md` (one entry
 per judgment call) — it summarizes what an adopter or operator would care about. Format follows
-[Keep a Changelog](https://keepachangelog.com/). The template is rolling (latest `develop` + tag
-`v0.1.0`), so changes accrue under **Unreleased** until a tag is cut.
+[Keep a Changelog](https://keepachangelog.com/). The template is rolling (latest `main` + tag
+`v0.2.0`), so changes accrue under **Unreleased** until a tag is cut.
 
 ## [Unreleased]
+
+### Changed
+- **Single-branch operating model (2026-07-10).** `main` is now the default and only long-lived branch. All work starts from and returns to `main` through green PRs; CI, assertion comparisons, agent instructions, shipping helpers, and adopter setup agree on that model. Release milestones use annotated tags/GitHub Releases instead of a second promotion branch.
+- **Tooling refresh (2026-07-10).** Biome 2.5.3, Node typings 26.1.1, and the SHA-pinned Claude action v1.0.170. TypeScript remains on 6.0.3 because 7.0.2 removes the programmatic API required by `ts-node` and fails this repo's safety gate. The abandoned ShellCheck npm wrapper and its vulnerable archive-extraction tree are gone; one repository launcher now downloads official ShellCheck v0.11.0, verifies the archive and extracted binary checksums, and caches the exact same binary on Windows Git Bash and Linux CI. The full dependency audit is 0/0 and CI now audits dev tooling too.
 
 ### Added
 - **Bounded one-shot tool MVP (`src/oneshot/`) (2026-06-18).** Admission gate (F-0040: single machine-checkable acceptance + working-set token budget) + evidence-gated verdict (F-0041: PASS only on captured exit-0 proof, ignores the agent self-claim). First slice of the bounded-single-shot product (`docs/bounded-vs-afk-strategy.md`); reuses the shared guardrail core, zero new dependencies. First features to exercise the risk-tier layer end-to-end (Tier B).
 
 ### Fixed
 - **verify-gate.sh Windows absolute-path normalization (F-0042).** Canonicalizes to repo-relative via `path.relative` mirroring path-guard.js; in-scope edits on Windows are no longer wrongly blocked (the bug had forced builders to bypass the guard). path-guard.js root aligned to `CLAUDE_PROJECT_DIR||cwd`. First Tier-C feature (builder-strong + evaluator + security-reviewer).
-- **Hook-contract test isolation (F-0043).** Six permissive-mode tests now pin a zero-in_progress STATE_FILE fixture instead of the live backlog, so `verify.sh` passes while a feature is in_progress. Hook-contract tests: 367.
+- **Hook-contract test isolation (F-0043).** Six permissive-mode tests now pin a zero-in_progress STATE_FILE fixture instead of the live backlog, so `verify.sh` passes while a feature is in_progress. Hook-contract tests at that release: 367.
 
 ### Removed
 - **Removed the ForgeOps demo — engine-only template (2026-06-16).** The non-functional browser
@@ -27,6 +31,7 @@ per judgment call) — it summarizes what an adopter or operator would care abou
   `src/forge/rbac.ts`. Added `update-state.ts --remove` to delete backlog rows.
 
 ### Security
+- **Main-only delivery defenses hardened (2026-07-10).** GitHub Actions now use exact reviewed commit SHAs; the local push guard allows only canonical literal pushes to short-lived branches or explicit tags; and the shipping helper rechecks a PR's target immediately before merge. Locked adopters also reconcile the retired ShellCheck dependency without running lifecycle scripts. Independent security review replayed quoted, escaped, multiline, redirection, wrapper, option, path, and dynamically-constructed push variants before approval.
 - **assertion-shield: closed 7 diff-header fail-opens.** A gutted test could slip past the
   anti-coverage-erosion gate via a one-line gitconfig/attribute (`diff.noprefix`,
   `diff.mnemonicPrefix`, `diff.srcPrefix`/`dstPrefix`, `core.quotepath`, `color.ui`,
@@ -35,8 +40,8 @@ per judgment call) — it summarizes what an adopter or operator would care abou
 - **path-authz: closed two scope bypasses.** `NotebookEdit` writes skipped per-feature
   authorization (both guards read only `file_path`), and `--paths './scripts/**'` could rescope a
   feature onto the gate scripts. Both closed; the review caught a regression in the first cut. (PR #108)
-- **CI dependency audit.** `npm audit --omit=dev --audit-level=high` now gates every PR (baseline
-  0 vulnerabilities). (PR #111)
+- **CI dependency audit.** `npm audit --audit-level=high` now gates every PR across production and
+  dev tooling (baseline 0 vulnerabilities). (PR #111; dev scope expanded 2026-07-10)
 
 ### Added
 - **Harness-property gauntlet (`bench/suite/G1`–`G4`).** A "3DMark for orchestration" stressing the
@@ -59,6 +64,6 @@ per judgment call) — it summarizes what an adopter or operator would care abou
 ---
 
 *Process note: every change above shipped through the engine's own loop — a green
-`scripts/verify.sh` (typecheck · lint · 367 hook-contract tests · mutation-smoke · state-validate),
-the 7 benchmark validity gates, and CI-gated PR merges to `develop`. Security-sensitive guard
+`scripts/verify.sh` (typecheck · lint · 464 hook-contract tests · mutation-smoke · state-validate),
+the 7 benchmark validity gates, and CI-gated PR merges to `main`. Security-sensitive guard
 changes additionally went through a fresh-context security review.*

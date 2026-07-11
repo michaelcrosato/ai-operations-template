@@ -18,4 +18,4 @@
 - Cost/usage line in the daily status report.
 
 ## Ideas
-- Heterogeneous second-opinion review (different model family) on promotion PRs.
+- Heterogeneous second-opinion review (different model family) before security-sensitive releases.
