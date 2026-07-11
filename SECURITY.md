@@ -28,10 +28,10 @@ We aim to acknowledge a report within **5 business days** and to agree on a disc
 
 ## Supported versions
 
-This is a rolling template; only the latest `develop` (and the most recent tag, currently `v0.1.0`) is supported. There are no backported security releases for older tags.
+This is a rolling template; only the latest `main` (and the most recent tag, currently `v0.2.0`) is supported. There are no backported security releases for older tags.
 
 ## Our own safeguards
 
 - Secrets are never committed; `.env*` is unreadable to agents by policy and by hook.
-- CI runs a dependency vulnerability audit (`npm audit --omit=dev --audit-level=high`), a secret-shaped-string scan, and a trust-widening tripwire on every PR.
+- CI runs a full dependency vulnerability audit (`npm audit --audit-level=high`, including dev tools), a secret-shaped-string scan, and a trust-widening tripwire on every PR.
 - Dependabot alerts, Dependabot security updates, secret scanning, and push protection are enabled on this repository.

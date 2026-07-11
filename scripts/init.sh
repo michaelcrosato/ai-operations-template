@@ -10,6 +10,9 @@ bash scripts/local-cli-preflight.sh
 echo "[init] installing dependencies…"
 if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
 
+echo "[init] provisioning checksum-pinned ShellCheck…"
+bash scripts/shellcheck.sh --version
+
 echo "[init] marking hook/gate scripts executable…"
 chmod +x .claude/hooks/*.sh scripts/*.sh 2>/dev/null || true
 

@@ -30,8 +30,8 @@ One command that must pass before anything merges. It runs, in order and fail-fa
 - **state integrity** — `update-state.ts --validate` checks `features.json` against its schema and invariants (single in-progress, born-failing, evidence-gated `passes`, closed shape)
 - **model-policy drift** — agent card `model:` frontmatter must match `.claude/model-policy.json`
 - **assertion-shield** — blocks any commit that deletes/weakens a test assertion
-- **biome + shellcheck** on `scripts/` and `.claude/hooks/`
-- **hook-contract tests** — `hook contract tests: 367 passed, 0 failed`
+- **biome + ShellCheck v0.11.0** on `scripts/` and `.claude/hooks/` (official binary, archive and binary checksums pinned)
+- **hook-contract tests** — `hook contract tests: 464 passed, 0 failed`
 - **mutation-smoke** — see §2
 
 Run it: `bash scripts/verify.sh`. The last line is `VERIFY: PASS (exit 0)` or `VERIFY: FAIL`. That line is machine-read: a feature can only be marked "done" when a captured green log exists on disk (see §5).
@@ -58,16 +58,16 @@ Each `[killed]` line is a guard proving it has teeth: remove that rule from the 
 
 ---
 
-## 3. The guard tests — `scripts/test-hooks.sh` (367 checks)
+## 3. The guard tests — `scripts/test-hooks.sh` (464 checks)
 
 Deterministic abuse cases against every hook — positive *and* negative:
 
-- **guard-bash**: blocks push to `main`/`master`, force-push, `.env` reads (bash *and* PowerShell / `[System.IO.File]` / `xxd`/`base64` tricks), pipe-to-shell, `npm publish`, secret-exfil POSTs, recursive `rm` on root/home, and self-bypass of the assertion-shield — while *allowing* pushes to `develop`, scoped `rm`, and harmless git.
+- **guard-bash**: blocks direct push to `main`/`master`, force-push, `.env` reads (bash *and* PowerShell / `[System.IO.File]` / `xxd`/`base64` tricks), pipe-to-shell, `npm publish`, secret-exfil POSTs, recursive `rm` on root/home, and self-bypass of the assertion-shield — while *allowing* pushes to short-lived feature/fix branches, scoped `rm`, and harmless git.
 - **verify-gate / path-guard**: blocks every spelling of a `features.json` edit (relative, backslash, dot-segment, `//`, parent re-entry); enforces per-feature path authorization (in-scope allowed, out-of-scope + `forbidden_paths` blocked, fail-closed on unknown feature); Windows absolute-path normalization (the F-0042 fix); and agrees between the bash and node implementations.
 - **update-state**: rejects malformed JSON, `passes:true` at birth, dangling dependencies, and two concurrent in-progress features (hand-edit defense).
 - **kill switch**: an `AGENT_STOP` file halts all commands.
 
-These run inside `verify.sh`; the count prints as `hook contract tests: 367 passed, 0 failed`.
+These run inside `verify.sh`; the count prints as `hook contract tests: 464 passed, 0 failed`.
 
 ---
 
@@ -113,7 +113,7 @@ Nothing here is self-reported; the receipts are committed:
 ## Honest limitations — what these proofs do *not* yet show
 
 - **The benchmark is not wired into CI.** Nothing in `bench/` runs automatically today — it's a measurement tool you run by hand, not a merge blocker. Wiring a nightly run (and gating the free `micro.mjs` latency probe) is future work.
-- **Engine-effect signal is ceiling-bound.** On greenfield tasks the base model already scores ~1.0, leaving no headroom to *measure* the factory's build→verify→judge loop improving outcomes. A refactor/"headroom" task is needed (in progress on the `feat/refactor-benchmark` branch).
+- **Engine-effect signal is ceiling-bound.** On greenfield tasks the base model already scores ~1.0, leaving no headroom to *measure* the factory's build→verify→judge loop improving outcomes. A fresh fix-and-improve-existing-code task is queued in the roadmap; the earlier experimental branch was rejected during review and is not evidence.
 - **The LLM-judge lane is deferred.** `tests/judges/` holds planted-bug diffs (a weakened assertion, a seeded IDOR) that the evaluator and security-reviewer *should* catch — but they are **not run in the gate** (an advisory promptfoo lane; LLM checks are slow, flaky, and billed). The judge prompts are exercised in real feature reviews, not in CI.
 - **App-level tests** (`src/oneshot/`, `src/health.js`) cover happy-path + error cases, not fuzzing.
 

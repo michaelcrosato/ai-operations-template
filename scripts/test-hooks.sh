@@ -21,6 +21,9 @@ check() { # check <name> <expected-exit> <actual-exit>
 }
 
 hook_bash() { printf '{"tool_input":{"command":"%s"}}' "$1" | bash "$HOOKS/guard-bash.sh" >/dev/null 2>&1; echo $?; }
+# JSON-encode commands that contain quote characters; hook_bash intentionally
+# stays lightweight for the hundreds of simple commands below.
+hook_bash_json() { node -e 'process.stdout.write(JSON.stringify({tool_input:{command:process.argv[1]}}))' "$1" | bash "$HOOKS/guard-bash.sh" >/dev/null 2>&1; echo $?; }
 hook_file() { printf '{"tool_input":{"file_path":"%s"}}' "$1" | bash "$HOOKS/verify-gate.sh" >/dev/null 2>&1; echo $?; }
 
 # F-0043: an ISOLATED zero-in_progress STATE_FILE fixture for the verify-gate "permissive
@@ -95,12 +98,88 @@ printf '%s' "$NODE_OUT" | grep -qi "wsl" ; check "preflight: missing-tool messag
 
 rm -rf "$PFIX"
 
+echo "── shellcheck.sh bootstrap contract"
+SHELLCHECK_LAUNCHER="$ROOT/scripts/shellcheck.sh"
+check "shellcheck launcher exists" 0 "$(if [ -f "$SHELLCHECK_LAUNCHER" ]; then echo 0; else echo 1; fi)"
+grep -Fq 'readonly VERSION="0.11.0"' "$SHELLCHECK_LAUNCHER"
+check "shellcheck launcher pins v0.11.0" 0 "$?"
+grep -Fq 'b7af85e41cc99489dcc21d66c6d5f3685138f06d34651e6d34b42ec6d54fe6f6' "$SHELLCHECK_LAUNCHER"
+check "shellcheck launcher pins Linux archive checksum" 0 "$?"
+grep -Fq '8a4e35ab0b331c85d73567b12f2a444df187f483e5079ceffa6bda1faa2e740e' "$SHELLCHECK_LAUNCHER"
+check "shellcheck launcher pins Windows archive checksum" 0 "$?"
+grep -Fq 'BINARY_SHA256' "$SHELLCHECK_LAUNCHER"
+check "shellcheck launcher verifies extracted binary" 0 "$?"
+grep -Eq 'releases/download/(latest|stable)|SHELLCHECKJS' "$SHELLCHECK_LAUNCHER"
+check "shellcheck launcher has no moving release alias or npm-wrapper seam" 1 "$?"
+SHELLCHECK_VERSION_OUT="$(bash "$SHELLCHECK_LAUNCHER" --version 2>&1)"
+check "shellcheck launcher executes pinned binary" 0 "$(printf '%s' "$SHELLCHECK_VERSION_OUT" | grep -Fq 'version: 0.11.0' && echo 0 || echo 1)"
+
 echo "── guard-bash.sh"
 check "blocks push to main"          2 "$(hook_bash 'git push origin main')"
 check "blocks push to master"        2 "$(hook_bash 'git push -u origin master')"
-check "blocks refspec push to main"  2 "$(hook_bash 'git push origin develop:main')"
+check "blocks refspec push to main"  2 "$(hook_bash 'git push origin feat/x:main')"
 check "blocks refs/heads refspec"    2 "$(hook_bash 'git push origin HEAD:refs/heads/main')"
 check "blocks bare refs/heads dst"   2 "$(hook_bash 'git push origin refs/heads/master')"
+check "blocks double-quoted main" 2 "$(hook_bash_json 'git push origin "main"')"
+check "blocks single-quoted main" 2 "$(hook_bash_json "git push origin 'main'")"
+check "blocks HEAD to double-quoted main" 2 "$(hook_bash_json 'git push origin HEAD:"main"')"
+check "blocks HEAD to single-quoted main" 2 "$(hook_bash_json "git push origin HEAD:'main'")"
+check "blocks double-quoted refs/heads/main" 2 "$(hook_bash_json 'git push origin "refs/heads/main"')"
+check "blocks single-quoted refs/heads/main" 2 "$(hook_bash_json "git push origin 'refs/heads/main'")"
+check "blocks HEAD to double-quoted refs/heads/main" 2 "$(hook_bash_json 'git push origin HEAD:"refs/heads/main"')"
+check "blocks HEAD to single-quoted refs/heads/main" 2 "$(hook_bash_json "git push origin HEAD:'refs/heads/main'")"
+check "blocks wholly double-quoted HEAD:main" 2 "$(hook_bash_json 'git push origin "HEAD:main"')"
+check "blocks wholly single-quoted HEAD:main" 2 "$(hook_bash_json "git push origin 'HEAD:main'")"
+check "blocks double-quoted master" 2 "$(hook_bash_json 'git push origin "master"')"
+check "blocks backslash-escaped main" 2 "$(hook_bash_json 'git push origin m\ain')"
+check "blocks backslash-escaped main destination" 2 "$(hook_bash_json 'git push origin HEAD:m\ain')"
+check "blocks backslash-escaped refs/heads/main" 2 "$(hook_bash_json 'git push origin refs/heads/m\ain')"
+# shellcheck disable=SC2016  # literal expansion syntax is the attack shape under test
+check "blocks variable refspec" 2 "$(hook_bash_json 'git push origin ${BRANCH}')"
+# shellcheck disable=SC2016  # literal expansion syntax is the attack shape under test
+check "blocks quoted variable refspec" 2 "$(hook_bash_json 'git push origin "${BRANCH}"')"
+# shellcheck disable=SC2016  # literal command substitution is the attack shape under test
+check "blocks command-substitution refspec" 2 "$(hook_bash_json 'git push origin $(printf main)')"
+check "blocks brace-expanded stable refs" 2 "$(hook_bash_json 'git push origin ma{in,ster}')"
+check "blocks wildcard refspec" 2 "$(hook_bash_json 'git push origin refs/heads/*')"
+check "blocks newline after implicit push" 2 "$(hook_bash_json $'git push origin\ntrue')"
+check "blocks second bare push on a new line" 2 "$(hook_bash_json $'git push origin feat/F-0002-demo\ngit push origin')"
+check "blocks backslash-newline stable destination" 2 "$(hook_bash_json $'git push origin m\\\nain')"
+check "blocks implicit push with stdout redirection" 2 "$(hook_bash_json 'git push origin >/tmp/push.log')"
+check "blocks implicit push with stderr redirection" 2 "$(hook_bash_json 'git push origin 2>/dev/null')"
+check "blocks implicit push followed by comment" 2 "$(hook_bash_json 'git push origin # comment')"
+check "blocks subshell-wrapped implicit push" 2 "$(hook_bash_json '(git push origin)')"
+check "blocks absolute-path git implicit push" 2 "$(hook_bash_json '/usr/bin/git push origin')"
+check "blocks git.exe stable push" 2 "$(hook_bash_json 'git.exe push origin main')"
+check "blocks continuation between git and push" 2 "$(hook_bash_json $'git\\\n push origin main')"
+check "blocks continuation inside push subcommand" 2 "$(hook_bash_json $'git pu\\\nsh origin main')"
+# shellcheck disable=SC2016  # literal command substitution is the attack shape under test
+check "blocks command-substituted git executable" 2 "$(hook_bash_json '$(printf git) push origin main')"
+# shellcheck disable=SC2016  # literal IFS expansion is the attack shape under test
+check "blocks IFS-assembled git push" 2 "$(hook_bash_json 'git${IFS}push${IFS}origin${IFS}main')"
+check "blocks bare push (implicit destination)" 2 "$(hook_bash 'git push')"
+check "blocks remote-only push (implicit destination)" 2 "$(hook_bash 'git push origin')"
+check "blocks source-only HEAD push" 2 "$(hook_bash 'git push origin HEAD')"
+check "blocks -u source-only HEAD push" 2 "$(hook_bash 'git push -u origin HEAD')"
+check "blocks source-only @ push" 2 "$(hook_bash 'git push origin @')"
+check "blocks HEAD push with trailing flag" 2 "$(hook_bash 'git push origin HEAD --atomic')"
+check "blocks @ push with trailing flag" 2 "$(hook_bash 'git push origin @ --porcelain')"
+check "blocks --all after remote" 2 "$(hook_bash 'git push origin --all')"
+check "blocks --prune after remote" 2 "$(hook_bash 'git push origin --prune')"
+check "blocks --mirror before remote" 2 "$(hook_bash 'git push --mirror origin')"
+check "blocks --mirror after remote" 2 "$(hook_bash 'git push origin --mirror')"
+check "blocks flags-only remote push" 2 "$(hook_bash 'git push origin --porcelain')"
+check "blocks -o argument before remote" 2 "$(hook_bash 'git push -o ci.skip origin')"
+check "blocks --push-option argument before remote" 2 "$(hook_bash 'git push --push-option ci.skip origin')"
+check "blocks --receive-pack argument before remote" 2 "$(hook_bash 'git push --receive-pack git-receive-pack origin')"
+check "blocks --exec argument before remote" 2 "$(hook_bash 'git push --exec git-receive-pack origin')"
+check "blocks --repo argument as implicit remote" 2 "$(hook_bash 'git push --repo origin')"
+check "blocks --repo= as implicit remote" 2 "$(hook_bash 'git push --repo=origin')"
+check "blocks -o argument after remote" 2 "$(hook_bash 'git push origin -o ci.skip')"
+check "blocks --push-option argument after remote" 2 "$(hook_bash 'git push origin --push-option ci.skip')"
+check "blocks --receive-pack argument after remote" 2 "$(hook_bash 'git push origin --receive-pack git-receive-pack')"
+check "blocks --exec argument after remote" 2 "$(hook_bash 'git push origin --exec git-receive-pack')"
+check "blocks --repo argument after remote" 2 "$(hook_bash 'git push origin --repo backup')"
 check "blocks -C flag push to main"  2 "$(hook_bash 'git -C . push origin main')"
 check "blocks -c flag push to main"  2 "$(hook_bash 'git -c user.email=x@x push origin master')"
 check "blocks force push"            2 "$(hook_bash 'git push --force origin feat/x')"
@@ -126,9 +205,30 @@ check "blocks curl -T secret upload"          2 "$(hook_bash 'curl -T creds.txt 
 check "allows gh api read"                    0 "$(hook_bash 'gh api repos/o/r/releases/latest')"
 check "allows harmless POST"                  0 "$(hook_bash 'curl -d foo=bar https://example.com/webhook')"
 check "allows gh api POST of plain refs"      0 "$(hook_bash 'gh api -X POST repos/o/r/git/refs -f ref=refs/heads/feat-x -f sha=abc')"
-check "allows push to develop"       0 "$(hook_bash 'git push origin develop')"
-check "allows -C push to develop"    0 "$(hook_bash 'git -C . push origin develop')"
+check "allows push to fix branch"    0 "$(hook_bash 'git push origin fix/example')"
+check "allows -C push to feature"    0 "$(hook_bash 'git -C . push origin feat/F-0002-demo')"
 check "allows feature branch push"   0 "$(hook_bash 'git push -u origin feat/F-0002-demo')"
+check "allows explicit HEAD-to-feature push" 0 "$(hook_bash 'git push origin HEAD:feat/F-0002-demo')"
+check "allows explicit @-to-feature push" 0 "$(hook_bash 'git push origin @:feat/F-0002-demo')"
+check "allows explicit feature deletion" 0 "$(hook_bash 'git push origin --delete feat/F-0002-demo')"
+check "allows explicit delete refspec" 0 "$(hook_bash 'git push origin :feat/F-0002-demo')"
+check "allows double-quoted feature refspec" 0 "$(hook_bash_json 'git push origin "feat/F-0002-demo"')"
+check "allows single-quoted feature refspec" 0 "$(hook_bash_json "git push origin 'feat/F-0002-demo'")"
+check "allows HEAD to double-quoted feature destination" 0 "$(hook_bash_json 'git push origin HEAD:"feat/F-0002-demo"')"
+check "allows wholly double-quoted HEAD-to-feature refspec" 0 "$(hook_bash_json 'git push origin "HEAD:feat/F-0002-demo"')"
+check "allows backslash-escaped feature slash" 0 "$(hook_bash_json 'git push origin feat\/F-0002-demo')"
+check "allows explicit tag push" 0 "$(hook_bash 'git push origin refs/tags/v0.3.0')"
+check "allows explicit tag refspec push" 0 "$(hook_bash 'git push origin refs/tags/v0.3.0:refs/tags/v0.3.0')"
+check "blocks unreviewed -o push option" 2 "$(hook_bash 'git push -o ci.skip origin feat/F-0002-demo')"
+check "blocks unreviewed --push-option" 2 "$(hook_bash 'git push --push-option ci.skip origin feat/F-0002-demo')"
+check "blocks unreviewed --receive-pack option" 2 "$(hook_bash 'git push --receive-pack git-receive-pack origin feat/F-0002-demo')"
+check "blocks unreviewed --exec option" 2 "$(hook_bash 'git push --exec git-receive-pack origin feat/F-0002-demo')"
+check "blocks unreviewed --repo option" 2 "$(hook_bash 'git push --repo origin feat/F-0002-demo')"
+check "blocks unreviewed --repo= option" 2 "$(hook_bash 'git push --repo=origin feat/F-0002-demo')"
+check "blocks trailing -o option" 2 "$(hook_bash 'git push origin -o ci.skip feat/F-0002-demo')"
+check "blocks trailing --receive-pack option" 2 "$(hook_bash 'git push origin --receive-pack git-receive-pack feat/F-0002-demo')"
+check "blocks -o deletion variant" 2 "$(hook_bash 'git push -o ci.skip origin --delete feat/F-0002-demo')"
+check "blocks --repo deletion variant" 2 "$(hook_bash 'git push --repo origin --delete feat/F-0002-demo')"
 check "allows scoped rm"             0 "$(hook_bash 'rm -rf node_modules/.cache')"
 check "allows plain git commit"      0 "$(hook_bash 'git commit -m feat')"
 
@@ -931,7 +1031,7 @@ rm -rf "$ASCH"
 rm -rf "$AS"
 
 # F-0016: a first commit before the upstream base exists must NOT leak git's
-# "fatal: ambiguous argument 'origin/develop...HEAD'" — detect the missing
+# "fatal: ambiguous argument 'origin/main...HEAD'" — detect the missing
 # upstream and print one calm line (all 9 fleet installs + curbcall, 2026-06-11).
 NU="$(mktemp -d)"
 (
@@ -1035,16 +1135,20 @@ LINT_VAL="$(pkg_field "$IT/package.json" 'console.log(p.scripts&&p.scripts.lint|
 check "fresh pkg: lint is biome lint scripts"      "biome lint scripts" "$LINT_VAL"
 PKG_NAME="$(pkg_field "$IT/package.json" 'console.log(p.name||"")')"
 check "fresh pkg: name is not ai-operations-template" 0 "$(if [ "$PKG_NAME" != 'ai-operations-template' ]; then echo 0; else echo 1; fi)"
-for DEP in "@biomejs/biome" "@types/node" "shellcheck" "ts-node" "typescript"; do
+for DEP in "@biomejs/biome" "@types/node" "ts-node" "typescript"; do
   DEP_PRESENT="$(pkg_field "$IT/package.json" "process.exit(p.devDependencies&&p.devDependencies['$DEP']?0:1)"; echo $?)"
   check "fresh pkg: devDep $DEP present" 0 "$DEP_PRESENT"
 done
+FRESH_SHELLCHECK_ABSENT="$(pkg_field "$IT/package.json" 'process.exit(p.devDependencies&&p.devDependencies.shellcheck?1:0)'; echo $?)"
+check "fresh pkg: retired shellcheck devDep absent" 0 "$FRESH_SHELLCHECK_ABSENT"
+check "fresh install: checksum-pinned shellcheck launcher copied" 0 "$(if [ -f "$IT/scripts/shellcheck.sh" ]; then echo 0; else echo 1; fi)"
 
 # ── 3. Merge package.json ────────────────────────────────────────────────────
 MT="$(mktemp -d)"
 ( cd "$MT" && git init -q && git config user.email t@t && git config user.name t ) >/dev/null 2>&1
-printf '{"name":"my-app","scripts":{"test":"vitest","lint":"eslint ."}}\n' > "$MT/package.json"
-bash "$INSTALL_SCRIPT" "$MT" >/dev/null 2>&1
+printf '{"name":"my-app","scripts":{"test":"vitest","lint":"eslint ."},"devDependencies":{"shellcheck":"~3.1.0"}}\n' > "$MT/package.json"
+printf 'dist/\n' > "$MT/.gitignore"
+MERGE_INSTALL_OUT="$(bash "$INSTALL_SCRIPT" "$MT" 2>&1)"
 MERGE_NAME="$(pkg_field "$MT/package.json" 'console.log(p.name||"")')"
 check "merge pkg: name preserved"         "my-app" "$MERGE_NAME"
 MERGE_TEST="$(pkg_field "$MT/package.json" 'console.log(p.scripts&&p.scripts.test||"")')"
@@ -1057,11 +1161,59 @@ MERGE_SHIELD="$(pkg_field "$MT/package.json" 'console.log(p.scripts&&p.scripts.s
 check "merge pkg: shield script added"    "ts-node scripts/assertion-shield.ts" "$MERGE_SHIELD"
 MERGE_STATE="$(pkg_field "$MT/package.json" 'console.log(p.scripts&&p.scripts.state||"")')"
 check "merge pkg: state script added"     "ts-node scripts/update-state.ts" "$MERGE_STATE"
-for DEP in "@biomejs/biome" "@types/node" "shellcheck" "ts-node" "typescript"; do
+for DEP in "@biomejs/biome" "@types/node" "ts-node" "typescript"; do
   DEP_OK="$(pkg_field "$MT/package.json" "process.exit(p.devDependencies&&p.devDependencies['$DEP']?0:1)"; echo $?)"
   check "merge pkg: devDep $DEP added"  0 "$DEP_OK"
 done
+CUSTOM_SHELLCHECK="$(pkg_field "$MT/package.json" 'console.log(p.devDependencies&&p.devDependencies.shellcheck||"")')"
+check "merge pkg: custom shellcheck spec preserved" "~3.1.0" "$CUSTOM_SHELLCHECK"
+check "merge pkg: custom shellcheck preservation warns" 0 "$(printf '%s' "$MERGE_INSTALL_OUT" | grep -q 'preserved project-owned shellcheck@~3.1.0' && echo 0 || echo 1)"
+check "merge pkg: ShellCheck cache is gitignored" 0 "$(grep -qxF '.cache/' "$MT/.gitignore"; echo $?)"
 rm -rf "$MT"
+
+# Retire only the two exact wrapper specs previously installed by this engine.
+for RETIRED_SPEC in "4.1.0" "^4.1.0"; do
+  RT="$(mktemp -d)"
+  ( cd "$RT" && git init -q && git config user.email t@t && git config user.name t ) >/dev/null 2>&1
+  printf '{"name":"my-app","devDependencies":{"shellcheck":"%s"}}\n' "$RETIRED_SPEC" > "$RT/package.json"
+  RETIRE_OUT="$(bash "$INSTALL_SCRIPT" "$RT" 2>&1)"
+  RETIRED_ABSENT="$(pkg_field "$RT/package.json" 'process.exit(p.devDependencies&&p.devDependencies.shellcheck?1:0)'; echo $?)"
+  check "merge pkg: retired shellcheck@$RETIRED_SPEC removed" 0 "$RETIRED_ABSENT"
+  check "merge pkg: retired shellcheck@$RETIRED_SPEC removal reported" 0 "$(printf '%s' "$RETIRE_OUT" | grep -Fq "removed retired engine devDependency: shellcheck@$RETIRED_SPEC" && echo 0 || echo 1)"
+  rm -rf "$RT"
+done
+
+# Upgrade a real locked adopter fixture. The lifecycle marker proves the
+# installer's lock reconciliation disables scripts; plain npm ci afterward
+# proves package.json and package-lock.json agree.
+LOCKED_RT="$(mktemp -d)"
+( cd "$LOCKED_RT" && git init -q && git config user.email t@t && git config user.name t ) >/dev/null 2>&1
+cat > "$LOCKED_RT/package.json" <<'LOCKEDPKG'
+{
+  "name": "locked-old-adopter",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "preinstall": "node -e \"require('fs').writeFileSync('preinstall-ran','yes')\""
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
+    "@types/node": "^25.9.2",
+    "shellcheck": "^4.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  }
+}
+LOCKEDPKG
+(cd "$LOCKED_RT" && npm install --package-lock-only --ignore-scripts --no-audit --no-fund >/dev/null 2>&1)
+check "locked upgrade fixture starts with package-lock.json" 0 "$(if [ -f "$LOCKED_RT/package-lock.json" ]; then echo 0; else echo 1; fi)"
+LOCKED_INSTALL_OUT="$(bash "$INSTALL_SCRIPT" "$LOCKED_RT" 2>&1)"
+check "locked upgrade: retired ShellCheck removed from manifest" 0 "$(pkg_field "$LOCKED_RT/package.json" 'process.exit(p.devDependencies&&p.devDependencies.shellcheck?1:0)'; echo $?)"
+check "locked upgrade: lock reconciliation reported" 0 "$(printf '%s' "$LOCKED_INSTALL_OUT" | grep -Fq 'reconciled: package-lock.json' && echo 0 || echo 1)"
+check "locked upgrade: reconciliation did not run lifecycle scripts" 0 "$(path_absent "$LOCKED_RT/preinstall-ran")"
+LOCKED_CI_RC="$(cd "$LOCKED_RT" && npm ci --no-audit --no-fund >/dev/null 2>&1; echo $?)"
+check "locked upgrade: subsequent npm ci passes" 0 "$LOCKED_CI_RC"
+rm -rf "$LOCKED_RT"
 
 # ── 4. Idempotent re-run ─────────────────────────────────────────────────────
 # Mutate features.json with a marker feature (F-9xxx range per fixture convention)
@@ -1193,7 +1345,8 @@ cat > "$STUB/gh" <<'GHSTUB'
 #                        `pr checks` probes should report "no checks" before
 #                        checks "register". Decremented each probe.
 #   FAKE_WATCH_RC      — exit code for `pr checks <pr> --watch` (default 0).
-#   FAKE_BASE          — base branch reported by `pr view` (default develop).
+#   FAKE_BASE          — base branch reported by `pr view` (default main).
+#   FAKE_BASE_FLIP_FILE — counter: first N views return main, then release.
 #   FAKE_MERGE_MARKER  — file touched when `pr merge` is invoked.
 #   FAKE_MERGE_RC      — exit code for `pr merge` (default 0).
 sub="${1:-} ${2:-}"
@@ -1211,7 +1364,17 @@ case "$sub" in
     printf 'CI\tpass\t1s\thttps://x\n'; exit 0 ;;
   "pr view")
     if [ "${FAKE_PRVIEW_RC:-0}" -ne 0 ]; then exit "${FAKE_PRVIEW_RC}"; fi
-    echo "${FAKE_BASE:-develop}"; exit 0 ;;
+    if [ -n "${FAKE_BASE_FLIP_FILE:-}" ]; then
+      n="$(cat "$FAKE_BASE_FLIP_FILE" 2>/dev/null || echo 0)"
+      if [ "$n" -gt 0 ]; then
+        echo $((n - 1)) > "$FAKE_BASE_FLIP_FILE"
+        echo main
+      else
+        echo release
+      fi
+      exit 0
+    fi
+    echo "${FAKE_BASE:-main}"; exit 0 ;;
   "pr merge") [ -n "${FAKE_MERGE_MARKER:-}" ] && : > "$FAKE_MERGE_MARKER"; exit "${FAKE_MERGE_RC:-0}" ;;
 esac
 exit 0
@@ -1237,7 +1400,7 @@ printf '9999' > "$NOCHECK_FILE"
 rm -f "$MARK"
 export FAKE_NOCHECK_FILE="$NOCHECK_FILE"
 export FAKE_WATCH_RC=0
-export FAKE_BASE=develop
+export FAKE_BASE=main
 export FAKE_MERGE_RC=0
 check "ship: fails closed when no checks ever register" 1 "$(SHIP_REGISTER_TIMEOUT=2 SHIP_REGISTER_INTERVAL=1 run_ship 5 --merge)"
 check "ship: no-checks path does not merge" no "$(merged)"
@@ -1268,26 +1431,36 @@ export FAKE_WATCH_RC=0
 check "ship: registers after a delay then merges" 0 "$(SHIP_REGISTER_TIMEOUT=5 SHIP_REGISTER_INTERVAL=1 run_ship 5 --merge)"
 check "ship: delayed registration merged" yes "$(merged)"
 
-# 10. base main refused
+# 10. non-main base refused
 printf '0' > "$NOCHECK_FILE"
 rm -f "$MARK"
-export FAKE_BASE=main
-check "ship: refuses to merge PR based on main" 1 "$(run_ship 5 --merge)"
-check "ship: main-based PR not merged" no "$(merged)"
+export FAKE_BASE=release
+check "ship: refuses to merge PR not based on main" 1 "$(run_ship 5 --merge)"
+check "ship: non-main PR not merged" no "$(merged)"
 
 # 10b. base cannot be determined (gh pr view errors) → fail closed (security review)
 printf '0' > "$NOCHECK_FILE"
 rm -f "$MARK"
-export FAKE_BASE=develop
+export FAKE_BASE=main
 export FAKE_PRVIEW_RC=1
 check "ship: refuses when base cannot be determined" 1 "$(run_ship 5 --merge)"
 check "ship: undetermined-base PR not merged" no "$(merged)"
 unset FAKE_PRVIEW_RC
 
+# 10c. Base flips after checks register/watch → second read refuses merge.
+printf '0' > "$NOCHECK_FILE"
+rm -f "$MARK"
+BASE_FLIP_FILE="$SHIP_FIX/base_flip_count"
+printf '1' > "$BASE_FLIP_FILE"
+export FAKE_BASE_FLIP_FILE="$BASE_FLIP_FILE"
+check "ship: rechecks and rejects base retargeted after green checks" 1 "$(run_ship 5 --merge)"
+check "ship: retargeted PR not merged" no "$(merged)"
+unset FAKE_BASE_FLIP_FILE
+
 # 11. merge-command failure propagates
 printf '0' > "$NOCHECK_FILE"
 rm -f "$MARK"
-export FAKE_BASE=develop
+export FAKE_BASE=main
 export FAKE_WATCH_RC=0
 export FAKE_MERGE_RC=1
 check "ship: merge failure propagates" nonzero "$(rc=$(run_ship 5 --merge); [ "$rc" -ne 0 ] && echo nonzero || echo zero)"

@@ -1,24 +1,31 @@
-# Status Report — 2026-07-02 — Big question answered: keep this project; one real hole found and fixed; everything green
+# Status Report — 2026-07-10
 
-> Plain-English summary for the business owner. You asked two things today: a deep-dive on whether this project is worth pursuing or whether an existing system would do the same job, and then a checkup — verify what actually works, add good tests, prune dead weight. Both are done. Bottom line: keep it — nothing on the market does this job — and the checkup found and fixed one real gap.
+## Shipped this week
 
-## Shipped this session
-- **The build-vs-buy answer: keep this project.** A large fact-checked research pass (over a hundred AI agents; every key claim independently challenged before being believed) compared this project against the official tooling, the popular open-source systems, and the commercial "AI developer" products. Three findings: (1) the AI lab's own published guidance recommends almost exactly the design this project already uses — ours is the stricter, machine-enforced version; (2) the official tooling is steadily absorbing the *generic* parts (loops, code review, some safety blocks), so the smart move is to keep deleting what they now cover rather than maintaining duplicates; (3) none of the alternatives have this project's core: proof-on-disk before anything counts as done, tests that are themselves tested, and tiered human sign-off. One famous pro-"big system" statistic actually failed our fact-check, so we no longer rely on it.
-- **A real hole found and fixed, with an independent reviewer's PASS.** The one-shot tool's front door is only supposed to accept a single check command. It turned out a command joined with an "&" sign could sneak two commands through as one. The rule is now stricter — everything it rejected before is still rejected, plus the trick — and six new tests pin down what happens when things go wrong (huge output, an unwritable proof file, tasks sitting exactly at the size limit).
-- **A full health checkup, watched directly, not taken on faith.** All 367 safety checks pass, the "do the tests actually catch bugs?" proof passes (it deliberately breaks the code and requires a test to notice), and the project ledger matches reality.
-- **Dead weight pruned.** One orphaned report file that nothing referenced was removed (history keeps a copy forever). The sweep confirmed the rest of the project is genuinely lean — no hidden clutter.
-- **Daily 1% improvement.** One of the AI builders discovered that one of my own instructions could trigger about 20 false alarms in future builds — and proved the cause with a controlled experiment. The instruction cards now carry the corrected rule, so that time is never wasted again.
+- **One clear source of truth.** The complete project history now lives on one protected main line. Short-lived work branches are removed after review, and accepted milestones use release tags instead of a second permanent branch.
+- **A critical tool-supply risk is removed.** An abandoned checking tool that could unpack unsafe files has been replaced with the official version, verified before it runs. The security scan now covers build tools as well as production packages.
+- **Safe maintenance updates are included.** Two compatible maintenance updates and the current assistant integration passed the full safety suite. A breaking compiler update was deliberately held back because it failed the project’s checks.
 
-## In progress / planned
-- The queued tidy-up (splitting a very large internal test file into smaller pieces) still waits for its own fresh, focused session — the careful-with-safety-things rule.
-- Next research priority: the one measurement nobody in the field has — hard proof of how much this whole system improves results versus a plain setup. Our measuring harness exists; it needs harder tasks before a difference can show.
+## Ready for your QA
+
+There is no staging or preview link for this engine template. Since the latest release tag, 18 completed improvements still await a release-level local QA pass:
+
+- **One-shot tool — 3 improvements.** It now rejects work that is too broad, reports success only after the requested check truly passes, and closes command-chaining and proof-recording failure paths.
+- **Installation and operator experience — 7 improvements.** Setup is complete; fresh-project installation, first-run checks, workflow consistency, shipping, and the operator guide are safer and easier to follow.
+- **Safety and review controls — 8 improvements.** File boundaries, single-task discipline, reviewer tests, assertion protection, command guards, and Windows path handling are all stronger.
+
+## In progress
+
+Nothing is actively being built. The next queued job is to split the oversized safety-test suite into smaller, easier-to-maintain parts without reducing coverage.
 
 ## Blocked / needs you
-- **Nothing is blocking you.** No open questions.
-- Still open whenever you want it (not blocking): a name and audience for the one-shot tool.
+
+- One cleanup item remains intentionally blocked after two unsuccessful attempts: reducing duplicated operating instructions without weakening the rules.
+- Not blocking: the one-shot tool still needs a product name and target customer when you are ready to choose them.
 
 ## Health
-- **All automated checks pass; the main line is clean and green.** Every change today went through independent review and green checks before merging.
-- **27 items finished, 1 queued, 1 intentionally deferred.**
-- Product tests grew from 25 to 31; all 367 safety checks intact; zero retries needed today (everything shipped on the first attempt).
-- **Cost:** one research-heavy pass (it briefly hit the day's usage ceiling and resumed after the reset), then normal small build sessions. No new recurring costs.
+
+- ⚠️ No staging site is configured for this engine template, so the 18 unreleased improvements above require a local release QA pass.
+- ✅ All automated checks pass: 31 product tests and 464 safety contracts, up from 367 safety contracts in the previous report. Every deliberate test mutation was detected.
+- 27 items are finished, 1 is queued, and 1 is intentionally blocked.
+- **Cost:** this maintenance session did not record a comparable spend figure, and it added no recurring service cost.

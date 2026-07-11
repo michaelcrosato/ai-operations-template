@@ -78,7 +78,7 @@ Each tier below gives: **what it tests · prompt mode · an EXAMPLE prompt · th
 ### L2 — Multi-file fix in an existing codebase  → **ADOPT SWE-bench Verified, don't author**
 - **Tests:** real-codebase comprehension + targeted multi-file change without regressions. **Prompt:** an actual GitHub issue.
 - **Oracle:** the instance's hidden **FAIL_TO_PASS + PASS_TO_PASS** sets, run in the per-instance **Docker** harness (no LLM judge; 99.78% gold-patch reproducibility). **Partial credit:** instance-level binary, but we run a **fixed 20–30 instance slice** and score the fraction resolved.
-- **Budget:** ~$0.50–2 / instance; the slice nightly. **Frontier:** mid-tier agents ~40–70% on Verified. **Cadence:** nightly / per-PR-to-develop.
+- **Budget:** ~$0.50–2 / instance; the slice nightly. **Frontier:** mid-tier agents ~40–70% on Verified. **Cadence:** nightly / per-PR-to-main.
 - **Why adopt:** authoring sound multi-file oracles is exactly where homegrown suites fail; SWE-bench Verified is already human-vetted. **Caveat:** it is almost certainly in model training data → use it for *engine-effect* (model pinned) regression, **not** as a novel-capability claim, and date-window any new instances (LiveCodeBench method).
 
 ### L3 — Build a whole component from spec  *(the "build me an MCP server" tier)*
