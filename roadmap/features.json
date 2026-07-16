@@ -982,6 +982,41 @@
         ".github/workflows/**",
         "roadmap/features.json"
       ]
+    },
+    {
+      "dependencies": [],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "B",
+      "id": "F-0048",
+      "epic": "foundation-lean",
+      "priority": 2,
+      "spec_ref": "roadmap/DECISIONS.md 2026-07-16 (Dependabot wave provenance ruling)",
+      "title": "Mechanically verify action pin provenance comments in the gate",
+      "description": "Every SHA-pinned action in .github/workflows carries a comment on the PRECEDING line naming its tag and a verification date (e.g. \"# actions/setup-node v7.0.0; tag + commit verified 2026-07-16\"). Dependabot rolls the SHA but cannot touch that comment, so every dependency wave leaves the comment certifying a tag the SHA no longer matches - a false attestation of verification nobody performed. This was fixed BY HAND on 2026-07-10 and again on 2026-07-16 (PRs #160/#161); CLAUDE.md section 9 says anything done manually twice becomes a script. Add an offline parser that reads each uses: owner/repo@sha line plus its preceding comment block and asserts the two agree, wired into verify.sh. Offline by default (no network in the gate): compare against a checked-in pin manifest or the comment itself, and keep any live tag-resolution behind an explicit opt-in flag so the gate stays hermetic and deterministic. Note both claude-code-action tags are ANNOTATED, so a live check must dereference the tag object to a commit before comparing - a naive ref comparison falsely reports mismatch.",
+      "acceptance": [
+        "A script parses every SHA-pinned uses: line in .github/workflows and its preceding provenance comment, and fails when the named tag and the pinned SHA disagree",
+        "The check runs inside scripts/verify.sh and is hermetic - it passes with no network access",
+        "A negative test proves the check FAILS on a planted comment/SHA mismatch, and a positive test proves it passes on the real workflows",
+        "Annotated-tag dereferencing is covered by a test if live resolution is implemented, or its absence is documented if the check is manifest-based",
+        "bash scripts/verify.sh exits 0 with evidence under roadmap/evidence/F-0048/"
+      ],
+      "authorized_paths": [
+        "scripts/check-action-pins.ts",
+        "scripts/verify.sh",
+        "scripts/test-hooks.sh",
+        ".github/workflows/ci.yml",
+        ".github/workflows/claude.yml",
+        "roadmap/evidence/F-0048/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "roadmap/features.json"
+      ]
     }
   ]
 }

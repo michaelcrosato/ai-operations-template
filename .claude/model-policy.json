@@ -1,5 +1,6 @@
 {
   "_comment": "Single source of truth for sub-agent model assignment (AI_OPERATIONS_PLAN §2.2). `tiers` maps a capability tier to a model; `agents` maps each .claude/agents/*.md to a tier. `scripts/check-model-policy.ts` enforces this: --check (in verify.sh) fails if any agent's frontmatter `model:` drifts from policy; --write is the hygiene routine that rewrites frontmatter from here. Only /research may change a tier→model mapping, after verifying the official model catalog (stamp last_verified). No other file may hardcode a model name.",
+  "_provider": "Anthropic first-party (subscription login / CLAUDE_CODE_OAUTH_TOKEN — plan §7.2), NOT Bedrock/Vertex/Foundry. Load-bearing: Claude Code's bare family aliases resolve PER PROVIDER (verified 2026-07-16, https://code.claude.com/docs/en/model-config) — `sonnet` is Sonnet 5 on the Anthropic API but Sonnet 4.6 on Claude Platform on AWS and Sonnet 4.5 on Bedrock/Google Cloud, and `opus` is Opus 4.6 on Microsoft Foundry. The tier notes below describe what these aliases resolve to on THIS backend only; re-verify before running the engine anywhere else.",
   "agents": {
     "builder": "builder",
     "builder-strong": "reasoning",
@@ -11,20 +12,20 @@
     "reasoning": {
       "model": "opus",
       "effort": "high",
-      "last_verified": "2026-06-09",
-      "notes": "Orchestrator, planner, evaluator, security-reviewer, and builder-strong (Tier C implementation — reasoning-critical/irreversible/novel work). Fable 5 (claude-fable-5) is a valid upgrade for the hardest planning/evaluation passes; usage-credit pricing applies after 2026-06-22."
+      "last_verified": "2026-07-16",
+      "notes": "Orchestrator, planner, evaluator, security-reviewer, and builder-strong (Tier C implementation — reasoning-critical/irreversible/novel work). `opus` resolves to Claude Opus 4.8 (claude-opus-4-8) at $5/$25 per MTok. Fable 5 (claude-fable-5) at $10/$50 per MTok — 2x Opus 4.8 — remains a valid upgrade for the hardest planning/evaluation passes. UNVERIFIED, carried from the 2026-06-09 stamp and outside the 2026-07-16 research scope — re-verify before relying on it: 'usage-credit pricing applies after 2026-06-22'."
     },
     "builder": {
       "model": "sonnet",
       "effort": "high",
-      "last_verified": "2026-06-09",
-      "notes": "Routine implementation of one well-briefed feature. Sonnet 4.6 at ~60% of Opus per-token price."
+      "last_verified": "2026-07-16",
+      "notes": "Routine implementation of one well-briefed feature. `sonnet` resolves to Claude Sonnet 5 (claude-sonnet-5, released 2026-06-30) — NOT Sonnet 4.6: the alias moved when Sonnet 5 shipped three weeks after this file's previous stamp, which is why the old note named the wrong generation. Pricing is two-phase: $2/$10 per MTok introductory through 2026-08-31 (40% of Opus 4.8), then $3/$15 standard from 2026-09-01 (60% of Opus 4.8). The prior note's flat '~60% of Opus' only becomes true again on Sept 1."
     },
     "fast": {
       "model": "haiku",
       "effort": "medium",
-      "last_verified": "2026-06-09",
-      "notes": "Explorer/search/triage fan-out. Returns conclusions, never file dumps."
+      "last_verified": "2026-07-16",
+      "notes": "Explorer/search/triage fan-out. Returns conclusions, never file dumps. `haiku` resolves to Claude Haiku 4.5 (claude-haiku-4-5) at $1/$5 per MTok."
     }
   }
 }
