@@ -23,9 +23,9 @@ jobs:
         with:
           fetch-depth: 0 # assertion-shield diffs against origin/main
 
-      # actions/setup-node v6.4.0; tag + commit verified 2026-07-10:
-      # https://api.github.com/repos/actions/setup-node/git/ref/tags/v6.4.0
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+      # actions/setup-node v7.0.0; tag + commit verified 2026-07-16:
+      # https://api.github.com/repos/actions/setup-node/git/ref/tags/v7.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           # 24 matches the development environment — Node 20/24 --test arg
           # handling already diverged once (DECISIONS 2026-06-10)
