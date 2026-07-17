@@ -1029,17 +1029,16 @@
       "id": "F-0049",
       "epic": "foundation-lean",
       "priority": 1,
-      "title": "Unify per-feature path-authorization matching into one implementation shared by path-guard.js and verify-gate.sh",
-      "description": "The two guards registered on the same PreToolUse matcher each re-implement the identical contract - active-feature derivation, the F-0034 glob-to-regex sentinel algorithm, F-0042 Windows path normalization, fail-closed semantics. The code admits the fragility: verify-gate.sh line 31 says it is mirroring path-guard.js normalizePath EXACTLY so both guards agree, and path-guard.js lines 37-40 mirror back. KILLER_FOUNDATION_ROADMAP R1 - ruled Tier C orchestrator-owned on 2026-07-01, never groomed until now - rates this the number-one drift risk on the load-bearing guard. Deliverable: one shared matching module consumed by both guards, the never-run bash fallback matcher in verify-gate.sh deleted, and a new hook-contract test corpus proving both guards return identical verdicts on divergence-prone cases - dot-segments, absolute Windows paths, trailing slashes, double-star edges.",
+      "title": "Agreement-corpus drift gate: prove path-guard.js and verify-gate.sh return identical path-authorization verdicts",
+      "description": "The two guards registered on the same PreToolUse matcher each re-implement the identical contract - active-feature derivation, the F-0034 glob-to-regex sentinel algorithm, F-0042 Windows path normalization, fail-closed semantics - and the code admits the mirror is fragile in both directions, verify-gate.sh line 31 and path-guard.js lines 37-40. KILLER_FOUNDATION_ROADMAP R1 rates this the number-one drift risk on the load-bearing guard. SCOPE NOTE, decided 2026-07-17 after an evaluator NEEDS_WORK: the FULL unification requires editing .claude/hooks files, which the F-SM2 writer rule makes impossible to authorize for any backlog feature - forbidden .claude/ double-star is unioned into every new row and forbidden wins in the guard. So this feature delivers the buildable, highest-leverage slice instead: a hook-contract agreement corpus in scripts/test-hooks.sh that EXECUTES both existing implementations against divergence-prone paths and fails the gate the moment their verdicts differ. That converts silent drift - the actual risk R1 names - into a red build. The physical unification remains chore-class work pending an operator decision on narrowing F-SM2, recorded in DECISIONS 2026-07-17.",
       "acceptance": [
         "bash scripts/verify.sh green",
-        "A new agreement-corpus contract test passes - it feeds the same path plus feature scope to both guards and asserts identical allow or deny verdicts on at least 10 divergence-prone cases",
-        "The never-run bash fallback matcher block is gone from verify-gate.sh",
+        "A new contract-test section feeds the identical path plus feature-scope fixture to BOTH path-guard.js and verify-gate.sh and asserts their allow or deny verdicts agree on at least 10 divergence-prone cases - dot-segments, absolute Windows paths, trailing slashes, double-star edges, forbidden-shadow overlaps",
+        "A deliberate one-line divergence planted in a COPY of the matcher logic under the test fixture proves the corpus goes red on disagreement",
         "Mutation smoke still kills all known mutants"
       ],
-      "spec_ref": "roadmap/KILLER_FOUNDATION_ROADMAP.md R1; roadmap/DECISIONS.md 2026-07-01",
+      "spec_ref": "roadmap/KILLER_FOUNDATION_ROADMAP.md R1; roadmap/DECISIONS.md 2026-07-17 (F-SM2 collision ruling)",
       "authorized_paths": [
-        ".claude/hooks/**",
         "scripts/test-hooks.sh",
         "roadmap/evidence/F-0049/**"
       ],
@@ -1049,9 +1048,7 @@
       ]
     },
     {
-      "dependencies": [
-        "F-0049"
-      ],
+      "dependencies": [],
       "status": "pending",
       "passes": false,
       "evidence": [],
@@ -1062,7 +1059,7 @@
       "epic": "foundation-lean",
       "priority": 2,
       "title": "Harden verify.sh against untracked files laundering a NEEDS_WORK diff into a green run",
-      "description": "verify.sh has no handling for untracked files around the hook-contract-test step, so an untracked test or fixture surviving a reset can make a dirty working state verify green. KILLER_FOUNDATION_ROADMAP R3 - same 2026-07-01 Tier C ruling as R1, also never groomed - calls verifier-gaming the number-one real agent failure mode, citing arXiv 2606.26300. Deliverable: verify.sh detects untracked files under gate-relevant paths - tests, hooks, scripts - and fails with a named list, with an escape hatch only for explicitly gate-irrelevant paths.",
+      "description": "verify.sh has no handling for untracked files around the hook-contract-test step, so an untracked test or fixture surviving a reset can make a dirty working state verify green. KILLER_FOUNDATION_ROADMAP R3 - same 2026-07-01 Tier C ruling as R1, also never groomed until 2026-07-17 - calls verifier-gaming the number-one real agent failure mode, citing arXiv 2606.26300. Deliverable: verify.sh detects untracked files under gate-relevant paths - tests, hooks, scripts - and fails with a named list, with an escape hatch only for explicitly gate-irrelevant paths.",
       "acceptance": [
         "bash scripts/verify.sh green on a clean tree",
         "A new contract test proves that an untracked file planted under a gate-relevant path makes verify.sh exit non-zero and name the file",
