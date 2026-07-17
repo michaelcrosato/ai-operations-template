@@ -44,7 +44,7 @@ Ordered by leverage-per-effort. Tiers per `TASK_AUTONOMY_TRIAGE.md`.
 - **Native dynamic workflows / 1000-subagent swarms** (killed, 3/3 refutes). A one-operator, one-feature-at-a-time factory has nothing to swarm. Bias every change toward *less* orchestration.
 - **A second parallel builder or builder-spawned sub-agents.** Cognition's durable rule: multi-agent works only when writes stay single-threaded and extra agents *advise*. The repo already forbids this — keep it.
 - **LLM-judge numeric scoring / pairwise ranking** (RAND: no judge is uniformly reliable; verdicts flip on formatting). Keep the evaluator a binary PASS/NEEDS_WORK bound to concrete acceptance, retry-once-then-block. Do not widen judge scope.
-- **Auto-generating any agent context file** (`/init` on CLAUDE.md/AGENTS.md). LLM-written context files measurably *reduce* success (−0.5–2%) and inflate cost (+20–23%). Hand-write minimal only; a duplicative-line *deletion* counts as a valid /kaizen win.
+- **Auto-generating any agent context file** (`/init` on CLAUDE.md/AGENTS.md). LLM-written context files are reported to *reduce* success and inflate cost — secondary-source result, exact percentages UNVERIFIED; the canonical hedged version lives in `docs/FRONTIER.md` §4. Hand-write minimal only; a duplicative-line *deletion* counts as a valid /kaizen win.
 - **Rewriting AGENTS.md as an `@`-import.** Claude-only syntax; the current human-readable pointer is the better cross-tool shape.
 - **Retrieval indexes / feature over-decomposition / heavy hand-holding prompts.** Opus 4.8's larger window + better compaction make these obsolete — but respect the real context-rot ceiling: shrink context, don't just trust a bigger window.
 

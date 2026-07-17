@@ -49,3 +49,13 @@ The newest research backs your instinct that the one-shot approach is the more r
 - **Q2 (name / who is it for?) → still open, intentionally deferred.** A brand/name and "who buys this" is the operator's call and is *not needed to build the internal harness*, which proceeds under the neutral technical directory `src/oneshot/`. Will revisit when there is something to brand. Not blocking.
 
 **Folded (2026-06-18):** scope reduced to a 2-feature minimal loop — F-0040 (one-shot solvability admission gate) + F-0041 (evidence-gated verdict) — groomed into `features.json` (Tier B, priority 1, isolated in `src/oneshot/`, reusing the shared safety core, no new dependencies). Decision logged in DECISIONS.md; the richer human-referee / calibrated-doubt UX from the strategy record §5.4 is deliberately deferred until this core proves out ("if it works here, that is the start").
+
+---
+
+## Q-0004 (2026-07-17, open — not blocking) — May automated work ever edit the safety-hook files, with extra review?
+
+**Question:** Today there is a hard rule: any new task added to the backlog is automatically banned from touching the folder where the safety hooks live. That ban is doing its job — but we just discovered it also means the system can never assign itself a task to *improve* those safety hooks. Two of the safety checks are twin copies of the same logic, and the best long-term fix (merging them into one) needs edits inside that protected folder. Should we loosen the ban slightly — keep the most dangerous files (the settings file, the model list, the security patterns) permanently off-limits, but allow hook-code edits when a task explicitly asks for them and gets the extra security review that already applies to risky work?
+
+**Why it matters:** If yes, the twin-logic merge can be scheduled like any other task, with the full double-review it deserves. If no, that kind of maintenance always waits for you to ask for it directly in a session like today's — which is safer but slower, and easy to forget.
+
+**What was assumed meanwhile (not blocking):** We built the safe alternative first: a new scheduled task (F-0049) adds an alarm test that instantly fails the build if the two twin copies ever drift apart. So nothing is at risk while this question waits — the merge is an improvement, not an emergency.
