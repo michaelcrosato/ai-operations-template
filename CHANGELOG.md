@@ -9,7 +9,11 @@ per judgment call) — it summarizes what an adopter or operator would care abou
 
 ## [Unreleased]
 
+### Added
+- **`docs/FRONTIER.md` — the verified-facts ledger (2026-07-16).** A one-page, session-persistent store of live-verified frontier facts: the cross-vendor model catalog (IDs, release dates, knowledge cutoffs, pricing, tokenizer generation), the model-role assignments for this repo, and the "why the repo is shaped this way" context for models whose training predates it. The freshness rule (CLAUDE.md §5) is now ledger-first — a fact verified <3 months ago is used, not re-researched — and `/research` writes new findings back. Exists so sessions stop re-buying the same multi-million-token research.
+
 ### Changed
+- **Model facts refreshed to the live catalog (2026-07-16).** `sonnet` on the Anthropic API now resolves to Claude Sonnet 5 (released 2026-06-30; introductory pricing through 2026-08-31), which the repo had been running while its docs still said Sonnet 4.6. `model-policy.json` gains `_provider` (aliases resolve per infrastructure provider) and `_tokenizer` (per-token prices compare only within a tokenizer generation) fields. Tier→model mappings unchanged.
 - **Single-branch operating model (2026-07-10).** `main` is now the default and only long-lived branch. All work starts from and returns to `main` through green PRs; CI, assertion comparisons, agent instructions, shipping helpers, and adopter setup agree on that model. Release milestones use annotated tags/GitHub Releases instead of a second promotion branch.
 - **Tooling refresh (2026-07-10).** Biome 2.5.3, Node typings 26.1.1, and the SHA-pinned Claude action v1.0.170. TypeScript remains on 6.0.3 because 7.0.2 removes the programmatic API required by `ts-node` and fails this repo's safety gate. The abandoned ShellCheck npm wrapper and its vulnerable archive-extraction tree are gone; one repository launcher now downloads official ShellCheck v0.11.0, verifies the archive and extracted binary checksums, and caches the exact same binary on Windows Git Bash and Linux CI. The full dependency audit is 0/0 and CI now audits dev tooling too.
 
