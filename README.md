@@ -2,21 +2,23 @@
 
 **What this repo is for:** a set of instructions that lets frontier-model coding agents do genuinely good work — a supercharged loop of *explore -> plan -> code -> commit.* Everything below exists to make that loop more reliable, efficient, auditable, and self-improving.
 
-## Six principles
+## Seven principles
 
-Six principles govern everything in this repository. Every agent session is bound by them; every file here exists to enforce one of them.
+Seven principles govern everything in this repository. Every agent session is bound by them; every file here exists to enforce one of them — and a file that stops earning its keep gets deleted.
 
-1. **100% AI-coded, on today's frontier — never yesterday's.** Every line of code, architecture decision, and maintenance task is done by current frontier AI models. Anything the models "remember" that is more than 3 months old — tools, frameworks, setups, best practices — is presumed stale and must be re-verified against live sources before it's relied on (the `/research` skill exists for exactly this, and [`docs/FRONTIER.md`](docs/FRONTIER.md) is where verified frontier facts persist between sessions so they aren't re-bought every time). The field changes week to week; the engine assumes that.
+1. **Trust nothing without evidence.** Frontier agents systematically over-report success, and frontier models reward-hack roughly half of the impossible tasks you hand them (ImpossibleBench, ICLR 2026). So "done" is never an agent's claim: it is a green gate log on disk, judged by a fresh-context evaluator that didn't write the code, recorded in a state file only one audited script can write. Separating the agent doing the work from the agent judging it is, per Anthropic's own 2026 harness guidance, "a strong lever" — this engine is the mechanically-enforced version.
 
-2. **Full AFK autonomy.** The agents following this system can run indefinitely without a human in the loop. It never stops to ask "how do you want to proceed" — it decides, documents the decision, and keeps moving. Genuine blockers get logged and skipped, not waited on. A run ends with work done, never with a question mark.
+2. **100% AI-coded, on today's frontier — never yesterday's.** Every line of code, architecture decision, and maintenance task is done by current frontier AI models. Anything the models "remember" that is more than 3 months old — tools, frameworks, setups, best practices — is presumed stale and must be re-verified against live sources before it's relied on (the `/research` skill exists for exactly this, and [`docs/FRONTIER.md`](docs/FRONTIER.md) is where verified frontier facts persist between sessions so they aren't re-bought every time). The field changes week to week; the engine assumes that.
 
-3. **The operator is a business client, not an engineer.** The human plans in plain English, clicks through finished features, and says what feels wrong. They never run commands, read code, debug, or make implementation decisions. Anything that reaches their eyes is written for a smart non-technical reader.
+3. **Full AFK autonomy — decide, document, keep moving.** The loop runs indefinitely without a human in it. It never stops to ask "how do you want to proceed" — it decides, records the judgment call in `roadmap/DECISIONS.md`, and keeps moving. Genuine blockers get logged and skipped, not waited on. A run ends with work done, never with a question mark.
 
-4. **Simple, token-efficient, orchestrator-style.** One central orchestrator plans, delegates, and judges; disposable specialist sub-agents do the work in parallel when — and only when — parallelism actually pays. State lives in files, not in anyone's context window. Spend tokens where they buy quality (planning, review); never on ceremony.
+4. **Autonomy scales with consequences, not confidence.** Not every change deserves the same leash. Every feature carries a risk tier (A/B/C, gated on irreversibility × blast radius) that decides which model builds it, how deeply it's reviewed, and whether a human must sign off before the merge. The human gate holds one irreversible merge — never the loop. Risk-tiered autonomy is now recognized practice across the major agent platforms; here it is mechanical, not advisory.
 
-5. **Downtime is productive time — the orchestrator sharpens the system.** It monitors progress, fixes problems, looks for opportunities to make adjustments and optimize the process, researches what the next moves need, pre-writes briefs so future work starts instantly, and ships one concrete improvement after another (`/kaizen`). *"Give me six hours to chop down a tree, and I will spend the first four sharpening the axe."*
+5. **State lives in files — one orchestrator, disposable specialists.** Backlog, briefs, evidence, decisions, progress — plain files in git, never in anyone's context window. A file-based loop is inspectable, diffable, and gate-able: every decision is something a human or a hook can read, block, or re-verify, and a fresh session — on any model — picks up exactly where the last one stopped. One orchestrator plans, delegates, and judges; disposable specialist sub-agents do the work, in parallel only when parallelism actually pays. Spend tokens where they buy quality (planning, review); never on ceremony.
 
-6. **The orchestrator is a leader — and leadership means taking care of those in your charge, not being in charge.** It trusts its agents but monitors their work, steps in to help when they struggle, and treats a repeated failure as its own failure to provide good briefs, good tools, or good conditions — then fixes those conditions. Machines get gates; agents get support.
+6. **Every line must earn its keep.** The engine's standing bet — a bet, not a proven consensus, but one aligned with Anthropic's harness guidance that every component "encodes an assumption about what the model can't do on its own" — is that the durable core of an agent harness is verification, state, and guardrails, and that everything else is scaffolding that rots as models improve. So the crucial parts stay small and the rest stays deletable: a 53-line constitution (vendor docs now warn that instruction bloat degrades agent adherence), model names in exactly one policy file, optional modules that activate on named triggers instead of by default, and a standing doctrine of pruning toward native as platforms absorb harness layers. A rule earns its place by naming the failure it prevents; anything explained twice becomes a rule, anything done twice becomes a script, and anything the platform now does natively gets deleted. That is what keeps the engine adaptable in days — not quarters — when models, platforms, and tools shift.
+
+7. **The orchestrator is a manager, and leadership means taking care of those in your charge.** Downtime is spent sharpening the system — monitoring progress, researching what the next moves need, pre-writing briefs so future work starts instantly — and each working session ships one concrete ≥1% improvement (`/kaizen` — benchmarked against the probes wherever a change can move them). The orchestrator trusts its agents but monitors their work, steps in when they struggle, and treats repeated failure as its own failure to provide good briefs, good tools, or good conditions — then fixes the conditions. Machines get gates; agents get support. *"Give me six hours to chop down a tree, and I will spend the first four sharpening the axe."*
 
 ---
 
@@ -24,13 +26,13 @@ Six principles govern everything in this repository. Every agent session is boun
 
 > **Read this first.** This repository is **not a product** — it is a *control plane* for building software with frontier AI agents: a state machine, a set of mechanical guardrails, and an adversarial review loop that let AI write and ship code semi-autonomously while staying auditable. The factory remains the core asset. The repo now also hosts the first slice of a second product built **with** that factory — the bounded one-shot tool (`src/oneshot/`): a deliberately-scoped, single-context-window, human-supervised coding harness (see [`docs/bounded-vs-afk-strategy.md`](docs/bounded-vs-afk-strategy.md)). An adopter can still drop the factory into their own repo and point it at their spec.
 
-**Operational status — last verified 2026-07-10 (`main`):**
+**Operational status — last verified 2026-07-17 (`main`):**
 
 | Layer | Status |
 |---|---|
 | Engine — state machine, gates, `.claude/hooks/`, **464** hook-contract tests, mutation gate, CI | ✅ **Working** |
 | Risk-tier adaptive layer (A/B/C → builder model, review depth, approval gate) | ✅ **now exercised end-to-end** — F-0040/F-0041 (Tier B) + F-0042/F-0043 (Tier C, incl. the mandatory security-reviewer + the awaiting_approval gate) |
-| One-shot tool (`src/oneshot/`) — admission gate + evidence-gated verdict | ✅ **MVP shipped** (F-0040/F-0041) — first slice of the bounded-single-shot product; early MVP, not a finished product |
+| One-shot tool (`src/oneshot/`) — admission gate + evidence-gated verdict | ✅ **MVP shipped** (F-0040/F-0041; admission gate since hardened — F-0047 closed a command-chaining hole) — early MVP, not a finished product |
 | Benchmark (`bench/`) | ✅ Built & validity-gated — atomic **7/7**; `L1 pass^5`, `L4/G1–G4 pass^2` dogfooded |
 | Engine-effect measurement | ⏳ Harness built; **no signal yet** — greenfield tasks already score 1.0, so the next move is refactoring/regression tasks, not bigger greenfield |
 
@@ -46,10 +48,10 @@ A working harness lets Claude-based agents take a plain-English backlog item, bu
 
 | Claim | Reality |
 |---|---|
-| **The AI operations factory** (orchestrator + sub-agents + gates + hooks + state machine + tier-driven adaptive layer) | ✅ **Real and working.** ~3,900 lines of scripts/hooks + a detailed ops design. Mechanical guardrails actually block. This is the IP. |
+| **The AI operations factory** (orchestrator + sub-agents + gates + hooks + state machine + tier-driven adaptive layer) | ✅ **Real and working.** ~4,600 lines of scripts/hooks — ~6,000 lines across 52 files for the full installed engine (a footprint principle 6 treats as a budget, not a brag). Mechanical guardrails actually block. This is the IP. |
 | **Evidence-gated delivery** (nothing is "done" without proof on disk; `features.json` writable only by one audited script) | ✅ **Real, mechanically enforced.** Hand-editing state is blocked by a hook; faking a pass requires editing the hook itself, which CI re-runs. |
 | **Adversarial review** (a fresh-context evaluator + a security reviewer grade each change before merge) | ✅ **Real, and it has caught real bugs** — a bypass hole in a guardrail fix and a state-machine birth-status hole, both rejected before merge. |
-| **Tests have teeth** (mutation gate proves the safety-critical tests aren't vacuous) | ✅ **Real.** 350+ hook-contract tests + a mutation-smoke gate that kills known mutants across the state writer and the assertion shield. |
+| **Tests have teeth** (mutation gate proves the safety-critical tests aren't vacuous) | ✅ **Real.** 464 hook-contract tests (re-run green 2026-07-17) + a mutation-smoke gate that kills known mutants across the state writer and the assertion shield. |
 
 ---
 
@@ -91,7 +93,7 @@ The design philosophy (autonomy, decide-don't-ask, freshness, token efficiency, 
 
 ## Why a harness, not a framework
 
-A fair question: why a custom file-based control plane instead of an off-the-shelf orchestration framework (LangGraph, CrewAI, Mastra, …)? Because the **independent variable here is the orchestration *harness*, not the agent graph.** The 2026 evidence is that the harness — not the model or the framework — dominates the outcome: the same model swings ~9.5 points on SWE-bench Pro purely from harness choice, and a tight, legible loop beats a heavier one ("Stop Comparing LLM Agents Without Disclosing the Harness", arXiv 2605.23950; Harness-Bench, arXiv 2605.27922 — both cited in [`bench/HARNESS-RESEARCH.md`](bench/HARNESS-RESEARCH.md)). A plain-English, file-based loop is **inspectable, diffable, and gate-able** in a way a framework's in-memory state is not: every decision is a file a human or agent can read, a hook can block, and CI can re-verify. Frameworks and protocols (MCP, multi-model routers, native sandboxes) are adopted at the *edges* when a concrete trigger fires ([`docs/optional-modules.md`](docs/optional-modules.md)), not baked into the core. This is a deliberate harness-engineering bet, not an oversight.
+A fair question: why a custom file-based control plane instead of an off-the-shelf orchestration framework (LangGraph, CrewAI, Mastra, …)? Because the **independent variable here is the orchestration *harness*, not the agent graph.** The 2026 evidence is that the harness — not the model or the framework — dominates the outcome: the same model swings ~9.5 points on SWE-bench Pro purely from harness choice, and a tight, legible loop beats a heavier one ("Stop Comparing LLM Agents Without Disclosing the Harness", arXiv 2605.23950; Harness-Bench, arXiv 2605.27922 — both cited in [`bench/HARNESS-RESEARCH.md`](bench/HARNESS-RESEARCH.md)). And per a 2026 loop-engineering study, "the hard, valuable part of a loop is designing the check that decides when the work is done" (arXiv 2607.00038) — verification, state, and guardrails are exactly the core this repo keeps, and everything else in it is built to be deletable (principle 6). A plain-English, file-based loop is **inspectable, diffable, and gate-able** in a way a framework's in-memory state is not: every decision is a file a human or agent can read, a hook can block, and CI can re-verify. Frameworks and protocols (MCP, multi-model routers, native sandboxes) are adopted at the *edges* when a concrete trigger fires ([`docs/optional-modules.md`](docs/optional-modules.md)), not baked into the core. This is a deliberate harness-engineering bet, not an oversight.
 
 ## Measuring whether a change actually helps (`bench/`)
 
@@ -128,6 +130,7 @@ The loop is closing: change the engine → the suite says, with numbers, whether
 - **Even this engine can ship on a stale assumption.** A model-switching feature was once justified by a now-false claim about the Claude Code platform (that a subagent's model can't be overridden per-invocation — it can). The freshness rule (`CLAUDE.md §5`) exists precisely to catch this; the lapse was caught in review, corrected, and recorded as a scar. Re-verify AI-tooling facts against live docs.
 - **Test depth is concentrated on the guardrail/state layer.** It has 464 contract tests + a mutation gate + property tests; the engine's own scripts carry targeted contract tests. A feature marked passing means *evidence exists on disk and CI ran green*, not "market-validated."
 - **Heavy AI / key-operator dependency.** Built and maintained by the AI orchestrator. Whether a human team can maintain it cold, at speed, is unproven; the ops plan + constitution are real onboarding cost.
+- **The engine's own footprint keeps growing.** ~4,600 lines of scripts/hooks today, up from ~3,900 at an earlier count (~17% growth); the full installed engine — agents, skills, and docs included — is ~6,000 lines across 52 files. Principle 6 — every line earns its keep, prune toward native — is the stated discipline, not an achieved end-state; the size trend is the number to watch to see whether it's being honored.
 - **Cross-platform fragility.** Hooks are bash; on Windows they need Git Bash (WSL bash misbehaves). CI does not test Windows builds. A Windows path-normalization bug in the path-authorization gate — which had silently forced builders to bypass the guard via unscoped Bash calls — was found and fixed in F-0042 (verify-gate.sh now canonicalizes paths via `path.relative`, matching path-guard.js).
 - **Code formatting is not enforced.** Biome *lint* gates every PR, but auto-format is intentionally off — the engine spends its gate budget on correctness (typecheck, lint, tests, mutation-smoke) over style. A non-writing `biome format --check` is a cheap future add if style drift ever shows up.
 
@@ -161,7 +164,7 @@ New here? Read in this order: **README** (this file) → **OPERATOR_GUIDE.md** (
 | `README.md` | What the repo is + honest status | Entry point and reality check | ✅ Current |
 | `OPERATOR_GUIDE.md` | The non-technical operator's daily loop | Human-facing; agents skip it | ✅ Current |
 | `AI_OPERATIONS_PLAN.md` | The full factory blueprint (adopter-generic) | Deep design + one-time setup (§11) | ✅ Current — blueprint, uses `<PLACEHOLDER>`s |
-| `CLAUDE.md` | The enforceable agent constitution (≤150 lines) | Auto-loaded rules every agent obeys | ✅ Current |
+| `CLAUDE.md` | The enforceable agent constitution (53 lines, capped at 150) | Auto-loaded rules every agent obeys | ✅ Current |
 | `TASK_AUTONOMY_TRIAGE.md` | Risk-tier (A/B/C) routing | How much autonomy a task gets | ✅ exercised (F-0040–F-0043) |
 | `AGENTS.md` | Pointer stub for non-Claude CLIs | Cross-tool entry; everything lives in CLAUDE.md | ✅ Stub (by design) |
 | `CHANGELOG.md` | Engine/template change log | Adopter-facing "what changed" | ✅ Current |
