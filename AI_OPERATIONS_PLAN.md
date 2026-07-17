@@ -23,7 +23,7 @@
 
 ## 1. Operating Principles (the contract)
 
-These five rules are binding on every agent session and every file added to this repo. They restate the project's requirements as enforceable design constraints.
+These six rules are binding on every agent session and every file added to this repo. They restate the project's requirements as enforceable design constraints.
 
 | # | Principle | Enforced by |
 |---|-----------|-------------|

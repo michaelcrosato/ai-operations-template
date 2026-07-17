@@ -17,9 +17,9 @@ The operator's instinct is that "really pivoting the direction" warrants a **bra
 | Referee | The **human, in real time** + lightweight mechanical checks that *surface* doubt to that human | Autonomous deterministic referees + circuit breakers (no human on the critical path) |
 | Operator | **Skilled agent-manager** (scopes, context-engineers, verifies) | **Non-technical business client** (plain-English intent only) |
 | Failure mode it must beat | The **verification gap** (false positives on a solvable task) | **Error compounding** over long horizons **+** the verification gap |
-| README principle it inverts | #2 (full AFK) and #3 (non-technical operator) | — (this is the home constitution) |
+| README principle it inverts | #3 (full AFK) and plan P3 (non-technical operator) | — (this is the home constitution) |
 
-**Two of the engine's six README principles invert outright under A** — full-AFK **#2** and non-technical-operator **#3**. (The admission gate *also* flips, from *risk tier* to *one-shot solvability* — but risk-tiering is a `TASK_AUTONOMY_TRIAGE.md` mechanism, **not** one of the six principles; and the downtime/token/leadership principles **soften** under real-time supervision rather than invert.) The inversion is clause-level, not a tuning knob: **README #2 forbids ever stopping to ask the human; A's entire referee model is the human approving in real time.** You cannot express both constitutions in one ≤150-line `CLAUDE.md` without that contradiction — which is the real reason this is a fork-class change, not a flag.
+**Two of the engine's core principles invert outright under A** — full-AFK (README **#3**) and the non-technical-operator contract (plan **P3**; formerly a README principle). (The admission gate *also* flips: README #4 admits work by *risk tier*, while A admits by *one-shot solvability* — under real-time supervision the tier axis collapses into a single admission question; and the downtime/leadership principle (#7) **softens** rather than inverts.) The inversion is clause-level, not a tuning knob: **README #3 forbids ever stopping to ask the human; A's entire referee model is the human approving in real time.** You cannot express both constitutions in one ≤150-line `CLAUDE.md` without that contradiction — which is the real reason this is a fork-class change, not a flag.
 
 ---
 
