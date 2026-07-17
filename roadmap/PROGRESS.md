@@ -8,7 +8,7 @@ Operator /goal: stop re-buying research each session; catalog the frontier (with
 - **Docs true-up:** README freshness principle said 6 months where the constitution says 3 — fixed to 3 + ledger pointer; FRONTIER row added to the documentation map; CLAUDE.md §1 pointer map gains the ledger (53 lines, §9 checklist walked).
 
 State: unchanged backlog (30 features — 27 done, 2 pending F-0046/F-0048, 1 blocked-by-design). Ledger PR this block rides on: see PR link in DECISIONS.
-Next: operator restores main's required approval (STILL OPEN from cycle 10); F-0048 or F-0046 build session; 30-day hygiene now also refreshes FRONTIER §2; Gemini 3.5 Pro GA + Fable-5 subscription terms are the two watched UNVERIFIED items; **Sonnet 5 intro pricing ends 2026-08-31**.
+Next: operator restores main's required approval (STILL OPEN from cycle 10); F-0048 or F-0046 build session; 30-day hygiene now also refreshes FRONTIER §2; kaizen candidate (evaluator, PR #164): a `--validate`-style assertion on `last_verified` stamps — the ledger's aging is process-enforced, not mechanical; Gemini 3.5 Pro GA + Fable-5 subscription terms are the two watched UNVERIFIED items; **Sonnet 5 intro pricing ends 2026-08-31**.
 
 ## 2026-07-16 (phase 6, cycle 10) — Frontier research refresh; Dependabot wave resolved 3/3; branch-protection gap surfaced
 
