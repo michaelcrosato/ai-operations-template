@@ -1,3 +1,15 @@
+## 2026-07-16 (phase 6, cycle 11) — Frontier ledger: docs/FRONTIER.md; §5 goes ledger-first; cross-vendor catalog verified
+
+Operator /goal: stop re-buying research each session; catalog the frontier (with cutoffs); record the "why" for LLMs with older cutoffs; wire model roles; docs true-up. Less-is-more honored: ONE new file + four small wiring edits.
+
+- **`docs/FRONTIER.md` (96 lines) is the new session-persistent verified-facts ledger.** §1 why-built-this-way (build context for pre-2026 cutoffs); §2 cross-vendor frontier catalog with per-row `last_verified` + sources; §3 model roles + verified switching surface; §4 findings ledger; §5 maintenance (writer = /research only; >3mo = stale; ≤150 lines). CLAUDE.md §5 now reads ledger-first (<3mo stamp = rely, else /research + write-back) — that clause is the anti-10M-token mechanism. /research skill gained the write-through duty + "weigh working public production repos over announcements" (operator signal).
+- **The operator's frontier list verified live before cataloging (66 Sonnet agents, per-lane sampling — morning pass's lane-order truncation FIXED): all three non-Anthropic names check out.** Gemini 3.5 Flash GA 2026-05-19, cutoff Jan 2025 (3.5 **Pro NOT GA** — rumors carried UNVERIFIED); Grok 4.5 GA ~Jul 8 (`grok-4.5`, cutoff Feb 1 2026 stated verbatim, 500k ctx, not in EU, xAI self-brands "SpaceXAI"); GPT-5.6 GA Jul 9 — **Sol/Terra/Luna are generation-5.6 capability tiers, not one model** (`gpt-5.6-sol`, cutoff Feb 16 2026, 1.05M ctx). Anthropic cutoffs (reliable/training): Fable 5, Opus 4.8, Sonnet 5 all Jan 2026/Jan 2026; Haiku 4.5 Feb 2025/Jul 2025; Sonnet 4.6 Aug 2025/Jan 2026. 30 load-bearing claims beyond the per-lane sample went unverified — recorded in the ledger row, not hidden.
+- **Model roles recorded (FRONTIER §3), the §8 safer-shape way:** Fable 5 = planner/auditor at the SESSION level when available (`claude --model claude-fable-5`, /model, per-invocation override for a single hard pass) — deliberately NOT flipped as the `reasoning` tier default (2× Opus per token, subscription terms UNVERIFIED → cost decision reserved to the operator); Opus 4.8 = implementer (existing tiers unchanged); Sonnet 5 = researcher (highest-token role); Haiku 4.5 = scout; Gemini 3.5 Flash / GPT-5.6 = external second-opinion lanes, NOT integrated (plan §2.1 stands). Switching surface verified against model-config docs.
+- **Docs true-up:** README freshness principle said 6 months where the constitution says 3 — fixed to 3 + ledger pointer; FRONTIER row added to the documentation map; CLAUDE.md §1 pointer map gains the ledger (53 lines, §9 checklist walked).
+
+State: unchanged backlog (30 features — 27 done, 2 pending F-0046/F-0048, 1 blocked-by-design). Ledger PR this block rides on: see PR link in DECISIONS.
+Next: operator restores main's required approval (STILL OPEN from cycle 10); F-0048 or F-0046 build session; 30-day hygiene now also refreshes FRONTIER §2; Gemini 3.5 Pro GA + Fable-5 subscription terms are the two watched UNVERIFIED items; **Sonnet 5 intro pricing ends 2026-08-31**.
+
 ## 2026-07-16 (phase 6, cycle 10) — Frontier research refresh; Dependabot wave resolved 3/3; branch-protection gap surfaced
 
 Operator /goal (review + audit the repo; resolve every branch — approve/merge or delete) with /deep-research on Sonnet for gathering and Opus for the audit + implementation. The split held: 148 Sonnet agents gathered, Opus judged and implemented.
@@ -484,22 +496,4 @@ Drove the previously blocked/deferred review-queue items to a genuine terminal *
 - **Enabled out-of-tree:** GitHub vulnerability alerts, Dependabot security updates, secret scanning + push protection, private vulnerability reporting (all were off). The postcss Dependabot alert cleared on merge.
 - **Groomed** the larger/risky fixes as features (not done casually, per the verified plan): F-0021 (F-0018 canvas RBAC enforcement + E2E + rbac unification, P1), F-0022 (arm the F-0007 path guard mechanically, P1), F-0023 (product model-currency grok-4→grok-4.3 central registry, P2). Backlog now 23 features, 20 passing — correcting the "all done" overstatement. STATUS.md regenerated honestly; Q-0003 opened (non-blocking).
 - **Gate:** `bash scripts/verify.sh` → VERIFY: PASS (exit 0), 190 hook contract tests, 0 fail; PR #44 CI verify+e2e green; merged to develop (e286caf).
-
-## 2026-06-14 — Forge evidence tests made self-contained (kills the PR #42 CI flake at the root)
-
-- Root-caused the PR #42 flake: `src/forge/abSim.test.js` copied sibling tests' evidence files into `roadmap/evidence/F-0017/` at module load; under parallel `node --test` it could read a source file mid-truncate-write and write an empty `F-0017/graph.json`, which fails `update-state.ts --validate`.
-- Fix: `abSim.test.js` now derives the F-0019/F-0020 artifacts IN-PROCESS (`promptToGraph('Research X and summarize')` + the pure `minimalGraph()/dockerfileContent()/dockerComposeContent()`) instead of reading sibling evidence files. The F-0017 emission no longer depends on test file-write order or `--test-concurrency`, so the planned glob-based runner ("Phase 1") cannot reintroduce the race.
-- Used the side-effect-free export functions rather than `exportArtifacts()` (which writes F-0020 and would shift the race), and kept `--test-concurrency=1` as defense-in-depth for the residual abSim.js-CLI-subprocess write race. Rationale in DECISIONS.md.
-- Committed evidence is byte-for-byte unchanged: graph.json 571B, sample-graph.json 1304B, Dockerfile/docker-compose.yml identical (SHA-256 verified).
-
-**Telemetry/Metrics:** 16/16 forge+health unit tests green; 25× parallel `node --test` all green with `F-0017/graph.json` stable at 571 bytes; full `bash scripts/verify.sh` → VERIFY: PASS (exit 0), 190 hook contract tests passing; fresh-context evaluator PASS (independent SHA-256 byte-match). Scope: `src/forge/abSim.test.js` only (+ records); `package.json` and `roadmap/features.json` untouched.
-
-## 2026-06-13 — F-0018 Visual Canvas unblocked and merged (PR #40)
-
-- Completed F-0018: Resolved Next.js compile errors for named exports in `@xyflow/react` and ignored TypeScript side-effect typecheck warnings for CSS style imports.
-- Staged, verified, pushed, and merged PR #40 to develop default branch using ship.sh.
-- Backlog state flipped: F-0018 is now status:done, passes:true with verified log evidence under roadmap/evidence/F-0018/verify.log.
-- 183 automated contract tests passing locally and in CI.
-
-**Telemetry/Metrics:** 20/20p stable (validated via ts-node scripts/update-state.ts --validate); all safety checks and unit tests passing; 183 hook contract tests passing; Next.js builds clean; E2E Playwright setup ready.
 

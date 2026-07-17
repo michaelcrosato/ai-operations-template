@@ -6,7 +6,7 @@
 
 Six principles govern everything in this repository. Every agent session is bound by them; every file here exists to enforce one of them.
 
-1. **100% AI-coded, on today's frontier — never yesterday's.** Every line of code, architecture decision, and maintenance task is done by current frontier AI models. Anything the models "remember" from before 6 months ago — tools, frameworks, setups, best practices — is presumed stale and must be re-verified against live sources before it's relied on (the `/research` skill exists for exactly this). The field changes week to week; the engine assumes that.
+1. **100% AI-coded, on today's frontier — never yesterday's.** Every line of code, architecture decision, and maintenance task is done by current frontier AI models. Anything the models "remember" that is more than 3 months old — tools, frameworks, setups, best practices — is presumed stale and must be re-verified against live sources before it's relied on (the `/research` skill exists for exactly this, and [`docs/FRONTIER.md`](docs/FRONTIER.md) is where verified frontier facts persist between sessions so they aren't re-bought every time). The field changes week to week; the engine assumes that.
 
 2. **Full AFK autonomy.** The agents following this system can run indefinitely without a human in the loop. It never stops to ask "how do you want to proceed" — it decides, documents the decision, and keeps moving. Genuine blockers get logged and skipped, not waited on. A run ends with work done, never with a question mark.
 
@@ -169,6 +169,7 @@ New here? Read in this order: **README** (this file) → **OPERATOR_GUIDE.md** (
 | `.claude/model-policy.json` | The only place model names live | Single source of truth for agent→model | ✅ Enforced by gate |
 | `.claude/agents/` · `skills/` · `rules/` · `hooks/` | Sub-agents, slash-command loops, path rules, mechanical guards | The runnable engine | ✅ Operational |
 | `scripts/verify.sh` | The single quality gate | One command, identical for agents and CI | ✅ Operational |
+| `docs/FRONTIER.md` | Verified frontier catalog (models, cutoffs, pricing) + why the repo is shaped this way | Session-persistent research ledger — read before re-researching; updated only by `/research` | ✅ Current |
 | `docs/how-it-proves-itself.md` | How the gate, mutation-smoke, guard tests + benchmark prove the engine works — with runnable commands | Hands-on "verify it yourself" tutorial + explanation | ✅ Current |
 | `bench/README.md` | Atomic golden-task probes | Fast quality/token/cost/speed measurement | ✅ Current |
 | `bench/suite/README.md` | As-built end-to-end oracle suite | The real capability + gauntlet benchmark | ✅ Current |

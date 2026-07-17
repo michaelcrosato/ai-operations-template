@@ -1,7 +1,7 @@
 # Agent Constitution: <REPO_NAME>
 
 ## 1. What this repo is
-A 100% AI-coded project. Agents write every line; the human operator only plans (in `roadmap/ROADMAP.md`) and does final QA. Pointer map: `README.md` = product architecture · `AI_OPERATIONS_PLAN.md` = how the factory works · `TASK_AUTONOMY_TRIAGE.md` = how much autonomy a task gets + where a human is required (groom sets `tier`, /work routes on it) · `roadmap/` = all durable state · `.claude/model-policy.json` = the only place model names live.
+A 100% AI-coded project. Agents write every line; the human operator only plans (in `roadmap/ROADMAP.md`) and does final QA. Pointer map: `README.md` = product architecture · `AI_OPERATIONS_PLAN.md` = how the factory works · `TASK_AUTONOMY_TRIAGE.md` = how much autonomy a task gets + where a human is required (groom sets `tier`, /work routes on it) · `roadmap/` = all durable state · `.claude/model-policy.json` = the only place model names live · `docs/FRONTIER.md` = verified frontier facts + build context (read before researching).
 
 ## 2. Commands
 - Init dev env: `bash scripts/init.sh`
@@ -27,6 +27,7 @@ Minor choices: pick the conventional option, one line in `roadmap/DECISIONS.md`,
 
 ## 5. Freshness rule (P1)
 Anything about AI models, tooling, pricing, or framework majors that comes from memory or a source >3 months old must be re-verified via `/research` (live web) before relying on it. This includes claims inside this repo's own docs.
+Check `docs/FRONTIER.md` FIRST: a fact stamped `last_verified` <3 months ago there may be relied on without re-research; on any /research pass, write new verified findings back to it (with stamp + source) so the next session inherits them instead of re-buying them.
 
 ## 6. Git & PR rules
 - Never commit directly to or push `main`. Every PR targets `main`. Branches: `feat/F-XXXX` or `fix/...`.

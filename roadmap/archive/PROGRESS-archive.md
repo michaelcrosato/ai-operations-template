@@ -837,3 +837,24 @@ No other changes (minimal per mandate). AGENT_STOP written with this diag, will 
 ---
 
 _Older entries archived to [roadmap/archive/PROGRESS-archive.md](archive/PROGRESS-archive.md) per AI_OPERATIONS_PLAN §4.3 (live log kept near ~500 lines)._
+
+<!-- archived 2026-07-16 (cycle 11): two 2026-06-13/14 blocks, per plan 4.3 (~500-line cap) -->
+
+## 2026-06-14 — Forge evidence tests made self-contained (kills the PR #42 CI flake at the root)
+
+- Root-caused the PR #42 flake: `src/forge/abSim.test.js` copied sibling tests' evidence files into `roadmap/evidence/F-0017/` at module load; under parallel `node --test` it could read a source file mid-truncate-write and write an empty `F-0017/graph.json`, which fails `update-state.ts --validate`.
+- Fix: `abSim.test.js` now derives the F-0019/F-0020 artifacts IN-PROCESS (`promptToGraph('Research X and summarize')` + the pure `minimalGraph()/dockerfileContent()/dockerComposeContent()`) instead of reading sibling evidence files. The F-0017 emission no longer depends on test file-write order or `--test-concurrency`, so the planned glob-based runner ("Phase 1") cannot reintroduce the race.
+- Used the side-effect-free export functions rather than `exportArtifacts()` (which writes F-0020 and would shift the race), and kept `--test-concurrency=1` as defense-in-depth for the residual abSim.js-CLI-subprocess write race. Rationale in DECISIONS.md.
+- Committed evidence is byte-for-byte unchanged: graph.json 571B, sample-graph.json 1304B, Dockerfile/docker-compose.yml identical (SHA-256 verified).
+
+**Telemetry/Metrics:** 16/16 forge+health unit tests green; 25× parallel `node --test` all green with `F-0017/graph.json` stable at 571 bytes; full `bash scripts/verify.sh` → VERIFY: PASS (exit 0), 190 hook contract tests passing; fresh-context evaluator PASS (independent SHA-256 byte-match). Scope: `src/forge/abSim.test.js` only (+ records); `package.json` and `roadmap/features.json` untouched.
+
+## 2026-06-13 — F-0018 Visual Canvas unblocked and merged (PR #40)
+
+- Completed F-0018: Resolved Next.js compile errors for named exports in `@xyflow/react` and ignored TypeScript side-effect typecheck warnings for CSS style imports.
+- Staged, verified, pushed, and merged PR #40 to develop default branch using ship.sh.
+- Backlog state flipped: F-0018 is now status:done, passes:true with verified log evidence under roadmap/evidence/F-0018/verify.log.
+- 183 automated contract tests passing locally and in CI.
+
+**Telemetry/Metrics:** 20/20p stable (validated via ts-node scripts/update-state.ts --validate); all safety checks and unit tests passing; 183 hook contract tests passing; Next.js builds clean; E2E Playwright setup ready.
+
