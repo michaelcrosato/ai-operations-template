@@ -1017,6 +1017,67 @@
         ".github/workflows/**",
         "roadmap/features.json"
       ]
+    },
+    {
+      "dependencies": [],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "C",
+      "id": "F-0049",
+      "epic": "foundation-lean",
+      "priority": 1,
+      "title": "Unify per-feature path-authorization matching into one implementation shared by path-guard.js and verify-gate.sh",
+      "description": "The two guards registered on the same PreToolUse matcher each re-implement the identical contract - active-feature derivation, the F-0034 glob-to-regex sentinel algorithm, F-0042 Windows path normalization, fail-closed semantics. The code admits the fragility: verify-gate.sh line 31 says it is mirroring path-guard.js normalizePath EXACTLY so both guards agree, and path-guard.js lines 37-40 mirror back. KILLER_FOUNDATION_ROADMAP R1 - ruled Tier C orchestrator-owned on 2026-07-01, never groomed until now - rates this the number-one drift risk on the load-bearing guard. Deliverable: one shared matching module consumed by both guards, the never-run bash fallback matcher in verify-gate.sh deleted, and a new hook-contract test corpus proving both guards return identical verdicts on divergence-prone cases - dot-segments, absolute Windows paths, trailing slashes, double-star edges.",
+      "acceptance": [
+        "bash scripts/verify.sh green",
+        "A new agreement-corpus contract test passes - it feeds the same path plus feature scope to both guards and asserts identical allow or deny verdicts on at least 10 divergence-prone cases",
+        "The never-run bash fallback matcher block is gone from verify-gate.sh",
+        "Mutation smoke still kills all known mutants"
+      ],
+      "spec_ref": "roadmap/KILLER_FOUNDATION_ROADMAP.md R1; roadmap/DECISIONS.md 2026-07-01",
+      "authorized_paths": [
+        ".claude/hooks/**",
+        "scripts/test-hooks.sh",
+        "roadmap/evidence/F-0049/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**"
+      ]
+    },
+    {
+      "dependencies": [
+        "F-0049"
+      ],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "C",
+      "id": "F-0050",
+      "epic": "foundation-lean",
+      "priority": 2,
+      "title": "Harden verify.sh against untracked files laundering a NEEDS_WORK diff into a green run",
+      "description": "verify.sh has no handling for untracked files around the hook-contract-test step, so an untracked test or fixture surviving a reset can make a dirty working state verify green. KILLER_FOUNDATION_ROADMAP R3 - same 2026-07-01 Tier C ruling as R1, also never groomed - calls verifier-gaming the number-one real agent failure mode, citing arXiv 2606.26300. Deliverable: verify.sh detects untracked files under gate-relevant paths - tests, hooks, scripts - and fails with a named list, with an escape hatch only for explicitly gate-irrelevant paths.",
+      "acceptance": [
+        "bash scripts/verify.sh green on a clean tree",
+        "A new contract test proves that an untracked file planted under a gate-relevant path makes verify.sh exit non-zero and name the file",
+        "Mutation smoke still kills all known mutants"
+      ],
+      "spec_ref": "roadmap/KILLER_FOUNDATION_ROADMAP.md R3; roadmap/DECISIONS.md 2026-07-01",
+      "authorized_paths": [
+        "scripts/verify.sh",
+        "scripts/test-hooks.sh",
+        "roadmap/evidence/F-0050/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**"
+      ]
     }
   ]
 }
