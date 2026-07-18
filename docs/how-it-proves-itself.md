@@ -31,7 +31,7 @@ One command that must pass before anything merges. It runs, in order and fail-fa
 - **model-policy drift** — agent card `model:` frontmatter must match `.claude/model-policy.json`
 - **assertion-shield** — blocks any commit that deletes/weakens a test assertion
 - **biome + ShellCheck v0.11.0** on `scripts/` and `.claude/hooks/` (official binary, archive and binary checksums pinned)
-- **hook-contract tests** — `hook contract tests: 464 passed, 0 failed`
+- **hook-contract tests** — `hook contract tests: 490 passed, 0 failed`
 - **mutation-smoke** — see §2
 
 Run it: `bash scripts/verify.sh`. The last line is `VERIFY: PASS (exit 0)` or `VERIFY: FAIL`. That line is machine-read: a feature can only be marked "done" when a captured green log exists on disk (see §5).
@@ -58,7 +58,7 @@ Each `[killed]` line is a guard proving it has teeth: remove that rule from the 
 
 ---
 
-## 3. The guard tests — `scripts/test-hooks.sh` (464 checks)
+## 3. The guard tests — `scripts/test-hooks.sh` (490 checks)
 
 Deterministic abuse cases against every hook — positive *and* negative:
 
@@ -67,7 +67,7 @@ Deterministic abuse cases against every hook — positive *and* negative:
 - **update-state**: rejects malformed JSON, `passes:true` at birth, dangling dependencies, and two concurrent in-progress features (hand-edit defense).
 - **kill switch**: an `AGENT_STOP` file halts all commands.
 
-These run inside `verify.sh`; the count prints as `hook contract tests: 464 passed, 0 failed`.
+These run inside `verify.sh`; the count prints as `hook contract tests: 490 passed, 0 failed`.
 
 ---
 

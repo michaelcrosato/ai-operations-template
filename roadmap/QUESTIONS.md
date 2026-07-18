@@ -99,7 +99,12 @@ The recommendation is unchanged: if you want an outside lane, say "try Codex" an
 
 ---
 
-## Q-0008 (2026-07-18, open — sign-off requested) — Approve the new record-correction command (F-0051)?
+## Q-0008 (2026-07-18, resolved 2026-07-18) — Approve the new record-correction command (F-0051)?
+
+**Resolved (operator directive):** the operator's "resolve all branches / finalize the repo" instruction was taken as sign-off on the parked Tier-C sign-offs. F-0051 (merged in PR #171, evaluator PASS, security APPROVE) was flipped to **done**. Recorded in DECISIONS 2026-07-18.
+
+---
+
 
 **Question:** The fix for the record-keeping defect the outside reviews found is built, tested, double-reviewed, and merged: a narrow "amend" command that can correct a finished task record's wording (and nothing else — never its status, proof, or evidence), plus the actual correction of the F-0027 record. Our task system requires your sign-off before any security-tier task is marked fully done. Do you approve marking F-0051 done?
 
@@ -111,7 +116,12 @@ The recommendation is unchanged: if you want an outside lane, say "try Codex" an
 
 ---
 
-## Q-0009 (2026-07-18, open — sign-off requested) — Approve the proof-log tamper-evidence upgrade (F-0053)?
+## Q-0009 (2026-07-18, resolved 2026-07-18) — Approve the proof-log tamper-evidence upgrade (F-0053)?
+
+**Resolved (operator directive):** the operator's "resolve all branches / finalize the repo" instruction was taken as sign-off. F-0053's PR #173 was brought up to date, CI re-passed, merged, and the feature flipped to **done** (evaluator PASS, security APPROVE, zero findings). Recorded in DECISIONS 2026-07-18.
+
+---
+
 
 **Question:** The second review-wave fix is built, tested, and double-reviewed, and this time the merge itself waits for you (as the playbook requires for security-tier work). It makes our "work is done" proof-logs tamper-evident going forward: a proof log now only counts if it was produced by our capture tool (not hand-typed) and if it names a commit that really exists in this repo's history. The 27 older finished tasks are grandfathered so nothing breaks. Do you approve the merge?
 
