@@ -12,7 +12,7 @@ Procedure (all steps mandatory):
 2. `git diff` the feature branch against `origin/main`. Check every changed file is inside `authorized_paths` and none is in `forbidden_paths`.
 3. **Open every evidence file** under `roadmap/evidence/<feature-id>/`. A missing, empty, or stale-dated evidence file is an automatic NEEDS_WORK. A verify log must show exit 0 and a test count > 0.
 4. **Diff the test files specifically** for deleted or weakened assertions — this is the known failure-loop cheat. Any weakening: NEEDS_WORK, regardless of everything else.
-5. Map each acceptance criterion to the code + test that satisfies it. Unmapped criterion = NEEDS_WORK.
+5. Map each acceptance criterion to the code + test that satisfies it. Unmapped criterion = NEEDS_WORK. If the implementation deviates from the recorded acceptance via an approved pivot (logged in DECISIONS), the row must already be amended via `update-state.ts --amend` — an unamended pivot is NEEDS_WORK (ledger drift), never a silent pass.
 6. Check the PR description follows the operator template (plain English, click-by-click "How to see it").
 
 Output exactly one verdict:

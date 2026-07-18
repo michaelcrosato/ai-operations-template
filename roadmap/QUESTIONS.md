@@ -76,3 +76,23 @@ The newest research backs your instinct that the one-shot approach is the more r
 3. **Google (Antigravity): the "can't run unattended" report was out of date.** They fixed that bug in early July, so the tool can run unattended after all. The real catch is the sign-in: it only accepts an interactive Google login, not a simple key a machine can use — awkward for a fully automated system. Google's suggested route for automation is a separate programming kit we haven't evaluated. Google stays the weakest of the three candidates for now.
 
 The recommendation is unchanged: if you want an outside lane, say "try Codex" and it will be set up as a careful, fully-reviewed task. If not, everything keeps running exactly as it is.
+
+---
+
+## Q-0006 (2026-07-18, open — not blocking) — Should we soften the boldest wording on the project's public page?
+
+**Question:** Four outside reviewers read this project cover to cover. They respected the machinery, but they all pushed back on the same thing: the public README says the loop "genuinely works" and calls the guardrails "mechanically enforced," while the reviewers found real (now being fixed) gaps — one task record still described a design we had rejected, and until the hardening task ships, the proof-log check could be satisfied by a hand-typed line. The README already has an unusually honest "limitations" section; the reviewers' point is that the boldest sentences above it write a check the limitations section then walks back. Should we soften those few sentences? Proposed edit, ready to apply on your yes: change "That loop is genuinely novel, it genuinely works" to "That loop is real, enforced by scripts and tests, and we publish its known limits below" and change the standalone "Real, mechanically enforced." to "Enforced by scripts and tests (see Honest limitations for the edges)." Nothing else changes.
+
+**Why it matters:** The public page is the first thing any outside reader judges us by — the reviewers themselves are proof. Words on it are yours to choose (that is why this is a question, not an edit). The same reviewers also suggested bigger identity moves — renaming the project "Claude Code template," deleting most history docs, demoting the one-shot tool — which are strategy calls listed here only so you know they were said; no action is proposed on them.
+
+**What was assumed meanwhile (the safe default):** Nothing on the README changed. The three real technical gaps the reviewers found are being fixed through the normal task loop regardless of what the words say (the task records, the proof-log hardening, and the one-shot tool's command screening).
+
+---
+
+## Q-0007 (2026-07-18, open — not blocking) — Is Windows-with-Git-Bash the only supported way to run this, or should we support the Linux-under-Windows setup too?
+
+**Question:** One reviewer tried the mental exercise of running this project the way many developers on Windows do — inside WSL, the Linux environment Windows can host — and found our safety check refuses to run there, telling the user to use Git Bash instead. That refusal is deliberate: in that setup our safety hooks can silently stop working, and the check would rather block than run unguarded. But it does mean an outsider with the common Linux-under-Windows setup hits a wall. Should we keep "use Git Bash on Windows" as the only supported path (documenting it more clearly), or is it worth building and testing real support for the Linux-under-Windows setup?
+
+**Why it matters:** It only affects future outside adopters — your own setup (Git Bash) is unaffected. Supporting the other path costs a careful, security-reviewed change; not supporting it costs some adopter friction.
+
+**What was assumed meanwhile (the safe default):** The check stays as is — it fails safe. If we ever add an override, it will carry the scary DANGEROUSLY_ name our rules require, so nobody flips it casually (already recorded in the decisions log).
