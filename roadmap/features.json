@@ -1149,9 +1149,11 @@
     },
     {
       "dependencies": [],
-      "status": "pending",
+      "status": "awaiting_approval",
       "passes": false,
-      "evidence": [],
+      "evidence": [
+        "roadmap/evidence/F-0053/verify.log"
+      ],
       "attempts": 0,
       "blocked_reason": null,
       "tier": "C",

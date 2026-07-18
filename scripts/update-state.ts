@@ -1,3 +1,5 @@
+import { execFileSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
@@ -47,6 +49,14 @@ const TIERS = ['A', 'B', 'C'];
 const BUILDERS = ['builder', 'builder-strong'];
 // forbidden_paths defaults that --add must never let a caller clear (guardrail surfaces).
 const SAFETY_FORBIDDEN = ['.claude/**', '.github/workflows/**'];
+// PROVENANCE_CUTOFF (F-0053, DECISIONS 2026-07-18): the numeric-id boundary for the --validate deep
+// evidence audit's tamper-evident-provenance requirements. A feature whose id part is > this value
+// must present a CAPTURED green verify log (CAPTURED-BY: scripts/capture.mjs + CAPTURE-EXIT: 0) whose
+// VERIFY-COMMIT sha is an ancestor of HEAD. The 27 legacy `done` rows (id <= 50) predate mandatory
+// capture and are GRANDFATHERED on their historical bare-marker logs, so --validate stays green on a
+// clean tree. Flip-time (--passes) strictness is UNCONDITIONAL and does NOT consult this cutoff, so a
+// still-pending sub-cutoff row (e.g. F-0046/F-0048) is held to the full contract at its future flip.
+const PROVENANCE_CUTOFF = 50;
 
 interface Feature {
   id: string; epic: string; title: string; spec_ref: string; description: string;
@@ -72,7 +82,11 @@ function load(): { $schema?: string; features: Feature[] } {
 function save(data: { features: Feature[] }): void {
   const errors = validate(data.features);
   if (errors.length) fail(`refusing to save invalid state:\n  - ${errors.join('\n  - ')}`);
-  const tmp = `${FILE}.tmp`;
+  // F-0053 (AC4): a per-write UNIQUE temp path (process id + random hex) instead of the fixed
+  // "${FILE}.tmp" — two writers, or a crashed prior run's leftover, can no longer collide on one
+  // shared temp mid-rename. renameSync stays the atomic publish step. (DECISIONS 2026-07-18: a
+  // lockfile/CAS was rejected — the writer is single-actor by design; this rider is the cheap guard.)
+  const tmp = `${FILE}.${process.pid}.${randomBytes(6).toString('hex')}.tmp`;
   fs.writeFileSync(tmp, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
   fs.renameSync(tmp, FILE);
   console.log('[update-state] saved.');
@@ -171,11 +185,45 @@ function find(data: { features: Feature[] }, id: string): Feature {
   return f;
 }
 
-/** Evidence contract: every evidence file exists, is non-empty, and at least
- *  one is a verify log proving a green gate run (plan §4.2, §6.3). Used by
- *  --passes at flip time AND by --validate for every passing feature, so a
- *  hand-edited or bash-redirected passes:true cannot survive CI. */
-function collectEvidenceErrors(f: Feature): string[] {
+/** Numeric id part of an F-XXXX id (F-0051 -> 51). Returns NaN for a malformed id — which
+ *  validate() rejects independently, and NaN > PROVENANCE_CUTOFF is false, so the strict audit is
+ *  never applied on the strength of an unparseable id alone. */
+function featureIdNumber(id: string): number {
+  const m = /^F-(\d+)$/.exec(id);
+  return m ? Number.parseInt(m[1], 10) : Number.NaN;
+}
+
+/** True iff `sha` is a real ancestor of HEAD (or is HEAD itself). The sha is SHAPE-VALIDATED against
+ *  /^[0-9a-f]{7,40}$/i BEFORE any git call, so the literal `no-git` (what verify.sh writes outside a
+ *  git tree) and any fabricated/foreign non-sha string are rejected WITHOUT spawning git. git is
+ *  invoked via execFileSync with an args array (shell:false), so nothing read from the log is ever
+ *  interpolated into a command line. A well-formed but non-existent/foreign sha makes
+ *  `git merge-base --is-ancestor` exit non-zero (thrown here) -> false.
+ *
+ *  MERGE-STRATEGY CAVEAT (AC2): this ancestry test is only meaningful because ship.sh lands feature
+ *  branches as MERGE commits and CI checks out FULL history — the verify commit therefore stays
+ *  reachable from the PR/main HEAD. If the merge strategy ever changes (a squash that rewrites the
+ *  verify commit away, or a shallow CI checkout that truncates history), a legitimately-recorded
+ *  VERIFY-COMMIT sha would no longer be an ancestor of HEAD and this check MUST be revisited. */
+function verifyCommitIsAncestor(sha: string): boolean {
+  if (!/^[0-9a-f]{7,40}$/i.test(sha)) return false;
+  try {
+    execFileSync('git', ['merge-base', '--is-ancestor', sha, 'HEAD'], { stdio: 'pipe' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Evidence contract: every evidence file exists, is non-empty, and at least one is a verify log
+ *  proving a green gate run (plan §4.2, §6.3). Used by --passes at flip time AND by --validate for
+ *  every passing feature, so a hand-edited or bash-redirected passes:true cannot survive CI.
+ *
+ *  `strictProvenance` (F-0053): when true, the green verify log must additionally be a tamper-evident
+ *  capture (CAPTURED-BY: scripts/capture.mjs + CAPTURE-EXIT: 0) carrying a VERIFY-COMMIT whose sha is
+ *  an ancestor of HEAD. It is UNCONDITIONALLY true at flip time (--passes); at audit time (--validate)
+ *  the caller passes true only for features above PROVENANCE_CUTOFF, grandfathering the legacy rows. */
+function collectEvidenceErrors(f: Feature, strictProvenance: boolean): string[] {
   const errors: string[] = [];
   if (f.evidence.length === 0) return [`${f.id}: no evidence recorded; run --evidence first`];
   let hasGreenVerifyLog = false;
@@ -188,21 +236,40 @@ function collectEvidenceErrors(f: Feature): string[] {
     const stat = fs.statSync(p);
     if (stat.isFile() && stat.size === 0) errors.push(`${f.id}: evidence file is empty: ${rel}`);
     if (/verify.*\.log$/i.test(rel)) {
-      const lines = fs.readFileSync(p, 'utf8').split(/\r?\n/);
+      const lines = fs.readFileSync(p, 'utf8').split(/\r?\n/).map((l) => l.trim());
       // Exact-line match, not substring: a failed run's log QUOTES the marker
       // inside this very audit's error message, which once self-satisfied the
       // check (found via PR #14). A quoted occurrence is never a whole line.
-      const hasMarker = lines.some((l) => l.trim() === 'VERIFY: PASS (exit 0)');
+      const hasMarker = lines.some((l) => l === 'VERIFY: PASS (exit 0)');
       // F-EC1 (security review): if this log was produced by scripts/capture.mjs, the
       // captured command's REAL exit code is authoritative — a PASS marker merely echoed
       // by a FAILING command must NOT count as green. The CAPTURE-EXIT header is the truth.
-      const fromCapture = lines.some((l) => l.trim() === 'CAPTURED-BY: scripts/capture.mjs');
-      const captureGreen = lines.some((l) => l.trim() === 'CAPTURE-EXIT: 0');
-      if (hasMarker && (!fromCapture || captureGreen)) hasGreenVerifyLog = true;
+      const fromCapture = lines.some((l) => l === 'CAPTURED-BY: scripts/capture.mjs');
+      const captureGreen = lines.some((l) => l === 'CAPTURE-EXIT: 0');
+      if (!strictProvenance) {
+        // Grandfathered / legacy deep audit (id <= PROVENANCE_CUTOFF): the pre-F-0053 contract — an
+        // exact PASS marker (with capture consistency when the log came from capture.mjs) is green.
+        if (hasMarker && (!fromCapture || captureGreen)) hasGreenVerifyLog = true;
+      } else {
+        // F-0053 provenance-strict (flip-time always; audit-time for id > PROVENANCE_CUTOFF): the
+        // green verify log MUST be a tamper-evident capture (CAPTURED-BY + CAPTURE-EXIT: 0) AND carry
+        // a VERIFY-COMMIT whose sha is an ancestor of HEAD. verify.sh writes the VERIFY-COMMIT line;
+        // its sha is the first whitespace-delimited token after the "VERIFY-COMMIT:" label (before
+        // the " @ <ts>"). CAPTURE-COMMIT (the capture.mjs header) does NOT match this prefix.
+        const commitLine = lines.find((l) => l.startsWith('VERIFY-COMMIT:'));
+        const commitSha = commitLine
+          ? (commitLine.slice('VERIFY-COMMIT:'.length).trim().split(/\s+/)[0] ?? '')
+          : '';
+        if (hasMarker && fromCapture && captureGreen && verifyCommitIsAncestor(commitSha)) {
+          hasGreenVerifyLog = true;
+        }
+      }
     }
   }
   if (!hasGreenVerifyLog) {
-    errors.push(`${f.id}: no green verify log among evidence (need a *verify*.log containing "VERIFY: PASS (exit 0)" from scripts/verify.sh)`);
+    errors.push(strictProvenance
+      ? `${f.id}: no provenance-verified green verify log among evidence (need a *verify*.log carrying the exact lines "VERIFY: PASS (exit 0)", "CAPTURED-BY: scripts/capture.mjs", "CAPTURE-EXIT: 0", and a "VERIFY-COMMIT: <sha> @ <ts>" whose <sha> is an ancestor of HEAD — capture the gate via scripts/capture.sh)`
+      : `${f.id}: no green verify log among evidence (need a *verify*.log containing "VERIFY: PASS (exit 0)" from scripts/verify.sh)`);
   }
   return errors;
 }
@@ -215,8 +282,11 @@ switch (cmd) {
     const errors = validate(data.features);
     // Deep evidence audit: re-verify the physical evidence contract for every
     // feature claiming passes:true, not just at flip time.
+    // F-0053: the tamper-evident-provenance requirements (captured log + ancestry-verified
+    // VERIFY-COMMIT) apply ONLY above PROVENANCE_CUTOFF — the 27 legacy `done` rows predate mandatory
+    // capture and stay green on their historical bare-marker logs (flip-time strictness is unconditional).
     for (const f of data.features.filter((x) => x.passes)) {
-      errors.push(...collectEvidenceErrors(f));
+      errors.push(...collectEvidenceErrors(f, featureIdNumber(f.id) > PROVENANCE_CUTOFF));
     }
     // Model-policy freshness (F-0009): warn — never fail — when a tier's
     // last_verified exceeds 30 days, so the next session's /research runs.
@@ -411,7 +481,9 @@ switch (cmd) {
     const [id, value] = args;
     if (value !== 'true') fail('--passes only accepts "true" (features are born failing; to un-pass, fix the feature)');
     const f = find(data, id);
-    const evidenceErrors = collectEvidenceErrors(f);
+    // F-0053: flip-time provenance is UNCONDITIONAL — every feature, regardless of id, must present a
+    // captured, ancestry-verified green log to flip (audit-time grandfathers legacy rows; a flip never does).
+    const evidenceErrors = collectEvidenceErrors(f, true);
     if (evidenceErrors.length) fail(evidenceErrors.join('\n  - '));
     f.passes = true;
     save(data);
