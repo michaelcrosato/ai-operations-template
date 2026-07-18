@@ -9,7 +9,9 @@
  * @property {string}   acceptanceCommand
  *   A single, machine-runnable shell command that verifies task completion.
  *   Must be exactly one command — no newlines, no shell-chaining operators
- *   (`;`, `&&`, `||`, `&`) and no pipes (`|`).
+ *   (`;`, `&&`, `||`, `&`) and no pipes (`|`). Also rejected (F-0052): command
+ *   substitution (`$(`/backtick), redirection (`>`/`<`), and carriage
+ *   returns (`\r`) — see CHAINING_RE and EXEC_VECTOR_RE below.
  * @property {string[]} contextPaths
  *   Relative (or absolute) file paths whose contents form the working-context
  *   for the task. Token estimates are computed over the concatenated contents.
@@ -58,6 +60,26 @@ function charsToTokens(totalChars) {
 const CHAINING_RE = /[\n;&|]/;
 
 /**
+ * Execution-vector metacharacters (F-0052).
+ * The 2026-07-18 review found that CHAINING_RE alone leaves the acceptance
+ * command able to smuggle work past the "single verifiable criterion"
+ * contract via mechanisms other than chaining. Rejects any acceptanceCommand
+ * containing:
+ *   - command substitution: the two-character opener `$(` (e.g. `$(whoami)`)
+ *     or a backtick (`` ` ``) (e.g. `` `whoami` ``)
+ *   - output redirection (`>`) or input redirection (`<`)
+ *   - a carriage return (`\r`) — CRLF-style line endings can hide a second
+ *     effective line from naive `\n`-only scanning on some shells/terminals
+ *
+ * Deliberately NOT rejected: a bare `$` not followed by `(`. Env-var
+ * references like `$HOME` or `$PATH` are common in legitimate acceptance
+ * commands and carry no substitution risk on their own — only the `$(`
+ * opener (or backticks) turns `$`/backtick into an execution vector, so a
+ * bare `$` followed by anything else stays admitted.
+ */
+const EXEC_VECTOR_RE = /\$\(|`|[><\r]/;
+
+/**
  * Resolve the working-set token budget from options -> env -> default.
  *
  * @param {AdmitOptions} [options]
@@ -86,7 +108,7 @@ function admit(descriptor, options) {
 
   // -- Gate 1: acceptance command must be a single, non-empty shell command --
   const cmd = typeof acceptanceCommand === 'string' ? acceptanceCommand.trim() : '';
-  if (!cmd || CHAINING_RE.test(acceptanceCommand)) {
+  if (!cmd || CHAINING_RE.test(acceptanceCommand) || EXEC_VECTOR_RE.test(acceptanceCommand)) {
     return { verdict: 'REJECT', reason: 'no-verifiable-criterion' };
   }
 

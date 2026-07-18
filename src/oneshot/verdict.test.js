@@ -176,8 +176,15 @@ test('F-0047: evidence-write failure is fail-closed (throws, never PASS)', () =>
 test('F-0047: evidence file records stdout and stderr of the acceptance command', () => {
   const evidencePath = tempEvidencePath();
   try {
+    // F-0052 note: verdict() now re-runs admit() on this descriptor first
+    // (AC2), and admit()'s CHAINING_RE has always rejected a bare `;` even
+    // inside a quoted -e argument (naive whole-string scan, no quote
+    // awareness -- see admit.js). The original fixture used `stmt1; stmt2`;
+    // rewritten with the JS comma operator (`stmt1, stmt2`) to stay a single
+    // admissible command while still executing both console calls and
+    // proving both are captured. Assertions below are unchanged.
     const descriptor = {
-      acceptanceCommand: "node -e \"console.log('out-marker-f0047'); console.error('err-marker-f0047')\"",
+      acceptanceCommand: "node -e \"console.log('out-marker-f0047'), console.error('err-marker-f0047')\"",
       contextPaths: []
     };
     const result = verdict(descriptor, { evidencePath });
@@ -189,5 +196,109 @@ test('F-0047: evidence file records stdout and stderr of the acceptance command'
     assert.ok(evidence.stderr.includes('err-marker-f0047'), 'evidence file stderr must contain the stderr marker');
   } finally {
     cleanUp([evidencePath]);
+  }
+});
+
+// F-0052 AC2: verdict re-runs admit() on its descriptor first. A rejected
+// (chained) command must produce a distinct NOT-ADMITTED outcome without
+// spawning anything and without writing any evidence file.
+test('F-0052 AC2: chained command fed directly to verdict -> NOT-ADMITTED, nothing spawned, no evidence file', () => {
+  const evidencePath = tempEvidencePath();
+  const descriptor = {
+    acceptanceCommand: 'echo one; echo two',
+    contextPaths: []
+  };
+  const result = verdict(descriptor, { evidencePath });
+  assert.equal(result.verdict, 'NOT-ADMITTED', 'a chained command must be rejected before spawning');
+  assert.equal(result.reason, 'no-verifiable-criterion');
+  assert.ok(!fs.existsSync(evidencePath), 'no evidence file may be written when admission fails');
+});
+
+// F-0052 AC3: the acceptance-command spawn has a configurable timeout; an
+// over-time command yields NOT-DONE with the evidence file recording the
+// timeout.
+test('F-0052 AC3: over-time command -> NOT-DONE, evidence file records timedOut and the limit', () => {
+  const evidencePath = tempEvidencePath();
+  try {
+    const descriptor = {
+      // Plain function expression, not an arrow function: `=>` contains a
+      // bare `>` which F-0052's EXEC_VECTOR_RE now rejects as redirection.
+      acceptanceCommand: 'node -e "setTimeout(function () {}, 5000)"',
+      contextPaths: []
+    };
+    const result = verdict(descriptor, { evidencePath, timeoutMs: 200 });
+    assert.equal(result.verdict, 'NOT-DONE', 'a timed-out command must yield NOT-DONE');
+
+    assert.ok(fs.existsSync(evidencePath), 'evidence file must be written even on timeout');
+    const evidence = JSON.parse(fs.readFileSync(evidencePath, 'utf8'));
+    assert.equal(evidence.timedOut, true, 'evidence file must record timedOut: true');
+    assert.equal(evidence.timeoutMs, 200, 'evidence file must record the timeout limit that was applied');
+  } finally {
+    cleanUp([evidencePath]);
+  }
+});
+
+// F-0052 AC4: a PASS result includes the evidencePath, and the file it
+// points at exists and records exit 0.
+test('F-0052 AC4: PASS result includes evidencePath, and that file exists and records exit 0', () => {
+  const evidencePath = tempEvidencePath();
+  try {
+    const descriptor = {
+      acceptanceCommand: 'node -e "process.exit(0)"',
+      contextPaths: []
+    };
+    const result = verdict(descriptor, { evidencePath });
+    assert.equal(result.verdict, 'PASS');
+    assert.equal(result.evidencePath, evidencePath, 'PASS result must return the evidencePath used');
+    assert.ok(fs.existsSync(result.evidencePath), 'the file at the returned evidencePath must exist');
+    const evidence = JSON.parse(fs.readFileSync(result.evidencePath, 'utf8'));
+    assert.equal(evidence.exitCode, 0, 'the evidence file must record exit 0');
+  } finally {
+    cleanUp([evidencePath]);
+  }
+});
+
+// F-0052 AC5: evidence writes are atomic (temp file then rename); no
+// leftover temp file may remain next to the evidence file after a run.
+test('F-0052 AC5: evidence write is atomic -- no *.tmp residue left next to the evidence file', () => {
+  const evidencePath = tempEvidencePath();
+  try {
+    const descriptor = {
+      acceptanceCommand: 'node -e "process.exit(0)"',
+      contextPaths: []
+    };
+    const result = verdict(descriptor, { evidencePath });
+    assert.equal(result.verdict, 'PASS');
+    assert.ok(fs.existsSync(evidencePath), 'final evidence file must exist');
+
+    const dir = path.dirname(evidencePath);
+    const base = path.basename(evidencePath);
+    const leftoverTmp = fs.readdirSync(dir).filter(
+      (name) => name.startsWith(base) && name.endsWith('.tmp')
+    );
+    assert.deepEqual(leftoverTmp, [], 'no *.tmp residue may remain next to the evidence file');
+  } finally {
+    cleanUp([evidencePath]);
+  }
+});
+
+// F-0052 AC5: default evidence filenames are collision-resistant (pid +
+// random hex), not bare milliseconds, while staying sortable by timestamp.
+test('F-0052 AC5: default evidencePath filename includes pid and random hex, not bare milliseconds', () => {
+  const descriptor = {
+    acceptanceCommand: 'node -e "process.exit(0)"',
+    contextPaths: []
+  };
+  const result = verdict(descriptor); // no evidencePath option -> default path
+  try {
+    assert.equal(result.verdict, 'PASS');
+    const filename = path.basename(result.evidencePath);
+    assert.match(
+      filename,
+      /^oneshot-verdict-\d+-\d+-[0-9a-f]+\.json$/,
+      'default evidence filename must be oneshot-verdict-<timestamp>-<pid>-<randomhex>.json'
+    );
+  } finally {
+    cleanUp([result.evidencePath]);
   }
 });
