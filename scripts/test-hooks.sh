@@ -759,6 +759,50 @@ EOF
 check "F-EC1: --passes ACCEPTS a captured green log (CAPTURE-EXIT: 0 + marker)" 0 "$(US_WITH_STATE "$FIX/ec-green.json" --passes F-9104 true)"
 rm -rf tmp/ec-launder tmp/ec-launder2 tmp/ec-green
 
+# ── F-0051: sanctioned --amend verb (correct a row's DESCRIPTIVE fields with a mandatory DECISIONS citation) ──
+# --amend edits ONLY title/description/acceptance, ONLY on in_progress|done rows, requires a reason
+# citing a dated DECISIONS entry, and re-validates via save() (which also refuses to empty acceptance).
+# It is the narrow verb that corrects the ledger after a recorded pivot (F-0027) without a hand-edit —
+# strictly narrower than --remove, so no new attack surface. Fixtures use the reserved F-9xxx range.
+AMF="$(mktemp -d)"
+mkdir -p tmp/amend-evidence
+printf 'VERIFY: PASS (exit 0)\n' > tmp/amend-evidence/verify.log
+amend_done() { # rewrite a fully-valid DONE fixture row (real green evidence so --validate round-trips)
+  printf '{ "features": [ { "id": "F-9501", "epic": "t", "title": "OLDTITLE", "spec_ref": "t", "description": "d", "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [], "priority": 1, "status": "done", "passes": true, "evidence": ["tmp/amend-evidence/verify.log"], "attempts": 0, "blocked_reason": null, "tier": "B" } ] }\n' > "$AMF/f.json"
+}
+# Guard 1 — field allowlist: a disallowed field (passes) is rejected even with a valid value + reason.
+amend_done
+check "F-0051: --amend REJECTS a disallowed field (passes)"          1 "$(US_WITH_STATE "$AMF/f.json" --amend F-9501 passes '"true"' correction per DECISIONS 2026-06-14)"
+# Guard 1 (mutation teeth) — the `passes` case above clears the value-shape guard but is ultimately
+# rejected by save()'s downstream boolean type check, so a mutant that DELETES Guard 1 survives it.
+# These two pin Guard 1 directly: tier "C" and status "in_progress" are values validate() ACCEPTS,
+# so if the allowlist were removed the amend would succeed — the ONLY thing rejecting them is Guard 1.
+amend_done
+check "F-0051: --amend REJECTS the tier field (allowlist, not save)"  1 "$(US_WITH_STATE "$AMF/f.json" --amend F-9501 tier '"C"' correction per DECISIONS 2026-07-18)"
+amend_done
+check "F-0051: --amend REJECTS the status field (allowlist, not save)" 1 "$(US_WITH_STATE "$AMF/f.json" --amend F-9501 status '"in_progress"' correction per DECISIONS 2026-07-18)"
+# Guard 2 — status allowlist: a pending row cannot be amended (re-groom via --remove + --add instead).
+cat > "$AMF/pending.json" <<'EOF'
+{ "features": [ { "id": "F-9501", "epic": "t", "title": "OLDTITLE", "spec_ref": "t", "description": "d", "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [], "priority": 1, "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null } ] }
+EOF
+check "F-0051: --amend REJECTS a pending row (status allowlist)"     1 "$(US_WITH_STATE "$AMF/pending.json" --amend F-9501 title '"NEWTITLE"' correction per DECISIONS 2026-06-14)"
+# Guard 4 — reason must cite a dated DECISIONS entry: a citation-less reason ("fixed wording") is rejected.
+amend_done
+check "F-0051: --amend REJECTS a reason with no DECISIONS citation"  1 "$(US_WITH_STATE "$AMF/f.json" --amend F-9501 title '"NEWTITLE"' fixed wording)"
+# Guard 3 / AC3 — an amend that would empty acceptance is rejected (before mutation AND by save()).
+amend_done
+check "F-0051: --amend REJECTS emptying acceptance ([])"             1 "$(US_WITH_STATE "$AMF/f.json" --amend F-9501 acceptance '[]' correction per DECISIONS 2026-06-14)"
+# Happy path — amend a DONE row's title: exit 0, logs AMEND + old + new value, file re-validates clean.
+amend_done
+AOUT="$(STATE_FILE="$AMF/f.json" node "$TSNODE" scripts/update-state.ts --amend F-9501 title '"NEWTITLE"' correction per DECISIONS 2026-06-14 2>&1)"; ARC=$?
+check "F-0051: --amend happy path exits 0"                           0 "$ARC"
+printf '%s' "$AOUT" | grep -q 'AMEND F-9501.title' ; check "F-0051: --amend logs AMEND <id>.<field>" 0 "$?"
+printf '%s' "$AOUT" | grep -q 'OLDTITLE'            ; check "F-0051: --amend logs the OLD value"      0 "$?"
+printf '%s' "$AOUT" | grep -q 'NEWTITLE'            ; check "F-0051: --amend logs the NEW value"      0 "$?"
+check "F-0051: --amend result re-validates clean (round-trip)"      0 "$(US_WITH_STATE "$AMF/f.json" --validate)"
+check "F-0051: --amend persisted the new title"                 "yes" "$(grep -q 'NEWTITLE' "$AMF/f.json" && echo yes || echo no)"
+rm -rf tmp/amend-evidence "$AMF"
+
 unset STATE_FILE
 rm -rf "$FIX"
 

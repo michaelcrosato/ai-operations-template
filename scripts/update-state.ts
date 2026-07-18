@@ -14,6 +14,7 @@ import * as path from 'node:path';
  *   ts-node scripts/update-state.ts --passes F-0001 true
  *   ts-node scripts/update-state.ts --paths F-0001 '<json-string-array>'   (replace authorized_paths — groom corrections)
  *   ts-node scripts/update-state.ts --remove F-0001 [F-0002 ...]   (delete feature rows; cascade-strip the removed ids from any remaining feature's dependencies)
+ *   ts-node scripts/update-state.ts --amend F-0001 <field> '<json-value>' <reason...>   (correct a descriptive field — title/description/acceptance — on an in_progress/done row; reason MUST cite a dated DECISIONS entry)
  */
 
 // STATE_FILE override exists for contract tests (scripts/test-hooks.sh) so they
@@ -438,6 +439,58 @@ switch (cmd) {
     save(data); // re-validates the whole backlog (ids, deps, cycles, invariants)
     console.log(`[update-state] removed ${args.length} feature(s): ${args.join(', ')}.` +
       (rewired.length ? ` Rewired dependencies: ${rewired.join('; ')}.` : ''));
+    break;
+  }
+  case '--amend': {
+    // Narrow sanctioned amendment verb (F-0051): correct a row's DESCRIPTIVE fields after a
+    // recorded pivot (e.g. F-0027's ledger drift) without a hand-edit — features.json may never
+    // be hand-edited, and --add refuses to rebirth a done row. House style mirrors
+    // `--status <id> blocked <reason...>`: positional args + a trailing free-text reason.
+    const [id, field, value, ...reasonParts] = args;
+    if (!id || !field || value === undefined) fail("--amend requires <id> <field> '<json-value>' <reason...>");
+    // Guard 1 — field allowlist (closed constant; extend deliberately, mirroring KNOWN_KEYS).
+    // This is what keeps --amend AWAY from the evidence-gated flip contract: id/status/passes/
+    // evidence/attempts/authorized_paths/priority/tier/dependencies/spec_ref all stay owned by
+    // their own guarded verbs and can never be rewritten as free-text through --amend.
+    const AMENDABLE = ['title', 'description', 'acceptance'];
+    if (!AMENDABLE.includes(field)) {
+      fail(`--amend can only change ${AMENDABLE.join('/')} — "${field}" is not amendable (status/passes/evidence/paths/attempts/etc. run through their own guarded verbs, never free-text)`);
+    }
+    const f = find(data, id);
+    // Guard 2 — status allowlist: only an in_progress or done row may be amended. A pending/blocked
+    // row is not yet (or no longer) a live record; re-groom it via the existing --remove + --add path.
+    if (f.status !== 'in_progress' && f.status !== 'done') {
+      fail(`--amend only edits in_progress or done rows; ${id} is "${f.status}" — re-groom a pending/blocked row via --remove + --add instead`);
+    }
+    // Guard 3 — value shape, checked BEFORE any mutation for a clean error (this plus save()'s
+    // re-validation is what satisfies "an amend that would empty acceptance is rejected"). The value
+    // arg is JSON.parse'd (fail on parse error, exactly like --add).
+    let parsed: unknown;
+    try { parsed = JSON.parse(value); } catch (e) { fail(`--amend <json-value> is not valid JSON: ${e}`); }
+    if (field === 'acceptance') {
+      if (!Array.isArray(parsed) || parsed.length === 0 || parsed.some((x) => typeof x !== 'string' || x.length === 0)) {
+        fail('--amend acceptance requires a non-empty JSON array of non-empty strings (an amend that would empty acceptance is rejected)');
+      }
+    } else if (typeof parsed !== 'string' || parsed.length === 0) {
+      fail(`--amend ${field} requires a non-empty JSON string value`);
+    }
+    // Guard 4 — reason: join the trailing args, require non-empty AND a dated DECISIONS citation.
+    // Every amendment must point at the durable decision that authorizes the ledger correction.
+    const reason = reasonParts.join(' ').trim();
+    if (!reason || !/DECISIONS(\.md)?\s+\d{4}-\d{2}-\d{2}/.test(reason)) {
+      fail('--amend requires a reason citing a dated DECISIONS entry — it must match /DECISIONS(\\.md)?\\s+\\d{4}-\\d{2}-\\d{2}/ (e.g. "... per DECISIONS 2026-06-14")');
+    }
+    // Guard 5 — log the old value, the new value, and the reason so the correction is auditable.
+    const rec = f as unknown as Record<string, unknown>;
+    const oldValue = rec[field];
+    console.log(`[update-state] AMEND ${id}.${field}`);
+    console.log(`  old: ${JSON.stringify(oldValue)}`);
+    console.log(`  new: ${JSON.stringify(parsed)}`);
+    console.log(`  reason: ${reason}`);
+    // Guard 6 — mutate the row, then save() (which re-validates the WHOLE backlog). No schema
+    // change, no new row field, no KNOWN_KEYS change: --amend only rewrites an existing field.
+    rec[field] = parsed;
+    save(data);
     break;
   }
   default:
