@@ -26,13 +26,13 @@ Seven principles govern everything in this repository. Every agent session is bo
 
 > **Read this first.** This repository is **not a product** — it is a *control plane* for building software with frontier AI agents: a state machine, a set of mechanical guardrails, and an adversarial review loop that let AI write and ship code semi-autonomously while staying auditable. The factory remains the core asset. The repo now also hosts the first slice of a second product built **with** that factory — the bounded one-shot tool (`src/oneshot/`): a deliberately-scoped, single-context-window, human-supervised coding harness (see [`docs/bounded-vs-afk-strategy.md`](docs/bounded-vs-afk-strategy.md)). An adopter can still drop the factory into their own repo and point it at their spec.
 
-**Operational status — last verified 2026-07-17 (`main`):**
+**Operational status — last verified 2026-07-18 (`main`):**
 
 | Layer | Status |
 |---|---|
-| Engine — state machine, gates, `.claude/hooks/`, **464** hook-contract tests, mutation gate, CI | ✅ **Working** |
-| Risk-tier adaptive layer (A/B/C → builder model, review depth, approval gate) | ✅ **now exercised end-to-end** — F-0040/F-0041 (Tier B) + F-0042/F-0043 (Tier C, incl. the mandatory security-reviewer + the awaiting_approval gate) |
-| One-shot tool (`src/oneshot/`) — admission gate + evidence-gated verdict | ✅ **MVP shipped** (F-0040/F-0041; admission gate since hardened — F-0047 closed a command-chaining hole) — early MVP, not a finished product |
+| Engine — state machine, gates, `.claude/hooks/`, **490** hook-contract tests, mutation gate, CI | ✅ **Working** |
+| Risk-tier adaptive layer (A/B/C → builder model, review depth, approval gate) | ✅ **exercised end-to-end** — Tier B (F-0040/F-0041/F-0052) and Tier C (F-0042/F-0043/F-0051/F-0053, incl. the mandatory security-reviewer + the awaiting_approval operator-sign-off gate, which held the F-0051/F-0053 merges for the operator) |
+| One-shot tool (`src/oneshot/`) — admission gate + evidence-gated verdict | ✅ **MVP shipped** (F-0040/F-0041); admission gate hardened across F-0047 (command-chaining), F-0052 (command-substitution/redirection, an admission-coupled verdict, a spawn timeout, atomic evidence writes) — early MVP, not a finished product |
 | Benchmark (`bench/`) | ✅ Built & validity-gated — atomic probes **7/7**; e2e suite dogfooded: `L1 pass^5`, `L4/G1–G4 pass^2`, L3 a single clean 1.0 |
 | Engine-effect measurement | ⏳ Harness built; **no signal yet** — greenfield tasks already score 1.0, so the next move is refactoring/regression tasks, not bigger greenfield |
 
@@ -49,9 +49,9 @@ A working harness lets Claude-based agents take a plain-English backlog item, bu
 | Claim | Reality |
 |---|---|
 | **The AI operations factory** (orchestrator + sub-agents + gates + hooks + state machine + tier-driven adaptive layer) | ✅ **Real and working.** A few thousand lines of scripts/hooks — the exact footprint and its growth trend are tracked once, under *Honest limitations* below (principle 6 treats size as a budget, not a brag). Mechanical guardrails actually block. This is the IP. |
-| **Evidence-gated delivery** (nothing is "done" without proof on disk; `features.json` writable only by one audited script) | ✅ **Real, mechanically enforced.** Hand-editing state is blocked by a hook; faking a pass requires editing the hook itself, which CI re-runs. |
+| **Evidence-gated delivery** (nothing is "done" without proof on disk; `features.json` writable only by one audited script) | ✅ **Real, mechanically enforced.** Hand-editing state is blocked by a hook; a passing record requires a capture-tool-produced proof log that names a real commit in this repo's history (F-0053 tamper-evidence), and CI re-runs the real gate on every PR as the hard backstop. |
 | **Adversarial review** (a fresh-context evaluator + a security reviewer grade each change before merge) | ✅ **Real, and it has caught real bugs** — a bypass hole in a guardrail fix and a state-machine birth-status hole, both rejected before merge. |
-| **Tests have teeth** (mutation gate proves the safety-critical tests aren't vacuous) | ✅ **Real.** The hook-contract suite (live count in the status table; re-run green 2026-07-17) + a mutation-smoke gate that kills known mutants across the state writer and the assertion shield. |
+| **Tests have teeth** (mutation gate proves the safety-critical tests aren't vacuous) | ✅ **Real.** The hook-contract suite (live count in the status table; re-run green 2026-07-18) + a mutation-smoke gate that kills known mutants across the state writer and the assertion shield. |
 
 ---
 

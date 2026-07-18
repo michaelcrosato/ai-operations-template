@@ -1078,7 +1078,7 @@
     },
     {
       "dependencies": [],
-      "status": "awaiting_approval",
+      "status": "done",
       "passes": true,
       "evidence": [
         "roadmap/evidence/F-0051/verify.log"
@@ -1149,8 +1149,8 @@
     },
     {
       "dependencies": [],
-      "status": "awaiting_approval",
-      "passes": false,
+      "status": "done",
+      "passes": true,
       "evidence": [
         "roadmap/evidence/F-0053/verify.log"
       ],

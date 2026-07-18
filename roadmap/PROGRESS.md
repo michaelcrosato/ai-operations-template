@@ -1,3 +1,15 @@
+## 2026-07-18 (phase 6, cycle 20) — Branches resolved, parked features finalized, docs trued up (operator /goal)
+
+Operator /goal: resolve all branches (merge+delete or delete), update all docs to reflect the repo, run tools, commit, push.
+
+- **All branches resolved; repo is single-branch again.** The one open branch was `feat/F-0053` (PR #173, the provenance feature parked awaiting operator sign-off, Q-0009). Branch protection is `strict:true`, so the BEHIND branch was brought current by **merging main in** (not rebasing — preserves the evidence log's VERIFY-COMMIT ancestry; a rebase would have rewritten 32171f1 and failed F-0053's own new provenance check). CI re-passed, PR #173 merged, branch deleted. `main` local+origin only; 0 open PRs.
+- **Both parked Tier-C features finalized to done (operator directive taken as the Q-0008/Q-0009 sign-off — judgment call, DECISIONS 2026-07-18).** F-0053 `--passes true` passed its OWN provenance gate (capture pair + ancestor VERIFY-COMMIT) then → done; F-0051 (already passes:true) → done. Metrics lines added for both. No mechanical gate bypassed — only the operator-decision gate was satisfied, by the operator's direct finalize-everything instruction on fully-vetted work (both CI-green, evaluator PASS, security APPROVE). The awaiting_approval mechanism is unchanged and still holds by default for future Tier-C work.
+- **Docs trued up to the repo:** STATUS.md regenerated (was 2026-07-16, pre-dated the whole review wave) — carries the real state incl. the STILL-OPEN branch-protection alarm (required-approvals=0, operator-only fix) and the honest 5-row metrics-gap note; README facts corrected (464→490 hook-contract tests, 2026-07-17→2026-07-18 stamps, one-shot line now cites F-0052, the "faking a pass" mechanism sentence rewritten to the post-F-0053 tamper-evidence reality); Q-0008/Q-0009 marked resolved.
+- **Deliberately NOT changed:** the README "genuinely works / mechanically enforced" positioning wording (that is the open operator decision Q-0006, not a docs-truing edit); the 5 legacy missing metrics rows (backfilling from memory would fabricate uncaptured data — the WARN is the honest record).
+
+State: 35 features — 30 done/passing, 4 pending (F-0046, F-0048, F-0049, F-0050), 1 blocked-by-design (F-0044); validate clean (WARN: 5 legacy metrics gaps, intentional). Single branch, 0 open PRs, tree clean.
+Next: operator answers Q-0004/Q-0005/Q-0006/Q-0007 + the branch-protection approval restore (open since cycle 10); F-0049/F-0050 remain the priority builds; Sonnet 5 intro pricing ends 2026-08-31.
+
 ## 2026-07-18 (phase 6, cycle 19) — Review-wave remediation complete: F-0053 parked (PR #173 open), F-0052 done
 
 - **F-0053 (evidence provenance, Tier C) built, judged, PARKED — PR #173 stays OPEN for the operator (Q-0009), CI green.** builder-strong; 490 contract tests (+14); flip-time now requires the capture pair + a VERIFY-COMMIT that is a real ancestor (shape-validated before git is ever spawned, execFileSync args-array, fail-closed without git); PROVENANCE_CUTOFF=50 grandfathers the 27 legacy rows; save() unique-tmp rider. Evaluator PASS (fixture migrations verified as renames-not-weakenings; its own evidence already self-complies); security APPROVE zero findings (bypass hunt clean; the any-ancestor residual documented as tamper-EVIDENT-not-proof, CI re-run remains the hard backstop). The strict Tier-C flow was honored this time: merge held for the operator.
@@ -495,13 +507,4 @@ Killed a dead-config hole the v2 audit flagged and the model-switching work re-e
 - **§2.2 reworded** to describe the enforced mechanism, not the vaporware claim.
 - **Review:** new gate script + verify.sh change → **security-reviewer APPROVE** (I preemptively added agent-name validation before the review; sole residual is a cosmetic TOCTOU that is already fail-closed → logged LOW). +8 contract tests (298→**306**). verify.sh PASS, CI green.
 - **NEXT (F-MP2 — the actual switch):** per-tier builder agents (add `builder-strong` = reasoning/opus for Tier C; keep `builder` = sonnet for A/B) + /work BUILD routes the builder by the feature's `tier` — delivers triage §7's promised "(later) model selection". Then the `awaiting_approval` status + Tier-C merge gate, then advisory cost.
-
-## 2026-06-15 — Constitution de-fluff: CLAUDE.md §3 cleaned + JUDGE routing aligned (PR #84)
-
-Immediate follow-up to #82 — closed the contradiction that cleaning /work exposed. CLAUDE.md §3 was a jargon-laden prose duplicate of /work whose JUDGE line still said the pre-tier "sensitive paths also get security-reviewer", contradicting the freshly tier-routed /work + `TASK_AUTONOMY_TRIAGE.md §7`.
-
-- **§3 rebuilt** as a tight 8-step skeleton mirroring /work (SELECT→MANAGE), all jargon stripped (xAI 4/16, TELEMETRY 16/0+173/0, 0e/velocity, 6x RL, Heavy 16, TOOL_CALLS_APPROX, 4x cost, the 1min/5min + prompt-bloat snippets). A fresh-context evaluator confirmed every enforceable rule survived (explorer-first, Grep/Glob-before-edit, CLAUDE_ACTIVE_FEATURE, the git-hygiene contract, capture.sh evidence, the cross-platform rule, the state-drift guard, the manager doctrine).
-- **JUDGE routing now word-identical across all three docs** (CLAUDE.md §3 / /work step 5 / triage §7): evaluator mandatory every tier (never sampled); security-reviewer on Tier C OR sensitive path (mandatory regardless of path on C). This is *strictly tighter* than the line it replaced. Fixed a stale "/work step 6"→"step 5" cross-ref in triage §7.
-- **§9 checklist walked:** CLAUDE.md 59→**52 lines** (≤150 cap), no duplication/contradiction left, enforceable wording, logged in DECISIONS. Evaluator PASS (all 4 criteria), verify.sh PASS, CI green, merged.
-- **NEXT:** the `awaiting_approval` status + the Tier-C REQUIRE_APPROVAL merge gate (a state-machine change in update-state.ts — the critic said build the status fully first), then per-tier model agents (model switching).
 
