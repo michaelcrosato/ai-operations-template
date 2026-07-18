@@ -3,7 +3,7 @@
   "_integration_pattern": "Any enabled tool runs as a sandboxed one-shot LEAF WORKER invoked via Bash: single briefed task, output captured under roadmap/evidence/, then re-validated by this repo's own verify gate and a fresh-context evaluator. Never a peer orchestrator; never spawning agents; its native review/subagent modes are NOT a substitute for this repo's evaluator (2026-07-17 research pass: Codex's own docs state there is 'no separate verification or judge role distinct from workers').",
   "_trust_levels": "untrusted-output — the only level currently defined: everything the tool produces is treated as an untrusted contribution and takes the same review path as external code (gate + evaluator + security-reviewer on sensitive paths).",
   "_secrets_policy": "Env-var NAMES only, never values (CLAUDE.md §7). Subscription/OAuth login is the preferred auth everywhere it exists (plan §7.2 subscription-first); API-key envs are documented fallbacks, never requirements.",
-  "_status": "Registry active since 2026-07-17. ZERO tools enabled. Every entry: status=candidate, approval_gate=operator (roadmap/QUESTIONS.md Q-0005). Confidence tags carry over from the 2026-07-17 adversarially-verified research pass (92 claims, 25 vote-tested: 18 confirmed / 7 killed) — durable findings in docs/FRONTIER.md §4; per-tool detail in docs/tool-registry.md.",
+  "_status": "Registry active since 2026-07-17. ZERO tools enabled. Every entry: status=candidate, approval_gate=operator (roadmap/QUESTIONS.md Q-0005). Confidence tags from the 2026-07-17 adversarially-verified research pass (92 claims, 25 vote-tested: 18 confirmed / 7 killed), updated by the 2026-07-18 frontier-delta pass (10 claim bundles x 3 refuters, 30 agents) — durable findings in docs/FRONTIER.md §4; per-tool detail in docs/tool-registry.md.",
   "tools": {
     "codex-cli": {
       "vendor": "OpenAI",
@@ -12,7 +12,7 @@
       "purpose": "Leaf-worker lane for one-shot briefed implementation or heterogeneous second-opinion passes, run headlessly via `codex exec`; output re-validated by this repo's gate + evaluator.",
       "trust_level": "untrusted-output",
       "auth": {
-        "subscription": "codex login (ChatGPT-plan OAuth, browser flow); device-code beta `codex login --device-auth` for browser-less headless runs. CONFIRMED against primary docs: ChatGPT-login and API-key are two co-equal paths — the 'OAuth-first with API-key fallback' hierarchy claim was adversarially REFUTED.",
+        "subscription": "codex login (ChatGPT-plan OAuth, browser flow); device-code beta `codex login --device-auth` for browser-less headless runs. CONFIRMED against primary docs: ChatGPT-login and API-key are two co-equal paths — the 'OAuth-first with API-key fallback' hierarchy claim was adversarially REFUTED. CONFIRMED 2026-07-18 (3-vote, learn.chatgpt.com/docs/pricing): ChatGPT Plus and Pro plans include 'Codex on the web, in the CLI, in the IDE extension, and on iOS' with published 5-hour-window message ranges (Plus: Sol 15-90 / Terra 20-110 / Luna 50-280; Pro 5x/20x higher); 'Additional weekly limits may apply', no figures stated.",
         "headless_fallback_env": "OPENAI_API_KEY"
       },
       "allowed_commands": [
@@ -23,10 +23,11 @@
       "approval_gate": "operator — Q-0005 before first live invocation; any wiring change is Tier C (security-reviewer mandatory)",
       "confidence": "Most-verified ecosystem of the three (sandboxing + auth confirmed against primary docs by multiple adversarial votes). Lowest-risk first candidate if a lane is ever funded.",
       "open_questions": [
-        "MCP client+server both-direction support: two blog sources agree, no primary-doc check yet (UNTESTED-strong)",
-        "KILLED claim — do not rely on: Ultra-mode subagents as a builder/evaluator analog; they are homogeneous parallel workers with no judge role"
+        "RESOLVED 2026-07-18: MCP both directions primary-confirmed — client (`codex mcp add/list/get/remove`) and server (`codex mcp-server`, 'Run Codex as an MCP server over stdio'); the CLI reference labels the server Stable while the in-repo protocol doc says experimental — discrepancy carried, not resolved",
+        "KILLED claim — do not rely on: Ultra-mode subagents as a builder/evaluator analog; they are homogeneous parallel workers with no judge role",
+        "Known vendor limitation, irrelevant to this repo's leaf-worker doctrine (we never use external subagents) but recorded so nobody re-buys it: under GPT-5.6 Sol's MultiAgent V2, `hide_spawn_agent_metadata=true` strips model/agent_type fields from spawn_agent — a Sol parent cannot pin Terra/Luna subagents (openai/codex #31814, sibling #31882, live mid-July 2026)"
       ],
-      "last_reviewed": "2026-07-17",
+      "last_reviewed": "2026-07-18",
       "sources": [
         "developers.openai.com/codex (auth, sandboxing, models)",
         "github.com/openai/codex"
@@ -35,25 +36,26 @@
     "grok-build": {
       "vendor": "xAI",
       "product": "Grok Build — github.com/xai-org/grok-build (open-sourced ~2026-07-14/15); default model Grok 4.5",
-      "status": "candidate (NOT enabled) — additionally blocked on pricing-tier resolution",
+      "status": "candidate (NOT enabled) — pricing-tier blocker resolved 2026-07-18; remaining open items: free-tier semantics + Windows sandbox coverage",
       "purpose": "Leaf-worker lane candidate: headless `grok -p` with streaming-json output; same capture-and-revalidate pattern.",
       "trust_level": "untrusted-output",
       "auth": {
-        "subscription": "Browser OAuth on first launch (CONFIRMED, primary docs). CONFLICTING/UNRESOLVED: which subscription tier unlocks CLI use — non-primary sources claim anywhere from $30/mo (SuperGrok) to $300/mo (SuperGrok Heavy); the primary docs name NO tier. Resolve live before enabling.",
+        "subscription": "Browser OAuth on first launch (CONFIRMED, primary docs). Tier-gate RESOLVED 2026-07-18 against primary: x.ai/pricing's comparison matrix marks Grok Build included on ALL six plans (Free, SuperGrok Lite, SuperGrok $30/mo, SuperGrok Heavy, Business, Enterprise) and x.ai/cli states verbatim 'Available to try for Free' (real-browser DOM + curl-with-browser-UA; plain automated fetch is bot-blocked). The old $30-$300 claims described rate/limit tiers, not a hard access gate. NOT STATED on primary pages: whether free access is standing or a ~7-day trial (secondary coverage says trial), and per-tier rate limits — carried UNVERIFIED.",
         "headless_fallback_env": "XAI_API_KEY"
       },
       "allowed_commands": [
         "grok -p <briefed one-shot task> --output-format streaming-json — non-interactive only"
       ],
-      "network": "Executes locally; 'only API calls to xAI leave your system' (UNTESTED-strong, non-primary). No vendor sandbox found in primary docs — isolation would be THIS repo's responsibility (optional-modules 'Native sandboxing' row) before any enablement.",
-      "sandbox": "None documented by the vendor (primary overview page silent on sandboxing).",
-      "approval_gate": "operator — Q-0005; plus live resolution of the subscription-tier conflict",
-      "confidence": "Product real and extensible (CONFIRMED: TUI + headless CLI + ACP; `grok inspect` documents config sources/instructions/skills/plugins/hooks/MCP). Pricing/tier facts CONFLICTING across sources.",
+      "network": "Executes locally; 'only API calls to xAI leave your system' (UNTESTED-strong, non-primary). Vendor sandbox can block child-process network via seccomp (Linux) per 18-sandbox.md.",
+      "sandbox": "SUPERSEDED 2026-07-18 (3-vote, primary): user-guide 18-sandbox.md documents OS-level filesystem+network isolation — Landlock (+optional bubblewrap) on Linux (kernel >=5.13), Seatbelt on macOS, seccomp child-network block; five profiles off/workspace/devbox/read-only/strict; applied to the whole grok process at startup, irreversible; ~/.grok/sandbox.toml deny-lists kernel-enforced. WINDOWS NOT MENTIONED in the sandbox doc — and this repo runs Windows, so for a local lane isolation remains THIS repo's responsibility (optional-modules 'Native sandboxing' row); the vendor sandbox would cover a Linux-CI lane only.",
+      "approval_gate": "operator — Q-0005 before first live invocation; any wiring change is Tier C (security-reviewer mandatory)",
+      "confidence": "Product real and extensible (CONFIRMED: TUI + headless CLI + ACP; `grok inspect` documents config sources/instructions/skills/plugins/hooks/MCP); vendor sandbox now documented (Linux/macOS only); access not tier-gated per primary. Repo active (three monorepo syncs 2026-07-16/17, incl. an SSRF fix in the hook runner) but NO version tags/releases published yet — no stable-release anchor to pin.",
       "open_questions": [
-        "Required subscription tier/price for CLI access (CONFLICTING, $30–$300/mo claims; primary docs silent)",
-        "'8 concurrent git-worktree-isolated subagents' + 'Arena Mode': two non-primary sources only; primary docs silent (UNTESTED-weak)"
+        "Free-tier semantics: standing access vs ~7-day trial, and per-tier rate limits — not stated on primary pages (secondary coverage says trial); check on first login",
+        "Windows sandbox coverage: 18-sandbox.md names Linux/macOS mechanisms only; Windows prebuilt binaries exist but sandboxing there is not documented",
+        "KILLED 2026-07-18 (3-0 against primary) — do not re-cite: '8 concurrent worktree subagents' and 'Arena Mode'; 16-subagents.md documents spawn_subagent with isolation none|worktree and 'the maximum nesting depth is one', no numeric concurrency limit, no Arena"
       ],
-      "last_reviewed": "2026-07-17",
+      "last_reviewed": "2026-07-18",
       "sources": [
         "docs.x.ai/build (overview, cli/headless-scripting, features/skills-plugins-marketplaces)",
         "github.com/xai-org/grok-build"
@@ -61,25 +63,26 @@
     },
     "antigravity-cli": {
       "vendor": "Google",
-      "product": "Antigravity CLI (launched ~2026-05-19 at I/O 2026; closed-source successor to Gemini CLI, whose free/Pro/Ultra serving stopped 2026-06-18)",
-      "status": "candidate (NOT enabled) — requires a dedicated live re-verification pass BEFORE any integration design work",
-      "purpose": "Forward-looking Google lane target (Gemini CLI is retired). NOT eligible for the leaf-worker pattern until its headless/CI capability is verified to exist.",
+      "product": "Antigravity CLI `agy` (launched ~2026-05-19 at I/O 2026; Google's stated successor to Gemini CLI — refined 2026-07-17: Gemini CLI's HOSTED serving for consumer AI Pro/Ultra stopped 2026-06-18, but the OSS repo is NOT archived, v0.51.0 released 2026-07-16)",
+      "status": "candidate (NOT enabled) — headless question RESOLVED 2026-07-18 (mode exists); remaining blocker is auth (no API-key path) + docs-site silence on headless",
+      "purpose": "Forward-looking Google lane target. Leaf-worker eligibility CORRECTED 2026-07-18: headless `-p`/`--print` EXISTS — the CLI's own CHANGELOG names it 'headless' with an active fix history (v1.0.8 fixed the Windows non-TTY stdout drop; flagship bug #76 closed 2026-07-12 via ~1.1.1) — but the docs site documents only the interactive TUI, and unattended runs would ride a cached OAuth session (untested).",
       "trust_level": "untrusted-output",
       "auth": {
-        "subscription": "Browser Google Sign-In, token cached in the OS keyring (two-source corroborated, UNTESTED). Higher usage tier reportedly behind $100/mo Google AI Ultra (UNTESTED). Google Cloud MCP surfaces authenticate via Application Default Credentials / short-lived service-account impersonation, not bare API keys (CONFIRMED for the Data Agent Kit extension specifically).",
-        "headless_fallback_env": "none documented — no API-key path for the CLI was found in this research pass"
+        "subscription": "Browser Google Sign-In, token cached in the OS keyring — Apple Keychain / Linux secret-service / Windows Credential Manager (CONFIRMED 2026-07-17, docs + repo README); print mode supports pasting the OAuth authorization code (CHANGELOG v1.0.11). Individual tier $0/mo (agent models incl. Gemini 3.5 Flash, Gemini 3.1 Pro, Claude Sonnet & Opus 4.6, gpt-oss-120b); AI Ultra $100/mo = 5x and $200/mo = 20x Antigravity usage vs Pro (blog.google 2026-05-19). Google Cloud MCP surfaces authenticate via Application Default Credentials / short-lived service-account impersonation, not bare API keys (CONFIRMED for the Data Agent Kit extension specifically).",
+        "headless_fallback_env": "none — API-key auth explicitly unsupported: maintainer verbatim 2026-07 (#78, open): 'Gemini API Key is not supported currently... For using an API key in Antigravity you can use the SDK.' Google's recommended CI path is the separate Antigravity SDK (Python, github.com/google-antigravity/antigravity-sdk-python) — a different surface this registry has not evaluated"
       },
       "allowed_commands": [],
       "network": "not established — do not infer",
-      "sandbox": "The separate Gemini API 'Managed Agents' surface has a CONFIRMED isolated Linux sandbox (Preview/pre-GA); Antigravity CLI's own sandbox model is not clearly documented.",
-      "approval_gate": "operator — Q-0005; plus a live /research pass resolving the headless/CI question first",
-      "confidence": "Lowest of the three: the largest gap between vendor marketing and adversarially-verified reality (two Google capability claims KILLED in verification).",
+      "sandbox": "The separate Gemini API 'Managed Agents' surface has a CONFIRMED isolated Linux sandbox (Preview/pre-GA); Antigravity docs' live-render describes a terminal sandbox using 'AppContainer on Windows' (single-source, UNTESTED — the docs site is a JS SPA that defeats plain fetchers). Minimum Windows 10 64-bit.",
+      "approval_gate": "operator — Q-0005; plus a smoke-test of headless `-p` on a cached OAuth session before any wiring design",
+      "confidence": "Still lowest of the three, but improved 2026-07-18: headless mode is real (changelog-evidenced) and actively bug-fixed; auth remains OAuth-only (a structural mismatch with unattended CI), and docs-site coverage of headless is absent — the marketing-vs-docs gap persists.",
       "open_questions": [
-        "HARD BLOCKER IF TRUE: one source (single, untested) marks Antigravity CLI as lacking headless/CI mode — this repo's loop is entirely non-interactive; verify FIRST",
+        "Unattended-run viability on a cached keyring OAuth session: untested; token lifetime/refresh behavior not stated anywhere examined",
+        "Antigravity SDK (Python) as the Google-recommended CI path: a separate surface, not yet evaluated by this registry",
         "Claimed 5-event lifecycle-hooks architecture + subagent primitives: single blog source; Google's primary docs examined in the pass are silent on hooks/subagents (UNTESTED-weak)",
-        "KILLED claims — do not rely on: 'working multi-agent orchestration for real coding tasks' and 'closest analog to this repo's subagent/hook architecture'; both refuted, with independent reviews finding orchestration unreliable in practice"
+        "KILLED claims — do not rely on: 'working multi-agent orchestration for real coding tasks' and 'closest analog to this repo's subagent/hook architecture'; both refuted 2026-07-17, no rehabilitating evidence found since"
       ],
-      "last_reviewed": "2026-07-17",
+      "last_reviewed": "2026-07-18",
       "sources": [
         "Google developer blog + trade press (I/O 2026 launch)",
         "docs.cloud.google.com data-cloud-extension/antigravity (MCP, ADC auth)",
