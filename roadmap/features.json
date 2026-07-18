@@ -668,8 +668,8 @@
       "id": "F-0027",
       "epic": "factory-hardening",
       "priority": 2,
-      "title": "AST-based assertion-shield (structural assertion counting; keep regex fallback)",
-      "description": "The assertion-shield uses keyword/line-diff matching, which false-positives on test renames (driving local bypass fatigue) and misses non-keyword assertions. Upgrade to parse test files with an AST (typescript or babel parser) and compare assertion-node counts/structure between BASE and HEAD; keep the regex shield as a fallback for unparseable diffs; CI still refuses any local bypass override.",
+      "title": "Assertion-shield false-positive fix: suppress flagging only for branch-new test files (AST redesign BLOCKED by security review as strictly weaker)",
+      "description": "The assertion-shield's strict regex deletion/weakening scan false-positived on branch-new test files (e.g. removing or renaming an in-branch-added test), driving local bypass fatigue. The originally-groomed fix (replace that scan with an AST assertion-COUNT comparison, BASE vs HEAD) was BLOCKED by security review as strictly weaker: a count-only check misses content-gutting of an existing assertion (expect(compute()).toBe(42) -> expect(true).toBe(true) keeps the call count constant), the most common weakening (DECISIONS 2026-06-14, PR 54). Shipped instead: keep the strict regex deletion/weakening scan UNCHANGED for every test file that existed on the base branch, and suppress flagging ONLY for branch-new files (absent on BASE, so removing or editing them cannot reduce pre-existing coverage). CI still refuses any local bypass override.",
       "authorized_paths": [
         "scripts/assertion-shield.ts",
         "scripts/test-hooks.sh",
@@ -679,9 +679,9 @@
       ],
       "spec_ref": "docs/feedback-3-verification.md; docs/ai-capabilities-research-2026-06.md",
       "acceptance": [
-        "assertion-shield parses test files into an AST and compares assertion counts/structure; a genuine rename no longer false-positives while a real deletion or weakening is still blocked",
-        "the regex approach remains a fallback for unparseable diffs; CI still refuses any bypass override",
-        "contract tests cover both the no-false-positive-on-rename case and the still-blocks-deletion case; bash scripts/verify.sh PASS"
+        "the shield keeps the strict regex deletion/weakening scan for every test file that existed on the base branch, and suppresses flagging only for branch-new files - a branch-new test file's edit or removal no longer false-positives while gutting an existing assertion is still blocked",
+        "CI still refuses any local bypass override",
+        "contract tests cover both the branch-new suppression case and the still-blocks-gutting case; bash scripts/verify.sh PASS"
       ]
     },
     {
