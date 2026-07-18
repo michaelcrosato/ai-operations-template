@@ -502,6 +502,18 @@ export STATE_FILE="$FIX/features.json"
 US_WITH_STATE() { local state_file="$1"; shift; STATE_FILE="$state_file" node "$TSNODE" scripts/update-state.ts "$@" >/dev/null 2>&1; echo $?; }
 US() { US_WITH_STATE "$FIX/features.json" "$@"; }
 US_REAL() { STATE_FILE='' node "$TSNODE" scripts/update-state.ts "$@" >/dev/null 2>&1; echo $?; }
+# F-0053: update-state.ts now demands tamper-evident evidence provenance — the green verify log must
+# carry the capture pair (CAPTURED-BY: scripts/capture.mjs + CAPTURE-EXIT: 0) AND a VERIFY-COMMIT whose
+# sha is a real ancestor of HEAD. This is required UNCONDITIONALLY at --passes flip time and, at
+# --validate audit time, for features above PROVENANCE_CUTOFF (id > 50). HEAD_SHA is a genuine ancestor
+# of HEAD (HEAD is an ancestor of itself), so it satisfies the git merge-base --is-ancestor check.
+# write_captured_green_log migrates the fixtures that used to flip/round-trip on a bare marker line to
+# this provenance-verified shape — never by weakening a check (assertion-shield + evaluator enforce that).
+HEAD_SHA="$(git rev-parse HEAD 2>/dev/null || echo no-git)"
+write_captured_green_log() { # write_captured_green_log <dest-log-path>
+  mkdir -p "$(dirname "$1")"
+  printf 'CAPTURED-BY: scripts/capture.mjs\nCAPTURE-EXIT: 0\nVERIFY-COMMIT: %s @ 2026-07-18T00:00:00Z\nVERIFY: PASS (exit 0)\n' "$HEAD_SHA" > "$1"
+}
 cat > "$STATE_FILE" <<'EOF'
 { "features": [ { "id": "F-9101", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
   "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [],
@@ -536,8 +548,9 @@ check "F-CG1: metrics rejects non-integer attempts"         1 "$(MV "$FIX/m-atte
 # Metrics completeness (kaizen, DECISIONS 2026-06-12): --validate WARNs (never fails) when a done
 # feature has NO metrics.jsonl record — surfacing the /kaizen + /status sampling gap, not silencing
 # it. A green verify.log under gitignored tmp/ satisfies the done-feature evidence contract.
-mkdir -p tmp/mc-evidence
-printf 'VERIFY: PASS (exit 0)\n' > tmp/mc-evidence/verify.log
+# F-0053: F-9101 (id > PROVENANCE_CUTOFF) is passes:true, so --validate's deep audit is now
+# provenance-strict for it — migrate its evidence from a bare marker to a captured, ancestry-verified log.
+write_captured_green_log tmp/mc-evidence/verify.log
 printf '{ "features": [ { "id": "F-9101", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [], "priority": 1, "status": "done", "passes": true, "evidence": ["tmp/mc-evidence/verify.log"], "attempts": 0, "blocked_reason": null } ] }\n' > "$FIX/mc-state.json"
 printf '%s\n' '{"date":"2026-06-10","feature":"F-9999"}' > "$FIX/mc-missing.jsonl"
 check "metrics completeness: WARNs when a done feature lacks a record"     "yes" "$(STATE_FILE="$FIX/mc-state.json" METRICS_FILE="$FIX/mc-missing.jsonl" node "$TSNODE" scripts/update-state.ts --validate 2>&1 | grep -q 'no metrics.jsonl record (F-9101)' && echo yes || echo no)"
@@ -619,8 +632,10 @@ check "evidence refuses missing file"           1 "$(US --evidence F-9101 "$FIX/
 echo 'audit said: need a verify.log containing "VERIFY: PASS (exit 0)" ... VERIFY: FAIL' > "$FIX/verify.log"
 check "evidence accepts existing file"          0 "$(US --evidence F-9101 "$FIX/verify.log")"
 check "passes rejects QUOTED marker in failed log" 1 "$(US --passes F-9101 true)"
-printf 'gate output...\nVERIFY: PASS (exit 0)\n' > "$FIX/verify.log"
-check "passes accepts green verify log (exact line)" 0 "$(US --passes F-9101 true)"
+# F-0053: --passes is provenance-strict UNCONDITIONALLY — a bare-marker log no longer flips it. Migrate
+# this accept-case fixture to a captured, ancestry-verified log (capture pair + ancestor VERIFY-COMMIT).
+write_captured_green_log "$FIX/verify.log"
+check "passes accepts green verify log (captured + ancestor VERIFY-COMMIT)" 0 "$(US --passes F-9101 true)"
 cat > "$STATE_FILE.corrupt" <<'EOF'
 { "features": [ { "id": "BAD", "status": "nope" } ] }
 EOF
@@ -749,8 +764,9 @@ cat > "$FIX/ec-launder2.json" <<'EOF'
 EOF
 check "F-EC1: --passes REJECTS a captured-by log with clean marker but CAPTURE-EXIT!=0" 1 "$(US_WITH_STATE "$FIX/ec-launder2.json" --passes F-9103 true)"
 # (d) Positive: a captured GREEN log (CAPTURE-EXIT: 0 + marker) is still accepted (fix doesn't over-block).
+# F-0053: flip-time now also requires an ancestry-verified VERIFY-COMMIT, so the green fixture carries one.
 mkdir -p tmp/ec-green/F-9104
-printf 'CAPTURED-BY: scripts/capture.mjs\nCAPTURE-EXIT: 0\nVERIFY: PASS (exit 0)\n' > tmp/ec-green/F-9104/verify.log
+printf 'CAPTURED-BY: scripts/capture.mjs\nCAPTURE-EXIT: 0\nVERIFY-COMMIT: %s @ 2026-07-18T00:00:00Z\nVERIFY: PASS (exit 0)\n' "$HEAD_SHA" > tmp/ec-green/F-9104/verify.log
 cat > "$FIX/ec-green.json" <<'EOF'
 { "features": [ { "id": "F-9104", "epic": "t", "title": "t", "spec_ref": "t", "description": "t",
   "acceptance": ["a"], "authorized_paths": ["src/**"], "forbidden_paths": [], "dependencies": [],
@@ -759,14 +775,82 @@ EOF
 check "F-EC1: --passes ACCEPTS a captured green log (CAPTURE-EXIT: 0 + marker)" 0 "$(US_WITH_STATE "$FIX/ec-green.json" --passes F-9104 true)"
 rm -rf tmp/ec-launder tmp/ec-launder2 tmp/ec-green
 
+# ── F-0053: evidence provenance — capture pair + VERIFY-COMMIT ancestry (Tier C) ──────────
+# --passes (flip-time, UNCONDITIONAL) requires the green verify log to carry the tamper-evident capture
+# pair (CAPTURED-BY: scripts/capture.mjs + CAPTURE-EXIT: 0) AND a VERIFY-COMMIT whose sha is an ancestor
+# of HEAD. --validate (audit-time) applies the same two requirements ONLY to features above
+# PROVENANCE_CUTOFF (id > 50); the legacy done rows (id <= 50) are grandfathered on their bare-marker logs.
+rm -rf tmp/prov
+PV="$(mktemp -d)"
+pv_feat() { # pv_feat <id> <status> <passes> <evidence-json>
+  printf '{ "id": "%s", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"], "authorized_paths": ["src/**"], "forbidden_paths": [], "dependencies": [], "priority": 1, "status": "%s", "passes": %s, "evidence": %s, "attempts": 0, "blocked_reason": null }' "$1" "$2" "$3" "$4"
+}
+# (1) flip-time: a BARE-marker log (no capture header) no longer flips --passes.
+mkdir -p tmp/prov/bare
+printf 'gate output...\nVERIFY: PASS (exit 0)\n' > tmp/prov/bare/verify.log
+printf '{ "features": [ %s ] }\n' "$(pv_feat F-9051 pending false '["tmp/prov/bare/verify.log"]')" > "$PV/bare.json"
+check "F-0053: --passes REJECTS a bare-marker log (no capture header)" 1 "$(US_WITH_STATE "$PV/bare.json" --passes F-9051 true)"
+# (2) flip-time: capture pair present but the VERIFY-COMMIT sha is FABRICATED — a valid hex shape that
+#     is not a real object, so git merge-base --is-ancestor fails (a foreign/other-repo sha behaves the same).
+mkdir -p tmp/prov/fab
+printf 'CAPTURED-BY: scripts/capture.mjs\nCAPTURE-EXIT: 0\nVERIFY-COMMIT: deadbeefdeadbeefdeadbeefdeadbeefdeadbeef @ 2026-07-18T00:00:00Z\nVERIFY: PASS (exit 0)\n' > tmp/prov/fab/verify.log
+printf '{ "features": [ %s ] }\n' "$(pv_feat F-9052 pending false '["tmp/prov/fab/verify.log"]')" > "$PV/fab.json"
+check "F-0053: --passes REJECTS a fabricated (non-ancestor) VERIFY-COMMIT sha" 1 "$(US_WITH_STATE "$PV/fab.json" --passes F-9052 true)"
+# (3) flip-time: capture pair present but the VERIFY-COMMIT line is MISSING entirely.
+mkdir -p tmp/prov/nocommit
+printf 'CAPTURED-BY: scripts/capture.mjs\nCAPTURE-EXIT: 0\nVERIFY: PASS (exit 0)\n' > tmp/prov/nocommit/verify.log
+printf '{ "features": [ %s ] }\n' "$(pv_feat F-9053 pending false '["tmp/prov/nocommit/verify.log"]')" > "$PV/nocommit.json"
+check "F-0053: --passes REJECTS a log with no VERIFY-COMMIT line" 1 "$(US_WITH_STATE "$PV/nocommit.json" --passes F-9053 true)"
+# (4) flip-time: the literal 'no-git' sentinel (what verify.sh writes outside a git tree) is REJECTED —
+#     it fails the /^[0-9a-f]{7,40}$/i sha-shape guard BEFORE any git call is spawned.
+mkdir -p tmp/prov/nogit
+printf 'CAPTURED-BY: scripts/capture.mjs\nCAPTURE-EXIT: 0\nVERIFY-COMMIT: no-git @ 2026-07-18T00:00:00Z\nVERIFY: PASS (exit 0)\n' > tmp/prov/nogit/verify.log
+printf '{ "features": [ %s ] }\n' "$(pv_feat F-9054 pending false '["tmp/prov/nogit/verify.log"]')" > "$PV/nogit.json"
+check "F-0053: --passes REJECTS the literal 'no-git' VERIFY-COMMIT value" 1 "$(US_WITH_STATE "$PV/nogit.json" --passes F-9054 true)"
+# (5) flip-time: a fully-valid captured log with a REAL ancestor sha (HEAD) is ACCEPTED.
+write_captured_green_log tmp/prov/valid/verify.log
+printf '{ "features": [ %s ] }\n' "$(pv_feat F-9055 pending false '["tmp/prov/valid/verify.log"]')" > "$PV/valid.json"
+check "F-0053: --passes ACCEPTS a captured log with a real ancestor (HEAD) sha" 0 "$(US_WITH_STATE "$PV/valid.json" --passes F-9055 true)"
+# (6) audit-time boundary: a row AT/below the cutoff (F-0050, id == PROVENANCE_CUTOFF) with a legacy
+#     bare-marker log still passes the --validate deep audit — the grandfathered rows are not invalidated.
+#     (Filename must contain "verify" to be recognized as a verify log by the /verify.*\.log$/i test.)
+mkdir -p tmp/prov/legacy
+printf 'VERIFY: PASS (exit 0)\n' > tmp/prov/legacy/verify.log
+printf '{ "features": [ %s ] }\n' "$(pv_feat F-0050 'done' true '["tmp/prov/legacy/verify.log"]')" > "$PV/grand.json"
+check "F-0053: --validate GRANDFATHERS a row at the cutoff (id<=50) on a legacy bare-marker log" 0 "$(US_WITH_STATE "$PV/grand.json" --validate)"
+# (7) audit-time: an ABOVE-cutoff row (id > 50) with a legacy bare-marker log is REJECTED by --validate.
+printf '{ "features": [ %s ] }\n' "$(pv_feat F-9056 'done' true '["tmp/prov/legacy/verify.log"]')" > "$PV/above.json"
+check "F-0053: --validate REJECTS an above-cutoff row (id>50) on a legacy bare-marker log" 1 "$(US_WITH_STATE "$PV/above.json" --validate)"
+# (8) audit-time: an ABOVE-cutoff row (id > 50) with a captured + ancestor log PASSES --validate.
+write_captured_green_log tmp/prov/valid2/verify.log
+printf '{ "features": [ %s ] }\n' "$(pv_feat F-9057 'done' true '["tmp/prov/valid2/verify.log"]')" > "$PV/above-ok.json"
+check "F-0053: --validate ACCEPTS an above-cutoff row with a captured + ancestor log" 0 "$(US_WITH_STATE "$PV/above-ok.json" --validate)"
+rm -rf tmp/prov "$PV"
+
+# ── F-0053 (AC4): save() writes to a UNIQUE temp file (pid + randomness) before rename ──────
+# The fixed "${FILE}.tmp" was a clobber/collision hazard (two writers, or a crashed prior run's
+# leftover, share one temp path). save() now derives the temp from process.pid + random hex. Assert
+# the source shape directly AND that save() still round-trips atomically leaving no stray temp litter.
+# shellcheck disable=SC2016  # the literal ${FILE}.tmp is the SOURCE string under test; no expansion intended
+check "F-0053: save() no longer uses the fixed \${FILE}.tmp temp path" 1 "$(grep -Fq 'const tmp = `${FILE}.tmp`' "$ROOT/scripts/update-state.ts" && echo 0 || echo 1)"
+check "F-0053: save() derives the temp from process.pid" 0 "$(grep -Eq 'const tmp = .*process\.pid' "$ROOT/scripts/update-state.ts" && echo 0 || echo 1)"
+check "F-0053: save() adds randomness to the temp name (randomBytes)" 0 "$(grep -Eq 'const tmp = .*randomBytes' "$ROOT/scripts/update-state.ts" && echo 0 || echo 1)"
+UT="$(mktemp -d)"
+printf '{ "features": [ { "id": "F-9060", "epic": "t", "title": "t", "spec_ref": "t", "description": "t", "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [], "priority": 1, "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null } ] }\n' > "$UT/features.json"
+check "F-0053: save() round-trips atomically (an --attempt persists)" 0 "$(US_WITH_STATE "$UT/features.json" --attempt F-9060)"
+check "F-0053: save() persisted the mutation (attempts incremented)" "yes" "$(node -e "process.stdout.write(require(process.argv[1]).features[0].attempts===1?'yes':'no')" "$UT/features.json")"
+check "F-0053: save() leaves no stray .tmp file after rename" 0 "$(ls "$UT"/*.tmp >/dev/null 2>&1 && echo 1 || echo 0)"
+rm -rf "$UT"
+
 # ── F-0051: sanctioned --amend verb (correct a row's DESCRIPTIVE fields with a mandatory DECISIONS citation) ──
 # --amend edits ONLY title/description/acceptance, ONLY on in_progress|done rows, requires a reason
 # citing a dated DECISIONS entry, and re-validates via save() (which also refuses to empty acceptance).
 # It is the narrow verb that corrects the ledger after a recorded pivot (F-0027) without a hand-edit —
 # strictly narrower than --remove, so no new attack surface. Fixtures use the reserved F-9xxx range.
 AMF="$(mktemp -d)"
-mkdir -p tmp/amend-evidence
-printf 'VERIFY: PASS (exit 0)\n' > tmp/amend-evidence/verify.log
+# F-0053: the amend fixture's DONE row (F-9501, id > PROVENANCE_CUTOFF, passes:true) is re-validated
+# at the round-trip check below, so its evidence must be a captured, ancestry-verified log, not a bare marker.
+write_captured_green_log tmp/amend-evidence/verify.log
 amend_done() { # rewrite a fully-valid DONE fixture row (real green evidence so --validate round-trips)
   printf '{ "features": [ { "id": "F-9501", "epic": "t", "title": "OLDTITLE", "spec_ref": "t", "description": "d", "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [], "priority": 1, "status": "done", "passes": true, "evidence": ["tmp/amend-evidence/verify.log"], "attempts": 0, "blocked_reason": null, "tier": "B" } ] }\n' > "$AMF/f.json"
 }
