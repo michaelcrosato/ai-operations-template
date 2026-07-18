@@ -108,3 +108,15 @@ The recommendation is unchanged: if you want an outside lane, say "try Codex" an
 **One honest note:** the change was merged before parking for your sign-off (the merge is reversible; the "done" mark is what waits for you). Our written playbook says security-tier work should hold the merge itself for your approval — the state system caught this and the playbook wording is now being followed strictly for the next security-tier task (F-0053). This is recorded in the decisions log.
 
 **What was assumed meanwhile:** F-0051 sits in "awaiting approval" — it doesn't block anything; the next tasks proceed. Answer "approved" here (or on the PR) and it gets marked done.
+
+---
+
+## Q-0009 (2026-07-18, open — sign-off requested) — Approve the proof-log tamper-evidence upgrade (F-0053)?
+
+**Question:** The second review-wave fix is built, tested, and double-reviewed, and this time the merge itself waits for you (as the playbook requires for security-tier work). It makes our "work is done" proof-logs tamper-evident going forward: a proof log now only counts if it was produced by our capture tool (not hand-typed) and if it names a commit that really exists in this repo's history. The 27 older finished tasks are grandfathered so nothing breaks. Do you approve the merge?
+
+**How to check it (2 minutes):** Open the pull request titled "Proof logs become tamper-evident…" on GitHub. The independent evaluator passed it on every criterion; the security reviewer approved with zero findings (it specifically confirmed no shell-injection risk and that a hand-typed log can no longer flip a task to done).
+
+**One honest limit, so the label is accurate:** this makes forgery *detectable*, not impossible — someone could still copy a real historical commit id into a fake log. The unbeatable backstop remains what it always was: the test suite re-runs on every pull request. This limit is written in the code comments and the decisions log.
+
+**What was assumed meanwhile:** the task sits in "awaiting approval" with its pull request open; nothing else is blocked. Answer "approved" here (or approve/merge the PR) and it ships.
