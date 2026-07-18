@@ -1075,6 +1075,105 @@
         ".claude/**",
         ".github/workflows/**"
       ]
+    },
+    {
+      "dependencies": [],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "C",
+      "id": "F-0051",
+      "epic": "factory-hardening",
+      "priority": 1,
+      "title": "Sanctioned --amend verb: correct a row's descriptive fields with a mandatory DECISIONS citation; fix the F-0027 ledger drift",
+      "description": "The 2026-07-18 external-review wave verified that F-0027's recorded title and acceptance still describe the AST design that security review BLOCKED, while the shipped implementation is the branch-new-suppression regex shield (DECISIONS 2026-06-14, PR 54). features.json may never be hand-edited and --add refuses to rebirth a done row, so the ledger needs a narrow sanctioned amendment verb. Scope: update-state.ts gains --amend taking id, field, json-value, and a trailing reason, restricted to title/description/acceptance on in_progress or done rows; the reason must cite a dated DECISIONS entry; old and new values are logged; save() re-validates the whole backlog. Strictly narrower than the existing --remove capability, so no new attack surface. Evidence for this feature must be captured via scripts/capture.sh so it stays valid under the coming F-0053 provenance audit.",
+      "acceptance": [
+        "--amend exists, restricted to the fields title, description, and acceptance, and to rows whose status is in_progress or done; contract tests prove a disallowed field (passes) and a disallowed status (pending) are both rejected",
+        "The amendment reason is mandatory and must cite a DECISIONS.md entry by date; a missing or citation-less reason is rejected - contract test",
+        "save() re-validates after amendment and an amend that would empty acceptance is rejected - contract test",
+        "This same PR uses the shipped verb to correct F-0027's title and acceptance to the shipped non-AST branch-new-suppression design per DECISIONS 2026-06-14 and PR 54, and a DECISIONS entry records the amendment",
+        "bash scripts/verify.sh exits 0 with evidence under roadmap/evidence/F-0051/ and mutation smoke still kills all known mutants"
+      ],
+      "spec_ref": "roadmap/DECISIONS.md 2026-07-18 review-wave triage",
+      "authorized_paths": [
+        "scripts/update-state.ts",
+        "scripts/test-hooks.sh",
+        "roadmap/evidence/F-0051/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "roadmap/features.json"
+      ]
+    },
+    {
+      "dependencies": [],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "B",
+      "id": "F-0052",
+      "epic": "oneshot-harness",
+      "priority": 2,
+      "title": "Close command-substitution and redirection admission holes; bind the one-shot verdict to admission",
+      "description": "The 2026-07-18 review wave verified: admit.js's chaining check blocks only newline, semicolon, ampersand, and pipe - command substitution (dollar-paren and backtick), output/input redirection (greater-than and less-than), and carriage returns are all admitted and then executed by verdict.js under a shell with no timeout; verdict() never re-checks admission; a PASS returns no evidence path; evidence writes are non-atomic with millisecond-timestamp names. F-0047 deliberately scoped to chaining only. This slice closes the admission holes and hardens the execution contract without gold-plating (env/cwd sandboxing deferred per DECISIONS 2026-07-18 - the acceptance command is the supervising operator's own command). Evidence must be captured via scripts/capture.sh (F-0053 provenance rules will already be live when this ships).",
+      "acceptance": [
+        "admit rejects an acceptanceCommand containing command substitution (dollar-paren or backtick), output or input redirection (greater-than or less-than), or a carriage return, with reason no-verifiable-criterion - at least one test per metacharacter class",
+        "verdict re-runs admit on its descriptor first and returns a distinct NOT-ADMITTED outcome without spawning anything when admission fails - a test feeds a chained command directly to verdict",
+        "the acceptance-command spawn gets a configurable timeout with a documented default; an over-time command yields NOT-DONE with the evidence file recording the timeout - deterministic test",
+        "a PASS result includes the evidencePath and a test asserts the returned file exists and records exit 0",
+        "evidence writes are atomic (temp file then rename) with a collision-resistant filename (process id plus randomness, not bare milliseconds); all F-0047 pinned behaviors still pass unmodified",
+        "bash scripts/verify.sh exits 0 with evidence under roadmap/evidence/F-0052/"
+      ],
+      "spec_ref": "roadmap/DECISIONS.md 2026-07-18 review-wave triage",
+      "authorized_paths": [
+        "src/oneshot/admit.js",
+        "src/oneshot/admit.test.js",
+        "src/oneshot/verdict.js",
+        "src/oneshot/verdict.test.js",
+        "roadmap/evidence/F-0052/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "roadmap/features.json"
+      ]
+    },
+    {
+      "dependencies": [],
+      "status": "pending",
+      "passes": false,
+      "evidence": [],
+      "attempts": 0,
+      "blocked_reason": null,
+      "tier": "C",
+      "id": "F-0053",
+      "epic": "foundation-lean",
+      "priority": 2,
+      "title": "Evidence provenance: require the capture pair and VERIFY-COMMIT ancestry for future passes flips",
+      "description": "The 2026-07-18 review wave verified two provenance gaps in update-state.ts's evidence validation: a hand-authored verify log containing only the bare marker line satisfies the validator whenever no CAPTURED-BY header is present (capture.mjs is optional today), and VERIFY-COMMIT is written by verify.sh but never read by anything. This slice makes capture provenance mandatory at flip time and adds a commit-ancestry check, grandfathering the existing backlog via a named cutoff constant. Sibling of F-0050 (different file and mechanism - F-0050 hardens verify.sh's runtime gate; this hardens the flip/audit contract); no dependency edge. Also rides the one-line state-writer fix: save() writes to a unique temp file before rename, closing the fixed-tmp collision (lockfile rejected per DECISIONS 2026-07-18).",
+      "acceptance": [
+        "--passes requires the green verify log to carry both CAPTURED-BY: scripts/capture.mjs and CAPTURE-EXIT: 0; a bare hand-written marker line no longer flips - contract test",
+        "--passes, and the --validate deep audit for features above the cutoff, parse VERIFY-COMMIT and require the SHA to be an ancestor of HEAD via git merge-base; a fabricated or foreign SHA, a no-git value, or a missing line is rejected - contract test; code comments record that this depends on merge commits (ship.sh) and full-history CI checkout and must be revisited if the merge strategy ever changes",
+        "a named PROVENANCE_CUTOFF constant set to 50 grandfathers the existing backlog: --validate stays green on a clean tree for all currently-done rows while flip-time strictness is unconditional; any F-9xxx contract-test fixtures that the new rules would catch are updated to captured-style logs",
+        "save() writes to a unique temp file (process id plus randomness) before rename - contract test or assertion covers it",
+        "bash scripts/verify.sh exits 0 with evidence under roadmap/evidence/F-0053/ and mutation smoke still kills all known mutants"
+      ],
+      "spec_ref": "roadmap/DECISIONS.md 2026-07-18 review-wave triage",
+      "authorized_paths": [
+        "scripts/update-state.ts",
+        "scripts/test-hooks.sh",
+        "roadmap/evidence/F-0053/**"
+      ],
+      "forbidden_paths": [
+        ".claude/**",
+        ".github/workflows/**",
+        "roadmap/features.json"
+      ]
     }
   ]
 }
