@@ -59,3 +59,13 @@ The newest research backs your instinct that the one-shot approach is the more r
 **Why it matters:** If yes, the twin-logic merge can be scheduled like any other task, with the full double-review it deserves. If no, that kind of maintenance always waits for you to ask for it directly in a session like today's — which is safer but slower, and easy to forget.
 
 **What was assumed meanwhile (not blocking):** We built the safe alternative first: a new scheduled task (F-0049) adds an alarm test that instantly fails the build if the two twin copies ever drift apart. So nothing is at risk while this question waits — the merge is an improvement, not an emergency.
+
+---
+
+## Q-0005 (2026-07-17, open — not blocking) — Should we turn on any outside AI coding tools as extra workers?
+
+**Question:** We deep-researched the three big non-Claude coding tools — OpenAI's Codex, xAI's Grok Build, and Google's Antigravity — and wrote the safety rulebook for how any outside tool would have to operate here: it does one assigned job at a time in a locked-down workspace, and everything it produces is checked by our own existing safety gates and independent reviewer before it counts. **Nothing is turned on.** Do you want to actually enable one as a real worker lane? If yes, OpenAI's Codex is the recommended starting point — it is by far the most proven of the three (its safety sandbox and sign-in were the most thoroughly confirmed things in the whole research pass).
+
+**Why it matters:** You already subscribe to all three companies, but we could not confirm from published sources whether your current plans unlock these specific tools. Two of the three have real unknowns: xAI's own docs don't say which subscription level unlocks their tool (outside reports disagree, ranging from $30 to $300 a month), and one report says Google's tool can't run unattended at all — and running unattended is the only way our system works. A lane also adds review work on our side, since everything an outside tool writes still goes through our own checks — so it's only worth turning on if it genuinely saves time or gives a useful second opinion.
+
+**What was assumed meanwhile (the safe default):** Nothing enabled, nothing spent. The rulebook is written, all three tools are marked "needs the operator's approval before first use," and the system keeps running Claude-only exactly as before. If you say "try Codex," the next step is a careful, fully-reviewed setup task — not a flipped switch. If you say "not now," nothing needs undoing.

@@ -41,13 +41,17 @@
 
 ## Trigger: first external / MCP tool integration
 
+> **Status (2026-07-17): PARTIALLY FIRED — ahead of first live use, by design.** The §2.3 standing rule requires a registry entry *before* any integration, so with three candidate external CLIs researched (Codex CLI / Grok Build / Antigravity — adversarially verified pass, see `docs/FRONTIER.md` §4) the **Tool registry artifacts have shipped**: `.claude/tool-policy.json` + `docs/tool-registry.md` (row kept below for provenance). **No tool is enabled** — every entry gates on operator approval (QUESTIONS Q-0005). Still deferred until the first *actual* tool boundary exists: schema-validated tool I/O and verb-first naming.
+
 | Module | What it adds | Notes |
 |---|---|---|
-| Tool registry artifacts | `.claude/tool-policy.json` + `docs/tool-registry.md` (purpose, trust level, env-named secrets, allowed commands, network, approval gate per tool) | The registry *principle* is already policy (plan §2.1 note); the machine-readable artifacts wait for a consumer (#44, K-2) |
+| Tool registry artifacts | `.claude/tool-policy.json` + `docs/tool-registry.md` (purpose, trust level, env-named secrets, allowed commands, network, approval gate per tool) | The registry *principle* is already policy (plan §2.1 note); the machine-readable artifacts wait for a consumer (#44, K-2). **Shipped 2026-07-17** (registry-first, zero tools enabled) |
 | Schema-validated tool I/O | Zod validation at every external-tool boundary, auto-reprompt on failure | Engine scripts already validate in code; the dependency earns its keep at the first external boundary (#75) |
 | Verb-first naming + capability boundaries | `get-file-info` not `file-info`; Roots-style filesystem scoping | (#76) |
 
 ## Trigger: you actually run other CLIs (Codex/goose/Cline) against this repo
+
+> **Status (2026-07-17): NOT fired.** The external-CLI research pass reviewed this trigger explicitly: no cross-tool sessions run against this repo yet, so both rows stay deferred. The tool registry (previous section) is the precondition layer, not this trigger — registering a candidate is not running it.
 
 | Module | What it adds | Notes |
 |---|---|---|
