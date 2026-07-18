@@ -89,6 +89,42 @@ test("REJECT no-verifiable-criterion: chained with single ampersand", () => {
   assert.equal(result.reason, "no-verifiable-criterion");
 });
 
+// F-0052: execution-vector metacharacters beyond the chaining class.
+test("REJECT no-verifiable-criterion: command substitution with $(", () => {
+  const result = admit({ acceptanceCommand: "echo $(whoami)", contextPaths: [] });
+  assert.equal(result.verdict, "REJECT");
+  assert.equal(result.reason, "no-verifiable-criterion");
+});
+
+test("REJECT no-verifiable-criterion: command substitution with backticks", () => {
+  const result = admit({ acceptanceCommand: "echo `whoami`", contextPaths: [] });
+  assert.equal(result.verdict, "REJECT");
+  assert.equal(result.reason, "no-verifiable-criterion");
+});
+
+test("REJECT no-verifiable-criterion: output redirection with >", () => {
+  const result = admit({ acceptanceCommand: "echo hi > /tmp/x", contextPaths: [] });
+  assert.equal(result.verdict, "REJECT");
+  assert.equal(result.reason, "no-verifiable-criterion");
+});
+
+test("REJECT no-verifiable-criterion: input redirection with <", () => {
+  const result = admit({ acceptanceCommand: "cat < file", contextPaths: [] });
+  assert.equal(result.verdict, "REJECT");
+  assert.equal(result.reason, "no-verifiable-criterion");
+});
+
+test("REJECT no-verifiable-criterion: embedded carriage return", () => {
+  const result = admit({ acceptanceCommand: "echo hi\rexit 0", contextPaths: [] });
+  assert.equal(result.verdict, "REJECT");
+  assert.equal(result.reason, "no-verifiable-criterion");
+});
+
+test("ADMIT: bare $HOME env-var reference (no paren) stays admitted", () => {
+  const result = admit({ acceptanceCommand: "echo $HOME", contextPaths: [] });
+  assert.equal(result.verdict, "ADMIT");
+});
+
 test("REJECT over-budget: context exceeds tiny budget of 1 token", () => {
   const f = makeTempFile("abcdefgh");
   try {
