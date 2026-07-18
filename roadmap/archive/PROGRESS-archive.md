@@ -2,6 +2,16 @@
 
 Older session blocks moved out of `roadmap/PROGRESS.md` per AI_OPERATIONS_PLAN §4.3 (keep the live handoff log near ~500 lines so "read the top" stays cheap). Newest-first, same convention as PROGRESS.md.
 
+## 2026-06-15 — Adaptive layer: /work loop de-fluffed + tier-routed JUDGE (PR #82, the loop-switching mechanism)
+
+Third PR of the operator /goal "loop switching / make it adaptable" program (after F-LP1 = tier data model, F-LP1b = triage rubric + groom assignment). This is the PR that gives the tier field its **mechanical routing behavior** in the main loop.
+
+- **/work de-fluffed.** Removed 11 jargon/telemetry tokens from `.claude/skills/work/SKILL.md` (xAI 4/16, 0e, 6x RL, Heavy 16-style, TELEMETRY 16/0+173/0, velocity, TOOL_CALLS_APPROX, 4x cost) — buzzwords that encoded no enforceable rule. Every REAL rule survives (a fresh-context evaluator confirmed each removed line's rule still lives somewhere): explorer-first, Grep/Glob-before-edit, report conclusions + line-refs + an approximate tool-call count + errors (never raw dumps), the BUILD-end git-hygiene commit contract, the temp-then-move evidence rule, the state-drift guard, the `VERIFY: PASS (exit 0)` check, all 8 loop steps, the manager mindset.
+- **Tier-routed JUDGE (step 5).** The fresh-context evaluator is now stated as **mandatory on every feature/every tier — never sampled** (the core invariant, made loud); the security-reviewer is ADDITIONALLY spawned when the feature is **Tier C** OR the diff touches a sensitive path (auth/API/data/workflows/hooks/deps) — mandatory regardless of path on Tier C. SHIP (step 6) notes the Tier-C REQUIRE_APPROVAL merge gate lands with the `awaiting_approval` status (next PR). Matches `TASK_AUTONOMY_TRIAGE.md §7` and groom step 3 exactly (evaluator cross-checked all 4 acceptance criteria → PASS, no contradiction).
+- **Gate + review:** `verify.sh` PASS (exit 0), 298 hook-contract tests, mutation-smoke killed all 4 rbac mutants. Per the engine's own rule (skills are behavior, not enforcement surfaces) this got a fresh-context **evaluator** (PASS) rather than a security-reviewer. CI green 1m21s, merged.
+- **Surprise / debt created:** cleaning /work exposed that **CLAUDE.md §3 still carries the same jargon AND the pre-tier JUDGE routing** — the constitution now contradicts the loop skill it points to. **NEXT: de-fluff CLAUDE.md §3 and align its JUDGE line with the tier routing** (§9 checklist: stays ≤150 lines, log in DECISIONS). Then F-LP-gate (`awaiting_approval` status + Tier-C merge gate), then per-tier model agents (model switching).
+
+
 ## 2026-06-14 — Deferrals cleared: F-0032 (page.tsx decomp) + F-0033 (Next 16) shipped — 33/33 passing
 
 Picked up the two items deliberately deferred earlier and finished them as careful, gated cycles, so nothing in the review queue or recommended backlog remains deferred.
