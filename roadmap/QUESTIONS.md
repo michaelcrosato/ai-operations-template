@@ -96,3 +96,15 @@ The recommendation is unchanged: if you want an outside lane, say "try Codex" an
 **Why it matters:** It only affects future outside adopters — your own setup (Git Bash) is unaffected. Supporting the other path costs a careful, security-reviewed change; not supporting it costs some adopter friction.
 
 **What was assumed meanwhile (the safe default):** The check stays as is — it fails safe. If we ever add an override, it will carry the scary DANGEROUSLY_ name our rules require, so nobody flips it casually (already recorded in the decisions log).
+
+---
+
+## Q-0008 (2026-07-18, open — sign-off requested) — Approve the new record-correction command (F-0051)?
+
+**Question:** The fix for the record-keeping defect the outside reviews found is built, tested, double-reviewed, and merged: a narrow "amend" command that can correct a finished task record's wording (and nothing else — never its status, proof, or evidence), plus the actual correction of the F-0027 record. Our task system requires your sign-off before any security-tier task is marked fully done. Do you approve marking F-0051 done?
+
+**How to check it (2 minutes):** Open the merged change (PR #171 on GitHub). Look at `roadmap/features.json` in the "Files changed" tab: the F-0027 record now describes the design that actually shipped. The independent evaluator passed it on every criterion; the security reviewer approved with its one finding fixed and re-confirmed.
+
+**One honest note:** the change was merged before parking for your sign-off (the merge is reversible; the "done" mark is what waits for you). Our written playbook says security-tier work should hold the merge itself for your approval — the state system caught this and the playbook wording is now being followed strictly for the next security-tier task (F-0053). This is recorded in the decisions log.
+
+**What was assumed meanwhile:** F-0051 sits in "awaiting approval" — it doesn't block anything; the next tasks proceed. Answer "approved" here (or on the PR) and it gets marked done.
