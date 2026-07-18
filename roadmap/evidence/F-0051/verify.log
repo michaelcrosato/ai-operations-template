@@ -1,8 +1,8 @@
 CAPTURED-BY: scripts/capture.mjs
 CAPTURE-FEATURE: F-0051
 CAPTURE-CMD: bash scripts/verify.sh
-CAPTURE-COMMIT: a001d4e6ff5bc639d832402ad7fec3467fddbf44
-CAPTURE-TS: 2026-07-18T05:47:10.302Z
+CAPTURE-COMMIT: 32d56715bc8bd56e8bea87205587fed12b6a4952
+CAPTURE-TS: 2026-07-18T06:00:18.447Z
 CAPTURE-EXIT: 0
 ----- 8< ----- captured stdout+stderr below -----
 
@@ -10,41 +10,41 @@ CAPTURE-EXIT: 0
 ──── typecheck: OK
 
 ──── verify: lint ────
-Checked 12 files in 11ms. No fixes applied.
+Checked 12 files in 12ms. No fixes applied.
 ──── lint: OK
 
 ──── verify: unit tests ────
-✔ getHealth() reports status ok and the correct service name (1.0836ms)
-✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.145ms)
-✔ getHealth() uptime_s is a non-negative number (0.0767ms)
-✔ CLI: node src/health.js exits 0 and prints JSON with status ok (46.329ms)
-✔ ADMIT: well-scoped descriptor returns verdict ADMIT (1.3794ms)
-✔ REJECT no-verifiable-criterion: empty acceptanceCommand (0.1196ms)
-✔ REJECT no-verifiable-criterion: missing acceptanceCommand (0.0723ms)
-✔ REJECT no-verifiable-criterion: whitespace-only acceptanceCommand (0.0679ms)
-✔ REJECT no-verifiable-criterion: chained with && (0.1028ms)
-✔ REJECT no-verifiable-criterion: chained with semicolon (0.0763ms)
-✔ REJECT no-verifiable-criterion: chained with || (0.0748ms)
-✔ REJECT no-verifiable-criterion: piped command (0.0562ms)
-✔ REJECT no-verifiable-criterion: command with embedded newline (0.0836ms)
-✔ REJECT no-verifiable-criterion: chained with single ampersand (0.1258ms)
-✔ REJECT over-budget: context exceeds tiny budget of 1 token (0.7035ms)
-✔ REJECT over-budget: tokens.measured and tokens.budget are numbers (0.6485ms)
-✔ Budget: DEFAULT_TOKEN_BUDGET is exported and equals 8000 (0.068ms)
-✔ Budget: default budget used when options.budget and env absent (0.5372ms)
-✔ Budget: options.budget overrides the default (0.5641ms)
-✔ Budget: ONESHOT_TOKEN_BUDGET env var used when options.budget absent (0.5701ms)
-✔ Budget: unreadable path counts as 0 chars (deterministic) (0.154ms)
-✔ Budget boundary: measured exactly equal to budget is ADMIT (0.4975ms)
-✔ Budget boundary: one token over budget is REJECT over-budget (0.4617ms)
-✔ AC1: non-zero exit -> NOT-DONE even when input claims PASS (64.1764ms)
-✔ AC2: exit 0 -> PASS and evidence file records exitCode 0 (54.9158ms)
-✔ AC3: non-zero exit -> NOT-DONE and evidence file records non-zero exitCode (54.0949ms)
-✔ AC4: verdict module loads with node builtins only (no external deps) (0.0933ms)
-✔ AC5: verdict consumes the F-0040 descriptor shape (ADMIT -> verdict round-trip) (52.4483ms)
-✔ F-0047: spawn error (maxBuffer exceeded) -> exitCode 127, NOT-DONE, evidence records 127 (126.8329ms)
-✔ F-0047: evidence-write failure is fail-closed (throws, never PASS) (53.8076ms)
-✔ F-0047: evidence file records stdout and stderr of the acceptance command (61.6964ms)
+✔ getHealth() reports status ok and the correct service name (0.955ms)
+✔ getHealth() timestamp parses to a valid ISO-8601 Date (0.3884ms)
+✔ getHealth() uptime_s is a non-negative number (0.1908ms)
+✔ CLI: node src/health.js exits 0 and prints JSON with status ok (43.6218ms)
+✔ ADMIT: well-scoped descriptor returns verdict ADMIT (1.444ms)
+✔ REJECT no-verifiable-criterion: empty acceptanceCommand (0.1399ms)
+✔ REJECT no-verifiable-criterion: missing acceptanceCommand (0.0748ms)
+✔ REJECT no-verifiable-criterion: whitespace-only acceptanceCommand (0.06ms)
+✔ REJECT no-verifiable-criterion: chained with && (0.1036ms)
+✔ REJECT no-verifiable-criterion: chained with semicolon (0.0831ms)
+✔ REJECT no-verifiable-criterion: chained with || (0.0706ms)
+✔ REJECT no-verifiable-criterion: piped command (0.0539ms)
+✔ REJECT no-verifiable-criterion: command with embedded newline (0.078ms)
+✔ REJECT no-verifiable-criterion: chained with single ampersand (0.135ms)
+✔ REJECT over-budget: context exceeds tiny budget of 1 token (0.6628ms)
+✔ REJECT over-budget: tokens.measured and tokens.budget are numbers (0.5686ms)
+✔ Budget: DEFAULT_TOKEN_BUDGET is exported and equals 8000 (0.0651ms)
+✔ Budget: default budget used when options.budget and env absent (0.4811ms)
+✔ Budget: options.budget overrides the default (0.4767ms)
+✔ Budget: ONESHOT_TOKEN_BUDGET env var used when options.budget absent (0.4956ms)
+✔ Budget: unreadable path counts as 0 chars (deterministic) (0.1414ms)
+✔ Budget boundary: measured exactly equal to budget is ADMIT (0.4508ms)
+✔ Budget boundary: one token over budget is REJECT over-budget (0.4467ms)
+✔ AC1: non-zero exit -> NOT-DONE even when input claims PASS (69.2292ms)
+✔ AC2: exit 0 -> PASS and evidence file records exitCode 0 (52.3112ms)
+✔ AC3: non-zero exit -> NOT-DONE and evidence file records non-zero exitCode (52.2488ms)
+✔ AC4: verdict module loads with node builtins only (no external deps) (0.0875ms)
+✔ AC5: verdict consumes the F-0040 descriptor shape (ADMIT -> verdict round-trip) (47.1328ms)
+✔ F-0047: spawn error (maxBuffer exceeded) -> exitCode 127, NOT-DONE, evidence records 127 (121.0733ms)
+✔ F-0047: evidence-write failure is fail-closed (throws, never PASS) (49.7951ms)
+✔ F-0047: evidence file records stdout and stderr of the acceptance command (56.7374ms)
 ℹ tests 31
 ℹ suites 0
 ℹ pass 31
@@ -52,7 +52,7 @@ Checked 12 files in 11ms. No fixes applied.
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 545.2006
+ℹ duration_ms 520.1491
 ──── unit tests: OK
 (no build script — skipping)
 ──── test coverage guard: OK (every src test file is wired into npm test)
@@ -71,7 +71,7 @@ Checked 12 files in 11ms. No fixes applied.
 ──── assertion shield: OK
 
 ──── verify: engine lint (biome) ────
-Checked 6 files in 12ms. No fixes applied.
+Checked 6 files in 10ms. No fixes applied.
 ──── engine lint (biome): OK
 
 ──── verify: shellcheck (hooks + gate scripts) ────
@@ -301,7 +301,7 @@ Checked 6 files in 12ms. No fixes applied.
 ── session-brief.sh
   [PASS] exits 0
   [PASS] emits brief content
-── update-state.ts (fixture: tmp/hook-tests-NuwLmu)
+── update-state.ts (fixture: tmp/hook-tests-G1X1Iq)
   [PASS] validate accepts valid fixture
   [PASS] validate exits 0 despite stale policy
   [PASS] validate warns on stale model-policy
@@ -379,6 +379,8 @@ Checked 6 files in 12ms. No fixes applied.
   [PASS] F-EC1: --passes REJECTS a captured-by log with clean marker but CAPTURE-EXIT!=0
   [PASS] F-EC1: --passes ACCEPTS a captured green log (CAPTURE-EXIT: 0 + marker)
   [PASS] F-0051: --amend REJECTS a disallowed field (passes)
+  [PASS] F-0051: --amend REJECTS the tier field (allowlist, not save)
+  [PASS] F-0051: --amend REJECTS the status field (allowlist, not save)
   [PASS] F-0051: --amend REJECTS a pending row (status allowlist)
   [PASS] F-0051: --amend REJECTS a reason with no DECISIONS citation
   [PASS] F-0051: --amend REJECTS emptying acceptance ([])
@@ -425,7 +427,7 @@ Checked 6 files in 12ms. No fixes applied.
   [PASS] delegates to seed script (success)
   [PASS] propagates seed script failure
   [PASS] circular delegation fails fast
-── update-state.ts invariants (fixture: tmp/hook-tests-NuwLmu)
+── update-state.ts invariants (fixture: tmp/hook-tests-G1X1Iq)
   [PASS] status:done without passes is rejected
   [PASS] dependency cycle is rejected
   [PASS] validate audits evidence of passing features (missing file rejected)
@@ -578,7 +580,7 @@ Checked 6 files in 12ms. No fixes applied.
   [PASS] F-MP2: builder-strong resolves to the reasoning tier
   [PASS] F-MP2: Tier-C builder uses a different model than the default builder
 
-hook contract tests: 474 passed, 0 failed
+hook contract tests: 476 passed, 0 failed
 ──── hook contract tests: OK
 
 ──── verify: mutation smoke ────
@@ -591,20 +593,20 @@ hook contract tests: 474 passed, 0 failed
 ── mutation smoke: OK (every known mutant was killed by a test) ──
 ──── mutation smoke: OK
 
-VERIFY-COMMIT: a001d4e6ff5bc639d832402ad7fec3467fddbf44 @ 2026-07-18T05:50:35Z
+VERIFY-COMMIT: 32d56715bc8bd56e8bea87205587fed12b6a4952 @ 2026-07-18T06:03:32Z
 VERIFY: PASS (exit 0)
 
 ----- stderr -----
-(node:29760) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/scripts/update-state.ts is not specified and it doesn't parse as CommonJS.
+(node:28780) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/scripts/update-state.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to \\?\C:\dev\ai-operations-template\package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)
 [update-state] WARN: 5 done feature(s) have no metrics.jsonl record (F-0022, F-0025, F-0026, F-0027, F-0030) — /kaizen + /status sample only recorded features; append one metrics line per shipped feature.
-(node:29908) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/scripts/check-model-policy.ts is not specified and it doesn't parse as CommonJS.
+(node:30820) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/scripts/check-model-policy.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to \\?\C:\dev\ai-operations-template\package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)
-(node:34172) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/scripts/assertion-shield.ts is not specified and it doesn't parse as CommonJS.
+(node:28356) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/dev/ai-operations-template/scripts/assertion-shield.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to \\?\C:\dev\ai-operations-template\package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)

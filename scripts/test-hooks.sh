@@ -773,6 +773,14 @@ amend_done() { # rewrite a fully-valid DONE fixture row (real green evidence so 
 # Guard 1 — field allowlist: a disallowed field (passes) is rejected even with a valid value + reason.
 amend_done
 check "F-0051: --amend REJECTS a disallowed field (passes)"          1 "$(US_WITH_STATE "$AMF/f.json" --amend F-9501 passes '"true"' correction per DECISIONS 2026-06-14)"
+# Guard 1 (mutation teeth) — the `passes` case above clears the value-shape guard but is ultimately
+# rejected by save()'s downstream boolean type check, so a mutant that DELETES Guard 1 survives it.
+# These two pin Guard 1 directly: tier "C" and status "in_progress" are values validate() ACCEPTS,
+# so if the allowlist were removed the amend would succeed — the ONLY thing rejecting them is Guard 1.
+amend_done
+check "F-0051: --amend REJECTS the tier field (allowlist, not save)"  1 "$(US_WITH_STATE "$AMF/f.json" --amend F-9501 tier '"C"' correction per DECISIONS 2026-07-18)"
+amend_done
+check "F-0051: --amend REJECTS the status field (allowlist, not save)" 1 "$(US_WITH_STATE "$AMF/f.json" --amend F-9501 status '"in_progress"' correction per DECISIONS 2026-07-18)"
 # Guard 2 — status allowlist: a pending row cannot be amended (re-groom via --remove + --add instead).
 cat > "$AMF/pending.json" <<'EOF'
 { "features": [ { "id": "F-9501", "epic": "t", "title": "OLDTITLE", "spec_ref": "t", "description": "d", "acceptance": ["a"], "authorized_paths": [], "forbidden_paths": [], "dependencies": [], "priority": 1, "status": "pending", "passes": false, "evidence": [], "attempts": 0, "blocked_reason": null } ] }
