@@ -38,7 +38,7 @@ jobs:
 
       # SHA-pinned (= tag v1.0.174, verified 2026-07-16): highest-privilege workflow, so an
       # upstream tag-move must not change what runs here. Hygiene routine rolls this.
-      - uses: anthropics/claude-code-action@12531344451323133b0493233c759991ac61da12
+      - uses: anthropics/claude-code-action@fa7e2f0a29a126f0b81cdcf360561b36e44cf608
         with:
           # Subscription-first (verified 2026-06-10): Pro/Max OAuth token from
           # `claude setup-token` — bills the agent credit pool included with the
